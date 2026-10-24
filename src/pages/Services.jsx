@@ -9,14 +9,14 @@ import ServiceComparisonModal from '../components/services/ServiceComparisonModa
 import ComparisonFloatingTray from '../components/services/ComparisonFloatingTray';
 import { comparisonService } from '../services/comparisonService';
 import { rankAndFilterServices } from '../services/searchRankingEngine';
-import ServiceRecommendationWizard from '../components/recommendations/ServiceRecommendationWizard';
-import { Sparkles, Layers, Compass } from 'lucide-react';
+import { Sparkles, Layers, Scale } from 'lucide-react';
+import RtiBuilderModal from '../components/services/RtiBuilderModal';
 
 const Services = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [comparedServices, setComparedServices] = useState(() => comparisonService.getComparedServices());
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isRtiModalOpen, setIsRtiModalOpen] = useState(false);
 
   // Read URL params or set defaults
   const activeCategory = searchParams.get('cat') || 'All';
@@ -127,24 +127,29 @@ const Services = () => {
             Official requirements, eligibility criteria, and step-by-step procedures to obtain essential Indian civic services.
           </p>
 
-          <button
-            type="button"
-            onClick={() => setIsWizardOpen(true)}
-            className="btn btn-primary animate-fade-in"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.625rem 1.25rem',
-              fontSize: '0.95rem',
-              fontWeight: '700',
-              borderRadius: '9999px',
-              boxShadow: 'var(--shadow-glow, 0 0 20px rgba(56, 189, 248, 0.2))',
-            }}
-          >
-            <Sparkles size={16} />
-            <span>Find Services For You (Explainable Recommender)</span>
-          </button>
+          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setIsRtiModalOpen(true)}
+              style={{
+                padding: '0.6rem 1.4rem',
+                borderRadius: '99px',
+                border: '1px solid #2563eb',
+                background: '#eff6ff',
+                color: '#1d4ed8',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 4px rgba(37,99,235,0.08)'
+              }}
+            >
+              <Scale size={16} />
+              <span>Citizen RTI Request Builder (Section 6(1))</span>
+            </button>
+          </div>
         </div>
 
         {/* Category Pills Navigation */}
@@ -257,10 +262,10 @@ const Services = () => {
           onUpdateList={(newList) => setComparedServices(newList)}
         />
 
-        {/* Explainable Service Recommendation Wizard Modal */}
-        <ServiceRecommendationWizard
-          isOpen={isWizardOpen}
-          onClose={() => setIsWizardOpen(false)}
+        {/* Citizen RTI Request Builder Modal */}
+        <RtiBuilderModal
+          isOpen={isRtiModalOpen}
+          onClose={() => setIsRtiModalOpen(false)}
         />
       </div>
     </div>
