@@ -1,65 +1,41 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
+import {
+  A11Y_KEY,
+  loadA11yPrefs,
+  saveA11yPrefs,
+  applyA11yPrefs,
+} from '../utils/preferencesStorage';
+
 const AccessibilityContext = createContext();
 
-const STORAGE_KEY = 'civicbridge_a11y_prefs';
-
 export const AccessibilityProvider = ({ children }) => {
-  const [fontSizeScale, setFontSizeScale] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw).fontSizeScale || 'normal' : 'normal';
-    } catch {
-      return 'normal';
-    }
-  });
-
-  const [isHighContrast, setIsHighContrast] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? Boolean(JSON.parse(raw).isHighContrast) : false;
-    } catch {
-      return false;
-    }
-  });
-
-  const [isDyslexicFont, setIsDyslexicFont] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? Boolean(JSON.parse(raw).isDyslexicFont) : false;
-    } catch {
-      return false;
-    }
-  });
+  const [initialPrefs] = useState(loadA11yPrefs);
+  const [fontSizeScale, setFontSizeScale] = useState(initialPrefs.fontSizeScale);
+  const [isHighContrast, setIsHighContrast] = useState(initialPrefs.isHighContrast);
+  const [isDyslexicFont, setIsDyslexicFont] = useState(initialPrefs.isDyslexicFont);
 
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Apply attributes to document root
+  // Apply attributes to document root and persist
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-font-scale', fontSizeScale);
-
-    if (isHighContrast) {
-      root.setAttribute('data-high-contrast', 'true');
-    } else {
-      root.removeAttribute('data-high-contrast');
-    }
-
-    if (isDyslexicFont) {
-      root.setAttribute('data-dyslexic-font', 'true');
-    } else {
-      root.removeAttribute('data-dyslexic-font');
-    }
-
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ fontSizeScale, isHighContrast, isDyslexicFont })
-      );
-    } catch (err) {
-      console.error('Failed to save a11y preferences', err);
-    }
+    const prefs = { fontSizeScale, isHighContrast, isDyslexicFont };
+    applyA11yPrefs(prefs);
+    saveA11yPrefs(prefs);
   }, [fontSizeScale, isHighContrast, isDyslexicFont]);
+
+  // Keep other open tabs in sync
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== A11Y_KEY && e.key !== null) return;
+      const prefs = loadA11yPrefs();
+      setFontSizeScale(prefs.fontSizeScale);
+      setIsHighContrast(prefs.isHighContrast);
+      setIsDyslexicFont(prefs.isDyslexicFont);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   // Text to Speech
   const speakText = (text) => {

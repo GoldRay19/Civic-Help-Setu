@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
 import './index.css';
 import App from './App.jsx';
+import { applySavedPreferences } from './utils/preferencesStorage';
+
+// Apply saved theme and accessibility settings before first paint
+applySavedPreferences();
 
 const rawKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const isClerkKeyValid = Boolean(

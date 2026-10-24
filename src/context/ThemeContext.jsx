@@ -1,17 +1,24 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { THEME_KEY, loadTheme, saveTheme, applyTheme } from '../utils/preferencesStorage';
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('civicbridge_theme');
-    return saved || 'dark';
-  });
+  const [theme, setTheme] = useState(loadTheme);
 
   useEffect(() => {
-    localStorage.setItem('civicbridge_theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
+    saveTheme(theme);
+    applyTheme(theme);
   }, [theme]);
+
+  // Keep other open tabs in sync
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === THEME_KEY || e.key === null) setTheme(loadTheme());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
