@@ -8,6 +8,77 @@
 const CONSENT_STORAGE_KEY = 'civicbridge_consent_preferences';
 const AUDIT_STORAGE_KEY = 'civicbridge_privacy_audit_log';
 
+// Vault export keeps the document metadata but never the document number.
+const redactVaultDocuments = (docs) =>
+  docs.map((doc) => ({
+    id: doc.id,
+    name: doc.type ?? doc.name ?? null,
+    category: doc.category ?? null,
+    issuer: doc.issuer ?? null,
+    documentNumber: doc.number || doc.documentNumber ? '***REDACTED***' : null,
+    issueDate: doc.issueDate ?? null,
+    expiryDate: doc.expiryDate ?? null,
+    verified: Boolean(doc.verified),
+    lastModified: doc.lastModified ?? doc.createdAt ?? null,
+  }));
+
+/**
+ * Every localStorage key where the app keeps the user's own data, with the file that writes it.
+ * purgeAllUserData deletes all of them and exportUserData builds its sections from the same list,
+ * so a service that starts writing a new key only has to be added here.
+ * exportAs is the section name in the export (null: deleted on purge but not exported, e.g.
+ * caches that only copy data exported elsewhere). `empty` is used when the key is missing or corrupt.
+ * Keys that purge leaves alone on purpose are in RETAINED_STORAGE_KEYS.
+ */
+export const USER_DATA_STORES = [
+  { key: 'civicbridge_vault_docs', exportAs: 'documentVaultMetadata', empty: [], transform: redactVaultDocuments }, // vaultStorage.js
+  { key: 'civicbridge_vault_pin', exportAs: null }, // vaultStorage.js
+  { key: 'civicbridge_saved_rich', exportAs: 'savedServices', empty: [] }, // savedStorage.js
+  { key: 'civicbridge_saved', exportAs: 'savedServiceBookmarks', empty: [] }, // ServiceDetails.jsx, savedStorage.js
+  { key: 'civicbridge_applications', exportAs: 'trackedApplications', empty: [] }, // trackingService.js
+  { key: 'civicbridge_office_tokens', exportAs: 'officeAppointments', empty: [] }, // locationService.js
+  { key: 'civic_service_reviews', exportAs: 'serviceReviews', empty: [] }, // reviewStorage.js
+  { key: 'civicbridge_reminders', exportAs: 'activeReminders', empty: [] }, // reminderNotificationService.js
+  { key: 'civicbridge_notification_settings', exportAs: 'notificationSettings', empty: {} }, // reminderNotificationService.js
+  { key: 'civicbridge_chat_history', exportAs: 'chatHistorySummary', empty: [], transform: (msgs) => ({ totalMessages: msgs.length }) }, // chatStorage.js
+  { key: 'civicbridge_eligibility_assessments', exportAs: 'eligibilityAssessments', empty: [] }, // assessmentStorage.js
+  { key: 'civic_grievance_tickets', exportAs: 'grievanceTickets', empty: [] }, // grievanceService.js
+  { key: 'civic_compared_services', exportAs: 'comparedServices', empty: [] }, // comparisonService.js
+  { key: 'civicbridge_faq_votes', exportAs: 'faqVotes', empty: {} }, // faqService.js
+  { key: 'civicbridge_ai_context_consent', exportAs: 'assistantContextConsent', empty: null }, // ai/contextRecommender.js
+  { key: 'civicbridge_offline_cache', exportAs: null }, // offlineCacheService.js
+  { key: 'civicbridge_offline_last_sync', exportAs: null }, // offlineCacheService.js
+];
+
+export const USER_DATA_STORAGE_KEYS = USER_DATA_STORES.map((store) => store.key);
+
+// The journey planner writes one key per journey: civic_journey_progress_<journeyId> (journeyDependencyEngine.js).
+const JOURNEY_PROGRESS_PREFIX = 'civic_journey_progress_';
+export const USER_DATA_KEY_PREFIXES = [JOURNEY_PROGRESS_PREFIX];
+
+// sessionStorage keys with user data, removed on purge (cached location from locationService.js).
+export const USER_DATA_SESSION_KEYS = ['civicbridge_user_coords'];
+
+// Keys that purge leaves alone on purpose.
+export const RETAINED_STORAGE_KEYS = [
+  // UI preferences (theme, language, accessibility), covered by essential storage
+  'civicbridge_theme',
+  'civicbridge_lang',
+  'civicbridge_plain_lang',
+  'civicbridge_a11y_prefs',
+  // Demo sign-in session, signing out is its own action
+  'civicbridge_demo_user',
+  // Admin portal data and the shared review queue for outdated-info reports
+  'civicbridge_custom_services',
+  'civicbridge_error_reports',
+  'civicbridge_audit_logs',
+  'civicbridge_rbac_users',
+  'civicbridge_service_submissions',
+  // Handled by purge itself: consents are reset, the audit log keeps the deletion receipt
+  CONSENT_STORAGE_KEY,
+  AUDIT_STORAGE_KEY,
+];
+
 // Standardized consent categories and their legal requirements
 export const CONSENT_CATEGORIES = {
   essential_storage: {
@@ -66,7 +137,44 @@ function getStorage() {
     getItem: (k) => globalThis.__mockPrivacyStorage.get(k) || null,
     setItem: (k, v) => globalThis.__mockPrivacyStorage.set(k, String(v)),
     removeItem: (k) => globalThis.__mockPrivacyStorage.delete(k),
+    key: (i) => [...globalThis.__mockPrivacyStorage.keys()][i] ?? null,
+    get length() {
+      return globalThis.__mockPrivacyStorage.size;
+    },
   };
+}
+
+function getSessionStorage() {
+  try {
+    return typeof window !== 'undefined' && window.sessionStorage ? window.sessionStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+// Stored keys that start with one of USER_DATA_KEY_PREFIXES.
+function getPrefixedUserDataKeys(storage) {
+  const keys = [];
+  for (let i = 0; i < (storage.length || 0); i += 1) {
+    const key = storage.key(i);
+    if (key && USER_DATA_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+// Parses a stored JSON value. Missing, corrupt or wrong-shaped values give `empty` instead of throwing.
+function readStoredJson(storage, key, empty) {
+  const raw = storage.getItem(key);
+  if (raw === null || raw === undefined || raw === '') return empty;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(empty) && !Array.isArray(parsed)) return empty;
+    return parsed;
+  } catch {
+    return empty;
+  }
 }
 
 /**
@@ -234,13 +342,23 @@ export function getPrivacyAuditLogs() {
 export function exportUserData(userId = 'citizen_user') {
   const storage = getStorage();
 
-  // Collect data across all modules
-  const rawSaved = storage.getItem('civicbridge_saved_items') || storage.getItem('civicbridge_saved') || '[]';
-  const rawApps = storage.getItem('civicbridge_applications') || '[]';
-  const rawDocs = storage.getItem('civicbridge_documents') || '[]';
-  const rawChat = storage.getItem('civicbridge_chat_history') || '[]';
-  const rawSettings = storage.getItem('civicbridge_notification_settings') || '{}';
-  const rawReminders = storage.getItem('civicbridge_reminders') || '[]';
+  // Collect data across all modules from the shared USER_DATA_STORES list
+  const sections = {};
+  const includedKeys = [];
+  for (const store of USER_DATA_STORES) {
+    if (!store.exportAs) continue;
+    if (storage.getItem(store.key) !== null) includedKeys.push(store.key);
+    const value = readStoredJson(storage, store.key, store.empty);
+    sections[store.exportAs] = store.transform ? store.transform(value) : value;
+  }
+
+  const journeyProgress = {};
+  for (const key of getPrefixedUserDataKeys(storage)) {
+    includedKeys.push(key);
+    if (key.startsWith(JOURNEY_PROGRESS_PREFIX)) {
+      journeyProgress[key.slice(JOURNEY_PROGRESS_PREFIX.length)] = readStoredJson(storage, key, null);
+    }
+  }
 
   const exportPayload = {
     exportMetadata: {
@@ -250,26 +368,14 @@ export function exportUserData(userId = 'citizen_user') {
       userId,
       format: 'application/json',
       retentionPolicy: 'https://civicbridge.org/privacy',
+      includedStorageKeys: includedKeys,
     },
     consentPreferences: getConsentPreferences(),
-    savedServices: JSON.parse(rawSaved),
-    trackedApplications: JSON.parse(rawApps),
-    documentVaultMetadata: JSON.parse(rawDocs).map((doc) => ({
-      id: doc.id,
-      name: doc.name,
-      category: doc.category,
-      documentNumber: doc.documentNumber ? '***REDACTED***' : null,
-      expiryDate: doc.expiryDate,
-      lastModified: doc.lastModified,
-    })),
-    activeReminders: JSON.parse(rawReminders),
-    notificationSettings: JSON.parse(rawSettings),
-    chatHistorySummary: {
-      totalMessages: JSON.parse(rawChat).length,
-    },
+    ...sections,
+    journeyProgress,
   };
 
-  recordPrivacyAuditLog('USER_DATA_EXPORTED', { totalCategories: 6 }, userId);
+  recordPrivacyAuditLog('USER_DATA_EXPORTED', { totalCategories: Object.keys(sections).length + 1 }, userId);
   return exportPayload;
 }
 
@@ -284,24 +390,21 @@ export function exportUserData(userId = 'citizen_user') {
 export function purgeAllUserData(userId = 'citizen_user', options = { preserveAuditTrail: true }) {
   const storage = getStorage();
 
-  const keysToDelete = [
-    'civicbridge_saved_items',
-    'civicbridge_saved',
-    'civicbridge_applications',
-    'civicbridge_documents',
-    'civicbridge_chat_history',
-    'civicbridge_reminders',
-    'civicbridge_notification_settings',
-    'civicbridge_offline_cache',
-    'civicbridge_appointments',
-    'civicbridge_reviews',
-  ];
-
   const deletedKeys = [];
-  for (const key of keysToDelete) {
+  for (const key of [...USER_DATA_STORAGE_KEYS, ...getPrefixedUserDataKeys(storage)]) {
     if (storage.getItem(key) !== null) {
       storage.removeItem(key);
       deletedKeys.push(key);
+    }
+  }
+
+  const session = getSessionStorage();
+  if (session) {
+    for (const key of USER_DATA_SESSION_KEYS) {
+      if (session.getItem(key) !== null) {
+        session.removeItem(key);
+        deletedKeys.push(key);
+      }
     }
   }
 

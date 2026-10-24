@@ -8,7 +8,7 @@ import {
   getPrivacyAuditLogs,
   exportUserData,
   purgeAllUserData,
-  CONSENT_CATEGORIES,
+  USER_DATA_STORAGE_KEYS,
 } from './privacyConsentService.js';
 
 describe('Privacy and Consent Management Service (#80)', () => {
@@ -108,48 +108,78 @@ describe('Privacy and Consent Management Service (#80)', () => {
 
   describe('Data Export Workflow', () => {
     it('exports all user-owned data in documented JSON format with sensitive fields redacted', () => {
-      // Simulate stored vault and application data
+      // Seed the keys the vault, tracker, saved services and appointments actually write
       const storage = globalThis.__mockPrivacyStorage;
       storage.set(
-        'civicbridge_documents',
+        'civicbridge_vault_docs',
         JSON.stringify([
-          { id: 'doc-1', name: 'Aadhaar Card', category: 'Identity', documentNumber: '1234-5678-9012' },
+          { id: 'doc-1', type: 'Aadhaar Card', category: 'Identity', number: '1234-5678-9012', issuer: 'UIDAI' },
         ])
       );
       storage.set(
         'civicbridge_applications',
         JSON.stringify([{ id: 'APP-100', serviceName: 'Passport' }])
       );
+      storage.set('civicbridge_saved_rich', JSON.stringify([{ serviceId: 'pan-card', folder: 'Finance' }]));
+      storage.set('civicbridge_office_tokens', JSON.stringify([{ id: 'apt_1', tokenNumber: 'TKN-123456' }]));
 
       const exported = exportUserData('user_789');
 
       expect(exported.exportMetadata.userId).toBe('user_789');
       expect(exported.exportMetadata.platform).toBe('Civic-Help-Setu');
       expect(exported.trackedApplications).toHaveLength(1);
+      expect(exported.savedServices).toHaveLength(1);
+      expect(exported.officeAppointments).toHaveLength(1);
       expect(exported.documentVaultMetadata).toHaveLength(1);
+      expect(exported.documentVaultMetadata[0].name).toBe('Aadhaar Card');
       // Verify document number is redacted
       expect(exported.documentVaultMetadata[0].documentNumber).toBe('***REDACTED***');
+      expect(JSON.stringify(exported)).not.toContain('1234-5678-9012');
+      expect(exported.exportMetadata.includedStorageKeys).toEqual(
+        expect.arrayContaining(['civicbridge_vault_docs', 'civicbridge_applications', 'civicbridge_saved_rich', 'civicbridge_office_tokens'])
+      );
+    });
+
+    it('does not crash on corrupt or missing stored values', () => {
+      const storage = globalThis.__mockPrivacyStorage;
+      storage.set('civicbridge_vault_docs', '{not json');
+      storage.set('civicbridge_reminders', JSON.stringify({ not: 'an array' }));
+
+      const exported = exportUserData('user_789');
+
+      expect(exported.documentVaultMetadata).toEqual([]);
+      expect(exported.activeReminders).toEqual([]);
+      expect(exported.trackedApplications).toEqual([]);
+      expect(exported.notificationSettings).toEqual({});
     });
   });
 
   describe('Cascading Account Deletion', () => {
     it('purges all related data across vault, applications, saved guides, and resets consents', () => {
       const storage = globalThis.__mockPrivacyStorage;
-      storage.set('civicbridge_documents', JSON.stringify([{ id: 'd1' }]));
+      storage.set('civicbridge_vault_docs', JSON.stringify([{ id: 'd1' }]));
       storage.set('civicbridge_applications', JSON.stringify([{ id: 'a1' }]));
+      storage.set('civicbridge_saved_rich', JSON.stringify([{ serviceId: 's1' }]));
       storage.set('civicbridge_saved', JSON.stringify([{ id: 's1' }]));
+      storage.set('civicbridge_office_tokens', JSON.stringify([{ id: 'apt_1' }]));
+      storage.set('civic_service_reviews', JSON.stringify([{ id: 'rev-1' }]));
       storage.set('civicbridge_chat_history', JSON.stringify([{ id: 'c1' }]));
+      storage.set('civic_journey_progress_new-business', JSON.stringify({ completedTaskIds: ['t1'] }));
+      storage.set('civicbridge_theme', 'dark');
       storage.set('civicbridge_consent_preferences', JSON.stringify({ analytics_telemetry: true }));
 
       const result = purgeAllUserData('user_delete_me', { preserveAuditTrail: true });
       expect(result.success).toBe(true);
-      expect(result.deletedKeysCount).toBeGreaterThanOrEqual(4);
+      expect(result.deletedKeysCount).toBe(8);
 
       // Verify all stores are deleted
-      expect(storage.get('civicbridge_documents')).toBeUndefined();
-      expect(storage.get('civicbridge_applications')).toBeUndefined();
-      expect(storage.get('civicbridge_saved')).toBeUndefined();
-      expect(storage.get('civicbridge_chat_history')).toBeUndefined();
+      for (const key of USER_DATA_STORAGE_KEYS) {
+        expect(storage.get(key)).toBeUndefined();
+      }
+      expect(storage.get('civic_journey_progress_new-business')).toBeUndefined();
+      expect(storage.get('civicbridge_consent_preferences')).toBeUndefined();
+      // UI preferences are kept
+      expect(storage.get('civicbridge_theme')).toBe('dark');
 
       // Verify deletion audit receipt is retained
       const logs = getPrivacyAuditLogs();
