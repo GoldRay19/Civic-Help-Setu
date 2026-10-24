@@ -40,6 +40,7 @@ const NearbyOffices = () => {
   // Location & Geolocation State
   const [userCoords, setUserCoords] = useState(() => getCachedUserCoordinates());
   const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState(null);
 
   // View & Modal State
   const [viewMode, setViewMode] = useState('split'); // 'split' | 'map' | 'list'
@@ -59,12 +60,15 @@ const NearbyOffices = () => {
   // Request GPS Location handler
   const handleRequestLocation = async () => {
     setIsLocating(true);
+    setLocationError(null);
     try {
       const coords = await requestUserCoordinates();
       setUserCoords(coords);
       toast?.success?.('Current GPS location detected successfully.', 'Location Acquired');
     } catch (err) {
-      toast?.warning?.(err.message || 'Could not retrieve your location.');
+      const message = err.message || 'Could not retrieve your location.';
+      setLocationError({ kind: err.kind || 'unavailable', message });
+      toast?.warning?.(message);
     } finally {
       setIsLocating(false);
     }
@@ -72,6 +76,7 @@ const NearbyOffices = () => {
 
   const handleClearLocation = () => {
     setUserCoords(null);
+    setLocationError(null);
     sessionStorage.removeItem('civicbridge_user_coords');
     toast?.info?.('Location filter cleared.');
   };
@@ -112,6 +117,12 @@ const NearbyOffices = () => {
     onlyOpenNow,
     onlyWheelchair,
   ]);
+
+  // Tailored empty-state hint: which next step actually helps
+  const emptyHint = userCoords
+    ? `Nothing found within ${maxRadiusKm} km of you. Try increasing the radius or clearing a filter.`
+    : 'Location is off, so results depend on your filters. Pick a state or district, or turn on location to see offices near you.';
+  const hasAccuracyNote = userCoords && Number.isFinite(userCoords.accuracy) && userCoords.accuracy > 1000;
 
   return (
     <div className="section animate-fade-in" style={{ paddingBottom: '5rem' }}>
@@ -291,6 +302,48 @@ const NearbyOffices = () => {
           onResetFilters={handleResetFilters}
         />
 
+        {locationError && (
+          <div
+            role="alert"
+            className="glass-panel"
+            style={{
+              display: 'flex',
+              gap: '0.75rem',
+              alignItems: 'flex-start',
+              padding: '0.9rem 1.1rem',
+              margin: '1rem 0',
+              borderRadius: '0.75rem',
+              border: '1px solid var(--border-light)',
+              fontSize: '0.9rem',
+            }}
+          >
+            <Info size={18} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+            <div>
+              <strong>
+                {locationError.kind === 'denied'
+                  ? 'Location access is blocked'
+                  : locationError.kind === 'timeout'
+                    ? 'Location request timed out'
+                    : 'Could not get your location'}
+              </strong>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                {locationError.message}
+                {locationError.kind !== 'denied' &&
+                  locationError.kind !== 'timeout' &&
+                  ' You can still choose a state and district above, or search by city or pincode.'}
+                {locationError.kind === 'denied' &&
+                  ' To use GPS later, allow location for this site in your browser settings and try again.'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {hasAccuracyNote && (
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.75rem 0' }}>
+            Your location is approximate (about {Math.round(userCoords.accuracy)} m), so distances may be off.
+          </p>
+        )}
+
         {/* Dynamic Layout Based on View Mode */}
         {viewMode === 'map' && (
           <div style={{ marginBottom: '2rem' }}>
@@ -321,7 +374,7 @@ const NearbyOffices = () => {
                   No Civic Centers Found
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', maxWidth: '450px', margin: '0 auto 1.5rem', fontSize: '0.9rem' }}>
-                  Try widening your radius slider, switching states, or clearing channel filters.
+                  {emptyHint}
                 </p>
                 <button
                   type="button"
@@ -391,7 +444,7 @@ const NearbyOffices = () => {
                     No Civic Centers Found
                   </h3>
                   <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 1.5rem', fontSize: '0.9rem' }}>
-                    No public offices matched your selected criteria. Try adjusting your district or radius.
+                    {emptyHint}
                   </p>
                   <button
                     type="button"

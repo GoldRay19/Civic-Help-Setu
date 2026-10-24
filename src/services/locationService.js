@@ -3,6 +3,66 @@ import { CIVIC_OFFICES } from '../data/locationOffices';
 const APPOINTMENTS_STORAGE_KEY = 'civicbridge_office_tokens';
 const USER_LOCATION_CACHE_KEY = 'civicbridge_user_coords';
 
+const isValidLat = (v) => Number.isFinite(v) && v >= -90 && v <= 90;
+const isValidLng = (v) => Number.isFinite(v) && v >= -180 && v <= 180;
+const asText = (v) => (typeof v === 'string' ? v.trim() : '');
+const asList = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
+
+/**
+ * Cleans one raw office record. Returns null when it can't be shown safely
+ * (missing id, name or usable coordinates). Text and list fields fall back to
+ * empty values so later string/array calls never throw.
+ */
+export const normalizeOffice = (raw) => {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = asText(raw.id);
+  const name = asText(raw.name);
+  const lat = raw.coordinates?.lat;
+  const lng = raw.coordinates?.lng;
+  if (!id || !name || !isValidLat(lat) || !isValidLng(lng)) return null;
+
+  return {
+    ...raw,
+    id,
+    name,
+    category: asText(raw.category),
+    type: asText(raw.type),
+    state: asText(raw.state),
+    district: asText(raw.district),
+    city: asText(raw.city),
+    pincode: asText(raw.pincode),
+    address: asText(raw.address),
+    landmark: asText(raw.landmark),
+    channels: asList(raw.channels),
+    serviceIds: asList(raw.serviceIds),
+    features: asList(raw.features),
+    coordinates: { lat, lng },
+  };
+};
+
+/**
+ * Normalizes a list of offices: drops unusable records and removes duplicates
+ * (same id, or same name + pincode). The first record wins.
+ */
+export const normalizeOffices = (list) => {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenNamePin = new Set();
+  const result = [];
+  for (const raw of list) {
+    const office = normalizeOffice(raw);
+    if (!office) continue;
+    const namePin = `${office.name.toLowerCase()}|${office.pincode}`;
+    if (seenIds.has(office.id) || seenNamePin.has(namePin)) continue;
+    seenIds.add(office.id);
+    seenNamePin.add(namePin);
+    result.push(office);
+  }
+  return result;
+};
+
+const OFFICES = normalizeOffices(CIVIC_OFFICES);
+
 /**
  * Calculates straight line distance in km between two lat/lng pairs using the Haversine formula.
  */
@@ -39,7 +99,9 @@ export const formatDistance = (distanceKm) => {
 export const requestUserCoordinates = () => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Geolocation is not supported by your browser.'));
+      const err = new Error('Geolocation is not supported by your browser.');
+      err.kind = 'unsupported';
+      reject(err);
       return;
     }
 
@@ -60,20 +122,25 @@ export const requestUserCoordinates = () => {
       },
       (error) => {
         let message = 'Unable to retrieve location.';
+        let kind = 'unavailable';
         switch (error.code) {
           case error.PERMISSION_DENIED:
             message = 'Location access was denied. You can select your state and district manually.';
+            kind = 'denied';
             break;
           case error.POSITION_UNAVAILABLE:
             message = 'Location information is currently unavailable.';
             break;
           case error.TIMEOUT:
             message = 'Location request timed out. Please try again or select manually.';
+            kind = 'timeout';
             break;
           default:
             message = error.message;
         }
-        reject(new Error(message));
+        const err = new Error(message);
+        err.kind = kind;
+        reject(err);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     );
@@ -86,7 +153,10 @@ export const requestUserCoordinates = () => {
 export const getCachedUserCoordinates = () => {
   try {
     const raw = sessionStorage.getItem(USER_LOCATION_CACHE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !isValidLat(parsed.lat) || !isValidLng(parsed.lng)) return null;
+    return parsed;
   } catch {
     return null;
   }
@@ -96,7 +166,7 @@ export const getCachedUserCoordinates = () => {
  * Returns a list of unique states present in the offices registry.
  */
 export const getAvailableStates = () => {
-  const states = Array.from(new Set(CIVIC_OFFICES.map((o) => o.state))).filter(Boolean);
+  const states = Array.from(new Set(OFFICES.map((o) => o.state))).filter(Boolean);
   return states.sort();
 };
 
@@ -107,7 +177,7 @@ export const getDistrictsByState = (state) => {
   if (!state) return [];
   const districts = Array.from(
     new Set(
-      CIVIC_OFFICES.filter((o) => o.state.toLowerCase() === state.toLowerCase()).map(
+      OFFICES.filter((o) => o.state.toLowerCase() === state.toLowerCase()).map(
         (o) => o.district
       )
     )
@@ -151,12 +221,13 @@ export const filterCivicOffices = ({
   serviceId = '',
   onlyOpenNow = false,
   onlyWheelchairAccessible = false,
+  offices = OFFICES,
 }) => {
-  const cleanQuery = searchQuery.trim().toLowerCase();
+  const cleanQuery = (searchQuery || '').trim().toLowerCase();
 
-  return CIVIC_OFFICES.map((office) => {
+  return normalizeOffices(offices).map((office) => {
     let distance = null;
-    if (userCoords && userCoords.lat && userCoords.lng) {
+    if (userCoords && Number.isFinite(userCoords.lat) && Number.isFinite(userCoords.lng)) {
       distance = calculateDistanceKm(
         userCoords.lat,
         userCoords.lng,
