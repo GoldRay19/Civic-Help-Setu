@@ -13,18 +13,14 @@ import { reviewStorage } from '../services/reviewStorage';
 import FeeBreakdownModal from '../components/services/FeeBreakdownModal';
 import EstimatedTimelineWidget from '../components/services/EstimatedTimelineWidget';
 import ConcessionEligibilityBadge from '../components/services/ConcessionEligibilityBadge';
-import { ArrowLeft, Clock, CreditCard, AlertTriangle, Bookmark, Flag, Zap, CheckCircle2, X, MapPin, Compass, Printer, Share2, Star, Calculator, Link2, Check } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
-import { copyServiceLink, getServiceUrl } from '../services/copyLinkService';
+import { ArrowLeft, Clock, CreditCard, AlertTriangle, Bookmark, Flag, Zap, CheckCircle2, X, MapPin, Compass, Printer, Share2, Star, Calculator, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { submitErrorReport } from '../services/adminService';
 import { createApplication } from '../services/trackingService';
 import { CIVIC_OFFICES } from '../data/locationOffices';
 import CommonRejectionReasonsCard from '../components/services/CommonRejectionReasonsCard';
 import ServiceFAQAccordion from '../components/services/ServiceFAQAccordion';
-import ReportOutdatedInfoModal from '../components/services/ReportOutdatedInfoModal';
-import OfficialSourcesList from '../components/services/OfficialSourcesList';
-import { formatVerificationDate } from '../services/sourceVerificationService';
+import CivicFormGeneratorModal from '../components/services/CivicFormGeneratorModal';
 
 const ServiceDetails = () => {
   const { id } = useParams();
@@ -46,7 +42,7 @@ const ServiceDetails = () => {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showFeeModal, setShowFeeModal] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
+  const [showFormGenModal, setShowFormGenModal] = useState(false);
   const [applyStep, setApplyStep] = useState(1); // 1: form, 2: success
   const [generatedAppId, setGeneratedAppId] = useState('');
   const [reportSubmitted, setReportSubmitted] = useState(false);
@@ -225,6 +221,22 @@ const ServiceDetails = () => {
                 >
                   <Printer size={16} />
                   <span>Print Visit Dossier</span>
+                </button>
+                <button
+                  onClick={() => setShowFormGenModal(true)}
+                  className="btn btn-outline"
+                  style={{
+                    padding: '0.6rem 1rem',
+                    fontSize: '0.85rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem'
+                  }}
+                  title="Generate pre-filled application or affidavit form"
+                >
+                  <FileText size={16} />
+                  <span>Generate Application Form</span>
                 </button>
               </div>
             </div>
@@ -555,12 +567,11 @@ const ServiceDetails = () => {
         service={service}
       />
 
-      {/* Outdated Information Reporting Modal */}
-      <ReportOutdatedInfoModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        service={service}
-        initialUserEmail={user?.email || ''}
+      {/* Civic Form & Affidavit Generator Modal */}
+      <CivicFormGeneratorModal
+        isOpen={showFormGenModal}
+        onClose={() => setShowFormGenModal(false)}
+        defaultService={service}
       />
     </>
   );
