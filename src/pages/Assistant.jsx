@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Send, AlertCircle, Loader2, Sparkles, Mic, MicOff, BookOpen, ExternalLink } from 'lucide-react';
+import { Send, AlertCircle, Loader2, Sparkles, Mic, MicOff, BookOpen, RefreshCw, Pencil } from 'lucide-react';
 import ChatMessage from '../components/ChatMessage';
 import { askCivicAssistant } from '../ai/civicAssistant';
 import { askGroundedCivicAssistant } from '../ai/groundedCivicAssistant';
@@ -11,6 +11,7 @@ import ChatHeaderControls from '../components/chat/ChatHeaderControls';
 import VoiceInputStatus from '../components/chat/VoiceInputStatus';
 import PersonalizedRecommendationsPanel from '../components/chat/PersonalizedRecommendationsPanel';
 import DocumentChecklistCard from '../components/chat/DocumentChecklistCard';
+import { STARTER_PROMPTS, resolveFollowUpQuery, getLastUserMessage, hasUserMessages } from '../ai/conversationContext';
 import { loadChatHistory, saveChatHistory, clearChatHistory } from '../services/chatStorage';
 
 const Assistant = () => {
@@ -22,6 +23,8 @@ const Assistant = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+  const inputRef = useRef(null);
+  const [failedQuery, setFailedQuery] = useState(null);
 
   const location = useLocation();
 
@@ -45,51 +48,67 @@ const Assistant = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, isLoading]);
 
-  const handleSendMessage = async (text = input) => {
+  const getAnswer = async (query, history) => {
+    // Short follow-ups like "what are the fees?" reuse the service from the last answer
+    const resolved = resolveFollowUpQuery(query, history);
+    let response;
+    try {
+      response = await askGroundedCivicAssistant(resolved);
+    } catch (groundingErr) {
+      console.warn('Grounded retrieval error, falling back to basic assistant:', groundingErr);
+      response = await askCivicAssistant(resolved);
+    }
+    return {
+      id: `asst-${Date.now()}`,
+      role: 'assistant',
+      text: '',
+      data: response.data,
+      serviceId: response.serviceId,
+      grounded: response.grounded ?? true,
+      confidenceScore: response.confidenceScore,
+      retrievedChunks: response.retrievedChunks || [],
+      suggestions: response.suggestions || [],
+      timestamp: new Date().toISOString(),
+    };
+  };
+
+  const handleSendMessage = async (text = input, { isRetry = false } = {}) => {
     const query = text.trim();
     if (!query || isLoading) return;
 
-    const userMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      text: query,
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    const history = messages;
+    if (!isRetry) {
+      const userMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        text: query,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+    }
     setInput('');
     setIsLoading(true);
     setError(null);
+    setFailedQuery(null);
 
     try {
-      let response;
-      try {
-        response = await askGroundedCivicAssistant(query);
-      } catch (groundingErr) {
-        console.warn('Grounded retrieval error, falling back to basic assistant:', groundingErr);
-        response = await askCivicAssistant(query);
-      }
-
-      const assistantMessage = {
-        id: `asst-${Date.now()}`,
-        role: 'assistant',
-        text: '',
-        data: response.data,
-        serviceId: response.serviceId,
-        grounded: response.grounded ?? true,
-        confidenceScore: response.confidenceScore,
-        retrievedChunks: response.retrievedChunks || [],
-        suggestions: response.suggestions || [],
-        timestamp: new Date().toISOString(),
-      };
-
+      const assistantMessage = await getAnswer(query, history);
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
       console.error(err);
       setError("We couldn't process your request. Please try again.");
+      setFailedQuery(query);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Put the last question back in the input so it can be reworded
+  const handleRefineLast = () => {
+    const last = getLastUserMessage(messages);
+    if (!last) return;
+    setInput(last.text || '');
+    inputRef.current?.focus();
   };
 
   const toggleVoiceInput = () => {
@@ -356,6 +375,30 @@ const Assistant = () => {
         {/* Personalized Civic Recommendations based on User Profile Context */}
         <PersonalizedRecommendationsPanel onSelectPrompt={(prompt) => handleSendMessage(prompt)} />
 
+        {/* Starter prompts for a fresh session */}
+        {!hasUserMessages(messages) && (
+          <section aria-label="Example questions" style={{ marginBottom: '1.5rem' }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem' }}>
+              Try asking
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.5rem' }}>
+              {STARTER_PROMPTS.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => handleSendMessage(item.prompt)}
+                  disabled={isLoading}
+                  className="card"
+                  style={{ textAlign: 'left', padding: '0.75rem 1rem', cursor: 'pointer', background: 'var(--glass-bg)', color: 'var(--text-primary)' }}
+                >
+                  <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--accent-main)' }}>{item.label}</strong>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{item.prompt}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Messages Container */}
         <div
           style={{
@@ -392,6 +435,15 @@ const Assistant = () => {
                     </p>
                   ) : (
                     renderAssistantContent(msg)
+                  )}
+                  {isUser && msg.id === getLastUserMessage(messages)?.id && !isLoading && (
+                    <button
+                      type="button"
+                      onClick={handleRefineLast}
+                      style={{ marginTop: '0.5rem', background: 'none', border: 'none', color: 'var(--accent-main)', fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: 0 }}
+                    >
+                      <Pencil size={12} /> Edit and resend
+                    </button>
                   )}
                 </div>
               </div>
@@ -431,10 +483,22 @@ const Assistant = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
+                flexWrap: 'wrap',
               }}
+              role="alert"
             >
               <AlertCircle size={18} />
-              <span>{error}</span>
+              <span style={{ flex: 1 }}>{error}</span>
+              {failedQuery && (
+                <button
+                  type="button"
+                  onClick={() => handleSendMessage(failedQuery, { isRetry: true })}
+                  className="btn"
+                  style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', borderRadius: '99px', gap: '0.35rem' }}
+                >
+                  <RefreshCw size={14} /> Try again
+                </button>
+              )}
             </div>
           )}
 
@@ -483,7 +547,9 @@ const Assistant = () => {
 
           <input
             type="text"
-            placeholder='Ask e.g. "How do I renew my Driving License?" or "Documents for Birth Certificate"'
+            ref={inputRef}
+            aria-label="Ask a civic question"
+            placeholder='Ask e.g. "Documents for Birth Certificate"'
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isLoading}

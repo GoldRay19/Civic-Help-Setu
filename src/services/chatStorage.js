@@ -1,3 +1,5 @@
+import { trimHistory } from '../ai/conversationContext.js';
+
 const STORAGE_KEY = 'civicbridge_chat_history';
 
 export const DEFAULT_WELCOME_MESSAGE = {
@@ -22,13 +24,16 @@ export const loadChatHistory = () => {
 export const saveChatHistory = (messages) => {
   try {
     // Only save serializable data
-    const serializable = messages.map((m) => ({
+    const serializable = trimHistory(messages).map((m) => ({
       id: m.id || `msg-${Date.now()}-${Math.random()}`,
       role: m.role,
       text: m.text || (typeof m.content === 'string' ? m.content : ''),
       data: m.data || null,
       serviceId: m.serviceId || null,
       suggestions: m.suggestions || [],
+      grounded: m.grounded,
+      confidenceScore: m.confidenceScore,
+      retrievedChunks: m.retrievedChunks || [],
       timestamp: m.timestamp || new Date().toISOString(),
     }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
