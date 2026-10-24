@@ -1,5 +1,71 @@
 const STORAGE_KEY = 'civicbridge_applications';
 
+export const STATUS_LABELS = {
+  submitted: 'Submitted',
+  'in-progress': 'In Progress',
+  'action-required': 'Action Required',
+  completed: 'Completed',
+};
+
+export const DATE_FALLBACK = 'Not available';
+
+export const normalizeStatus = (status) =>
+  Object.prototype.hasOwnProperty.call(STATUS_LABELS, status) ? status : 'submitted';
+
+export const getStatusLabel = (status) => STATUS_LABELS[normalizeStatus(status)];
+
+// Turns free text or a Date into "Mon D, YYYY". Anything unparseable gives the fallback.
+export const normalizeDate = (value, fallback = DATE_FALLBACK) => {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  if (!text) return fallback;
+  // Without a year, Date() silently guesses 2001, so treat that as unusable.
+  if (!(value instanceof Date) && !/\b\d{4}\b/.test(text)) return fallback;
+  const parsed = value instanceof Date ? value : new Date(text);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+// Stage the application is currently sitting on. Stages before it are done.
+export const getCurrentStageIndex = (status) => {
+  const s = normalizeStatus(status);
+  if (s === 'completed') return 3;
+  if (s === 'in-progress' || s === 'action-required') return 1;
+  return 0;
+};
+
+// Single place that turns a status into stage flags, so they cannot contradict it.
+export const applyStageFlags = (stages, status) => {
+  const s = normalizeStatus(status);
+  const list = Array.isArray(stages) ? stages : [];
+  return list.map((stage, idx) => {
+    // eslint-disable-next-line no-unused-vars
+    const { completed, inProgress, actionRequired, ...rest } = stage;
+    const isStepAfterSubmit = idx === 1;
+    const done = s === 'completed' || (s === 'submitted' ? idx === 0 : idx < 1);
+    const active = s === 'in-progress' && isStepAfterSubmit;
+    const action = s === 'action-required' && isStepAfterSubmit;
+    const out = { ...rest, completed: done };
+    if (active) out.inProgress = true;
+    if (action) out.actionRequired = true;
+    return out;
+  });
+};
+
+const normalizeApplication = (app) => {
+  if (!app || typeof app !== 'object') return app;
+  const status = normalizeStatus(app.status);
+  return {
+    ...app,
+    status,
+    appliedDate: normalizeDate(app.appliedDate),
+    estimatedCompletion: normalizeDate(app.estimatedCompletion),
+    currentStageIndex: getCurrentStageIndex(status),
+    pendingAction: status === 'action-required' ? app.pendingAction || null : null,
+    stages: applyStageFlags(app.stages, status),
+  };
+};
+
 const DEFAULT_APPLICATIONS = [
   {
     id: 'SRV-98234710',
@@ -152,7 +218,10 @@ export const getApplications = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_APPLICATIONS));
       return DEFAULT_APPLICATIONS;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_APPLICATIONS;
+    // Old saved data may carry stage flags that contradict the status, so repair on read.
+    return parsed.filter((a) => a && a.id).map(normalizeApplication);
   } catch (err) {
     console.error('Failed to parse applications from storage', err);
     return DEFAULT_APPLICATIONS;
@@ -212,7 +281,6 @@ export const createApplication = ({ serviceId, serviceName, category, applicantN
         description: 'Verifying submitted identity proof and prerequisite documents.',
         timestamp: 'Estimated within 3 business days',
         completed: false,
-        inProgress: true,
       },
       {
         title: 'Competent Authority Assessment',
@@ -240,45 +308,46 @@ export const addManualApplication = ({
   category = 'General',
   appliedDate,
   estimatedCompletion,
-  status = 'submitted',
+  status: rawStatus = 'submitted',
   initialNote = '',
   applicantName = 'Citizen Applicant',
 }) => {
   const all = getApplications();
   const cleanId = referenceId.trim().toUpperCase();
 
-  const stages = [
+  const status = normalizeStatus(rawStatus);
+  const appliedStr = normalizeDate(appliedDate);
+  const estimatedStr = normalizeDate(estimatedCompletion);
+  const hasEstimate = estimatedStr !== DATE_FALLBACK;
+
+  const stages = applyStageFlags([
     {
       title: 'Application Submitted',
       description: 'Submitted at district portal / physical center.',
-      timestamp: appliedDate || 'Submitted',
-      completed: true,
+      timestamp: appliedStr,
     },
     {
       title: 'Document Verification',
       description: 'Scrutiny of applicant credentials and attachments.',
-      timestamp: status === 'submitted' ? 'Pending initiation' : 'In review',
-      completed: status !== 'submitted',
-      inProgress: status === 'in-progress',
-      actionRequired: status === 'action-required',
+      timestamp:
+        status === 'submitted' ? 'Pending initiation'
+          : status === 'action-required' ? 'Action needed'
+          : status === 'in-progress' ? 'In review'
+          : 'Cleared',
     },
     {
       title: 'Departmental Processing',
       description: 'Officer evaluation and statutory approvals.',
       timestamp: status === 'completed' ? 'Cleared' : 'Pending prior stages',
-      completed: status === 'completed',
     },
     {
       title: 'Final Issuance / Dispatch',
       description: 'Ready for collection, digital download, or courier delivery.',
-      timestamp: status === 'completed' ? 'Issued' : (estimatedCompletion ? `Est: ${estimatedCompletion}` : 'Pending'),
-      completed: status === 'completed',
+      timestamp: status === 'completed' ? 'Issued' : (hasEstimate ? `Est: ${estimatedStr}` : 'Pending'),
     },
-  ];
+  ], status);
 
-  let currentStageIndex = 0;
-  if (status === 'in-progress' || status === 'action-required') currentStageIndex = 1;
-  else if (status === 'completed') currentStageIndex = 3;
+  const currentStageIndex = getCurrentStageIndex(status);
 
   const newApp = {
     id: cleanId,
@@ -286,8 +355,8 @@ export const addManualApplication = ({
     serviceName: serviceName.trim(),
     category,
     applicantName,
-    appliedDate: appliedDate || 'Recent',
-    estimatedCompletion: estimatedCompletion || 'Within 15 days',
+    appliedDate: appliedStr,
+    estimatedCompletion: estimatedStr,
     status,
     currentStageIndex,
     notes: initialNote
@@ -356,13 +425,14 @@ export const resolveApplicationPendingAction = (appId, resolutionNote = '') => {
   const target = all.find((a) => a.id.toUpperCase() === appId.toUpperCase());
   if (!target) return null;
 
+  // Nothing to resolve if the application is not waiting on the citizen.
+  if (target.status !== 'action-required' && !target.pendingAction) return target;
+
   target.pendingAction = null;
   target.status = 'in-progress';
-  if (target.stages && target.stages[1]) {
-    target.stages[1].actionRequired = false;
-    target.stages[1].inProgress = true;
-    target.stages[1].timestamp = 'Action resolved • Resumed verification';
-  }
+  target.currentStageIndex = getCurrentStageIndex('in-progress');
+  target.stages = applyStageFlags(target.stages, 'in-progress');
+  if (target.stages[1]) target.stages[1].timestamp = 'Action resolved • Resumed verification';
 
   if (resolutionNote) {
     target.notes = [

@@ -22,6 +22,7 @@ import {
   addNoteToApplication,
   resolveApplicationPendingAction,
   getTrackingMetrics,
+  getStatusLabel,
 } from '../services/trackingService';
 import ActiveApplicationsSummaryGrid from '../components/tracking/ActiveApplicationsSummaryGrid';
 import ActionRequiredAlert from '../components/tracking/ActionRequiredAlert';
@@ -355,11 +356,7 @@ const Track = () => {
                         : '1px solid var(--accent-main)',
                   }}
                 >
-                  {activeApp.status === 'action-required'
-                    ? 'Action Required'
-                    : activeApp.status === 'in-progress'
-                    ? 'In Progress'
-                    : activeApp.status}
+                  {getStatusLabel(activeApp.status)}
                 </span>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '0.5rem' }}>
                   Target Delivery: <strong>{activeApp.estimatedCompletion}</strong>
@@ -431,8 +428,8 @@ const Track = () => {
                           >
                             {stage.title}
                           </h4>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                            {stage.timestamp}
+                          <span style={{ fontSize: '0.8rem', color: isAction && !isDone ? '#ef4444' : 'var(--text-tertiary)', fontWeight: isAction && !isDone ? 700 : 400 }}>
+                            {isAction && !isDone && !/^action/i.test(stage.timestamp || '') ? 'Action needed' : stage.timestamp}
                           </span>
                         </div>
                         <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
