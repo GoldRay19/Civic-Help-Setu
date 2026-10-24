@@ -28,7 +28,7 @@ import ActionRequiredAlert from '../components/tracking/ActionRequiredAlert';
 import LinkedDocumentsManager from '../components/tracking/LinkedDocumentsManager';
 import ManualAddApplicationModal from '../components/tracking/ManualAddApplicationModal';
 import TrackingReceiptModal from '../components/tracking/TrackingReceiptModal';
-import JourneyPlannerModal from '../components/journey/JourneyPlannerModal';
+import SlaBreachAlertWidget from '../components/tracking/SlaBreachAlertWidget';
 
 const Track = () => {
   const location = useLocation();
@@ -360,6 +360,11 @@ const Track = () => {
                   Target Delivery: <strong>{formatDisplayDate(activeApp.estimatedCompletion)}</strong>
                 </div>
               </div>
+            </div>
+
+            {/* Statutory Citizen Charter SLA & Breach Alert */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <SlaBreachAlertWidget application={activeApp} citizenName={activeApp.applicantName} />
             </div>
 
             {/* Action Required Banner if present */}
