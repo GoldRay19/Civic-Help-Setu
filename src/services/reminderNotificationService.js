@@ -3,6 +3,13 @@
  * and standard iCalendar (.ics) export for Saved Services.
  */
 
+import {
+  buildIcsContent,
+  escapeIcsText,
+  formatIcsUtcTimestamp,
+  parseIsoDate,
+} from '../utils/icsText';
+
 const REMINDERS_STORAGE_KEY = 'civicbridge_reminders';
 const NOTIFICATION_SETTINGS_KEY = 'civicbridge_notification_settings';
 
@@ -125,19 +132,25 @@ export const calculateDaysRemaining = (deadlineDate) => {
 
 /**
  * Generates an RFC 5545 compliant iCalendar (.ics) string for a service reminder.
+ * Returns null when the deadline is missing or not a real YYYY-MM-DD date.
  */
 export const generateICalendarEvent = ({
   serviceName,
   deadlineDate,
   reminderNote = '',
 }) => {
-  const dateStr = deadlineDate.replace(/-/g, '');
-  const nowStr = new Date()
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .split('.')[0] + 'Z';
+  const date = parseIsoDate(deadlineDate);
+  if (!date) return null;
 
-  return [
+  // All-day events end on the next day (DTEND is exclusive in RFC 5545).
+  const toIcsDate = (d) => d.toISOString().slice(0, 10).replace(/-/g, '');
+  const start = new Date(Date.UTC(date.year, date.month - 1, date.day));
+  const end = new Date(Date.UTC(date.year, date.month - 1, date.day + 1));
+  const dateStr = toIcsDate(start);
+  const endDateStr = toIcsDate(end);
+  const nowStr = formatIcsUtcTimestamp();
+
+  return buildIcsContent([
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//CivicBridge//Citizen Service Reminders//EN',
@@ -146,18 +159,18 @@ export const generateICalendarEvent = ({
     `UID:${Date.now()}@civicbridge.setu`,
     `DTSTAMP:${nowStr}`,
     `DTSTART;VALUE=DATE:${dateStr}`,
-    `DTEND;VALUE=DATE:${dateStr}`,
-    `SUMMARY:CivicBridge Deadline: ${serviceName}`,
-    `DESCRIPTION:${reminderNote || 'Civic procedure submission / renewal deadline reminder via CivicBridge Setu.'}`,
+    `DTEND;VALUE=DATE:${endDateStr}`,
+    `SUMMARY:${escapeIcsText(`CivicBridge Deadline: ${serviceName}`)}`,
+    `DESCRIPTION:${escapeIcsText(reminderNote || 'Civic procedure submission / renewal deadline reminder via CivicBridge Setu.')}`,
     'STATUS:CONFIRMED',
     'BEGIN:VALARM',
     'TRIGGER:-P1D',
     'ACTION:DISPLAY',
-    `DESCRIPTION:Reminder: ${serviceName} is due tomorrow!`,
+    `DESCRIPTION:${escapeIcsText(`Reminder: ${serviceName} is due tomorrow!`)}`,
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR',
-  ].join('\r\n');
+  ]);
 };
 
 /**
@@ -165,6 +178,7 @@ export const generateICalendarEvent = ({
  */
 export const downloadCalendarFile = (serviceName, deadlineDate, reminderNote) => {
   const icsData = generateICalendarEvent({ serviceName, deadlineDate, reminderNote });
+  if (!icsData) return false;
   const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
