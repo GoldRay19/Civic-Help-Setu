@@ -16,6 +16,7 @@ import {
 } from '../services/reminderNotificationService';
 import FolderTabs from '../components/saved/FolderTabs';
 import ServiceNoteModal from '../components/saved/ServiceNoteModal';
+import SavedEmptyState from '../components/saved/SavedEmptyState';
 import SavedItemCard from '../components/saved/SavedItemCard';
 import ReminderScheduleModal from '../components/saved/ReminderScheduleModal';
 import FavoritesQuickBar from '../components/saved/FavoritesQuickBar';
@@ -196,7 +197,7 @@ const Saved = () => {
             </p>
           </div>
 
-          {savedItems.length > 0 && (
+          {populatedItems.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <button
                 type="button"
@@ -216,7 +217,7 @@ const Saved = () => {
         </div>
 
         {/* Favorites & Reminders Quick Bar */}
-        {savedItems.length > 0 && (
+        {populatedItems.length > 0 && (
           <FavoritesQuickBar
             savedItems={savedItems}
             reminders={reminders}
@@ -228,7 +229,7 @@ const Saved = () => {
         )}
 
         {/* Folder Tabs & Search Toolbar */}
-        {savedItems.length > 0 && (
+        {populatedItems.length > 0 && (
           <div
             style={{
               display: 'flex',
@@ -278,34 +279,8 @@ const Saved = () => {
         )}
 
         {/* Main Content Area */}
-        {savedItems.length === 0 ? (
-          <div
-            className="card"
-            style={{
-              textAlign: 'center',
-              padding: '5rem 2rem',
-              background: 'var(--glass-bg)',
-              border: '1px dashed var(--border-main)',
-            }}
-          >
-            <Bookmark size={48} color="var(--text-tertiary)" style={{ margin: '0 auto 1.5rem' }} />
-            <h2 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>
-              Your Saved Hub is Empty
-            </h2>
-            <p
-              style={{
-                color: 'var(--text-secondary)',
-                maxWidth: '450px',
-                margin: '0 auto 2rem',
-                lineHeight: '1.6',
-              }}
-            >
-              Save any government service procedure while browsing the directory to organize notes, set renewal deadlines, and create checklists.
-            </p>
-            <Link to="/services" className="btn btn-primary" style={{ padding: '0.75rem 2rem' }}>
-              Explore Services Directory
-            </Link>
-          </div>
+        {populatedItems.length === 0 ? (
+          <SavedEmptyState />
         ) : filteredItems.length === 0 ? (
           <div
             className="card"

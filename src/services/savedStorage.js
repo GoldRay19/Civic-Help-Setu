@@ -1,27 +1,6 @@
 const STORAGE_KEY = 'civicbridge_saved_rich';
 const LEGACY_KEY = 'civicbridge_saved';
 
-const DEFAULT_SAVED_ITEMS = [
-  {
-    serviceId: 'birth-certificate',
-    folder: 'Family',
-    priority: 'high',
-    notes: 'Collect original hospital discharge card before Friday morning.',
-    savedAt: '2026-10-15',
-    targetDate: '2026-10-25',
-    status: 'in-progress',
-  },
-  {
-    serviceId: 'pan-card',
-    folder: 'Finance',
-    priority: 'medium',
-    notes: 'Verify mobile number is receiving Aadhaar OTP for instant paperless e-PAN.',
-    savedAt: '2026-10-18',
-    targetDate: null,
-    status: 'pending',
-  },
-];
-
 export const getSavedItems = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -42,13 +21,14 @@ export const getSavedItems = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
         return migrated;
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SAVED_ITEMS));
-      return DEFAULT_SAVED_ITEMS;
+      // New users start with nothing saved so the Saved page can show its empty state.
+      return [];
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.error('Failed to load saved items from storage', err);
-    return DEFAULT_SAVED_ITEMS;
+    return [];
   }
 };
 
