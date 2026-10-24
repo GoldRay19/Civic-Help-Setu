@@ -9,6 +9,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import PlainLanguageToggle from './common/PlainLanguageToggle';
 import OfflineCacheStatusModal from './common/OfflineCacheStatusModal';
 import EmergencyHelplineModal from './emergency/EmergencyHelplineModal';
+import VoiceSearchInput from './common/VoiceSearchInput';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -103,6 +104,17 @@ const Navbar = () => {
             <PhoneCall size={13} />
             <span>SOS</span>
           </button>
+
+          <VoiceSearchInput
+            onTranscript={(transcript) => {
+              navigate(`/services?q=${encodeURIComponent(transcript)}`);
+            }}
+            onServiceMatched={(match) => {
+              if (match.targetServiceId) {
+                navigate(`/services/${match.targetServiceId}`);
+              }
+            }}
+          />
 
           <button onClick={toggleTheme} style={{ padding: '0.5rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.3s' }} title={t('nav.toggleTheme', 'Toggle Theme')}>
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
