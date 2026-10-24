@@ -27,6 +27,7 @@ import ApplicationTimeline from '../components/tracking/ApplicationTimeline';
 import ActionRequiredAlert from '../components/tracking/ActionRequiredAlert';
 import LinkedDocumentsManager from '../components/tracking/LinkedDocumentsManager';
 import ManualAddApplicationModal from '../components/tracking/ManualAddApplicationModal';
+import TrackEmptyState from '../components/tracking/TrackEmptyState';
 import TrackingReceiptModal from '../components/tracking/TrackingReceiptModal';
 import JourneyPlannerModal from '../components/journey/JourneyPlannerModal';
 
@@ -272,15 +273,7 @@ const Track = () => {
         )}
 
         {applications.length === 0 && !activeApp && !notFound && (
-          <div className="card" style={{ textAlign: 'center', padding: '2.5rem', marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: '800', marginBottom: '0.5rem' }}>No applications tracked yet</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '480px', margin: '0 auto 1.5rem' }}>
-              Enter a reference ID above, or register an application you filed at an office or state portal.
-            </p>
-            <button type="button" className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-              <Plus size={16} /> Add Application
-            </button>
-          </div>
+          <TrackEmptyState onAdd={() => setIsAddModalOpen(true)} />
         )}
 
         {/* Active Application Detail Card */}
