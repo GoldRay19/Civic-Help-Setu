@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
@@ -21,7 +22,7 @@ import Login from './pages/Login';
 import SignUpPage from './pages/SignUp';
 import SSOCallback from './pages/SSOCallback';
 import Assistant from './pages/Assistant';
-import Services from './pages/Services';
+import { ServiceCardSkeletonGrid } from './components/ServiceCardSkeleton';
 import ServiceDetails from './pages/ServiceDetails';
 import Eligibility from './pages/Eligibility';
 import NearbyOffices from './pages/NearbyOffices';
@@ -33,6 +34,16 @@ import OpenSource from './pages/OpenSource';
 import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
+
+const Services = lazy(() => import('./pages/Services'));
+
+const ServicesFallback = () => (
+  <div className="section">
+    <div className="container">
+      <ServiceCardSkeletonGrid />
+    </div>
+  </div>
+);
 
 function App() {
   return (
@@ -58,7 +69,7 @@ function App() {
                       <Route path="/sso-callback" element={<SSOCallback />} />
                       <Route path="/signup/sso-callback" element={<SSOCallback />} />
                       <Route path="/assistant" element={<Assistant />} />
-                      <Route path="/services" element={<Services />} />
+                      <Route path="/services" element={<Suspense fallback={<ServicesFallback />}><Services /></Suspense>} />
                       <Route path="/services/:id" element={<ServiceDetails />} />
                       <Route path="/eligibility" element={<Eligibility />} />
                       <Route path="/nearby" element={<NearbyOffices />} />
