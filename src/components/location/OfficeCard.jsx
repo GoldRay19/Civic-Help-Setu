@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { formatDistance } from '../../services/locationService';
 import { useToast } from '../../context/ToastContext';
+import BestTimeToVisitCard from './BestTimeToVisitCard';
 
 const OfficeCard = ({
   office,
@@ -250,6 +251,9 @@ const OfficeCard = ({
             )}
           </div>
         )}
+
+        {/* Real-time Footfall Rush Forecaster & Best Time to Visit */}
+        <BestTimeToVisitCard office={office} />
       </div>
 
       {/* Bottom Action Buttons */}
