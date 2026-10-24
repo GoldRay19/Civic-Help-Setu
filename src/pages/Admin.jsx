@@ -39,6 +39,7 @@ import ServiceSubmissionReviewModal from '../components/admin/ServiceSubmissionR
 import AuditLogViewer from '../components/admin/AuditLogViewer';
 import ServiceImportPanel from '../components/admin/ServiceImportPanel';
 import { useToast } from '../context/ToastContext';
+import { getAuditReports, resolveAuditReport } from '../services/communityAuditService';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -47,6 +48,7 @@ const Admin = () => {
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  const [communityAudits, setCommunityAudits] = useState([]);
 
   // Modals
   const [serviceModal, setServiceModal] = useState({ isOpen: false, service: null });
@@ -65,6 +67,7 @@ const Admin = () => {
     setUsers(getUserList());
     setAuditLogs(getAuditLogs());
     setSubmissions(getServiceSubmissions());
+    setCommunityAudits(getAuditReports());
   }, []);
 
   const handleLogout = () => {
@@ -143,8 +146,18 @@ const Admin = () => {
     setAuditLogs(getAuditLogs());
   };
 
+  const handleResolveAudit = (auditId) => {
+    const note = window.prompt('Enter administrative resolution note / corrective action taken:', 'Verified ground reality and updated office procedure.');
+    if (note && note.trim()) {
+      resolveAuditReport(auditId, note.trim(), user?.username || 'SuperAdmin');
+      setCommunityAudits(getAuditReports());
+      toast?.success?.('Discrepancy audit resolved and official notice published.');
+    }
+  };
+
   const pendingReportsCount = reports.filter((r) => r.status === 'pending').length;
   const pendingSubmissionsCount = submissions.filter((s) => s.status === 'pending').length;
+  const pendingAuditsCount = communityAudits.filter((a) => a.status === 'open').length;
 
   return (
     <div className="section animate-fade-in" style={{ paddingBottom: '6rem' }}>
@@ -240,6 +253,7 @@ const Admin = () => {
               { id: 'services', label: `Service Catalog (${services.length})`, badge: null },
               { id: 'submissions', label: 'Submissions Queue', badge: pendingSubmissionsCount || null },
               { id: 'reports', label: 'Inaccuracy Reports', badge: pendingReportsCount || null },
+              { id: 'community-audits', label: 'Discrepancy Audits', badge: pendingAuditsCount || null },
               { id: 'users', label: `User Roles (${users.length})`, badge: null },
               { id: 'audit', label: 'Audit Trail Logs', badge: null },
             ].map((tab) => {
@@ -513,6 +527,80 @@ const Admin = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Community Discrepancy Audits Tab */}
+            {activeTab === 'community-audits' && (
+              <div>
+                <div style={{ marginBottom: '1.25rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem' }}>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>Crowdsourced Discrepancy Audits</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>
+                    Citizen-reported divergences between official service rules and ground-level counter demands.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {communityAudits.length === 0 ? (
+                    <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                      No community discrepancy reports recorded yet.
+                    </div>
+                  ) : (
+                    communityAudits.map((item) => (
+                      <div
+                        key={item.id}
+                        className="card"
+                        style={{
+                          padding: '1.25rem',
+                          borderLeft: `4px solid ${item.status === 'resolved' ? '#10b981' : item.corroborationsCount >= 3 ? '#ef4444' : '#f59e0b'}`,
+                          background: 'var(--glass-bg)',
+                        }}
+                      >
+                        <div className="flex-between" style={{ marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--accent-main)', textTransform: 'uppercase', marginRight: '0.5rem' }}>
+                              {item.serviceName}
+                            </span>
+                            <span style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: '600' }}>
+                              {item.discrepancyType.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.reportedAt} • {item.officeLocation}</span>
+                        </div>
+
+                        <h4 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)', margin: '0.3rem 0' }}>
+                          {item.title}
+                        </h4>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.6rem' }}>
+                          {item.description}
+                        </p>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                            <span>👍 {item.corroborationsCount} Citizens Corroborated</span>
+                            <span>👎 {item.refutationsCount} Refuted</span>
+                            <span>Reported by: {item.reportedBy}</span>
+                          </div>
+
+                          {item.status === 'resolved' ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', color: '#10b981', fontWeight: '600' }}>
+                              <CheckCircle2 size={16} /> Resolved: {item.resolutionNote}
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleResolveAudit(item.id)}
+                              className="btn btn-primary"
+                              style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+                            >
+                              Resolve & Post Directive
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
