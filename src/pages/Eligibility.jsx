@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Sparkles, ShieldCheck, Bookmark, HelpCircle } from 'lucide-react';
+import { Sparkles, ShieldCheck, Bookmark, HelpCircle, Calculator } from 'lucide-react';
 import UniversalEligibilityWizard from '../components/eligibility/UniversalEligibilityWizard';
 import SavedAssessmentsList from '../components/eligibility/SavedAssessmentsList';
+import EntitlementCalculatorModal from '../components/eligibility/EntitlementCalculatorModal';
 
 const Eligibility = () => {
   const [activeTab, setActiveTab] = useState('wizard');
   const [refreshCount, setRefreshCount] = useState(0);
+  const [isCalcOpen, setIsCalcOpen] = useState(false);
 
   const handleAssessmentSaved = () => {
     setRefreshCount((prev) => prev + 1);
@@ -82,6 +84,27 @@ const Eligibility = () => {
           >
             Saved Assessments
           </button>
+          <button
+            type="button"
+            onClick={() => setIsCalcOpen(true)}
+            style={{
+              padding: '0.6rem 1.5rem',
+              borderRadius: '99px',
+              fontWeight: '700',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              border: '1px solid #16a34a',
+              background: '#f0fdf4',
+              color: '#15803d',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s',
+            }}
+          >
+            <Calculator size={16} />
+            <span>Welfare Subsidy Maximizer</span>
+          </button>
         </div>
 
         {/* Transparent logic privacy banner */}
@@ -111,6 +134,9 @@ const Eligibility = () => {
         ) : (
           <SavedAssessmentsList refreshTrigger={refreshCount} />
         )}
+
+        {/* Welfare Entitlement Maximizer Modal */}
+        <EntitlementCalculatorModal isOpen={isCalcOpen} onClose={() => setIsCalcOpen(false)} />
       </div>
     </div>
   );
