@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import SearchBox from '../components/SearchBox';
-import { BookOpen, Shield, HelpCircle, Users, CheckCircle2, Code, ArrowRight, Sparkles } from 'lucide-react';
+import { BookOpen, Shield, HelpCircle, Users, CheckCircle2, Code, ArrowRight, Sparkles, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import DisasterReliefHubModal from '../components/emergency/DisasterReliefHubModal';
 
 const useTypewriter = (words, typingSpeed = 80, deletingSpeed = 40, pauseDuration = 2500) => {
   const [text, setText] = useState('');
@@ -35,6 +36,7 @@ const useTypewriter = (words, typingSpeed = 80, deletingSpeed = 40, pauseDuratio
 const Home = () => {
   const typingWords = ["Government Services.", "Passport Applications.", "Birth Certificates.", "Public Systems."];
   const typedText = useTypewriter(typingWords);
+  const [isReliefModalOpen, setIsReliefModalOpen] = useState(false);
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden' }}>
@@ -69,6 +71,21 @@ const Home = () => {
           <div className="animate-fade-in delay-300" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link to="/services" className="btn btn-primary">Explore All Guides</Link>
             <Link to="/assistant" className="btn btn-secondary">Try AI Assistant</Link>
+            <button
+              type="button"
+              onClick={() => setIsReliefModalOpen(true)}
+              className="btn btn-secondary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderColor: '#dc2626',
+                color: '#dc2626'
+              }}
+            >
+              <ShieldAlert size={16} color="#dc2626" />
+              <span>Offline Relief Camps & SOS</span>
+            </button>
           </div>
         </div>
       </section>
@@ -191,6 +208,12 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Offline Disaster Relief & Emergency Hub Modal */}
+      <DisasterReliefHubModal
+        isOpen={isReliefModalOpen}
+        onClose={() => setIsReliefModalOpen(false)}
+      />
     </div>
   );
 };
