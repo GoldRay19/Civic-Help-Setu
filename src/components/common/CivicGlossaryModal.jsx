@@ -38,7 +38,7 @@ const CivicGlossaryModal = ({
           flexDirection: 'column',
           padding: '1.75rem',
           borderRadius: '1.25rem',
-          background: 'var(--bg-card, #131b2e)',
+          background: 'var(--bg-main)',
           border: '1px solid var(--border-main)',
         }}
       >
