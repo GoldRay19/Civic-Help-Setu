@@ -54,7 +54,8 @@ const OfflineCacheStatusModal = ({ isOpen, onClose }) => {
           padding: '2rem',
           position: 'relative',
           maxHeight: '90vh',
-          overflowY: 'auto'
+          overflowY: 'auto',
+          top: '18rem'
         }}
       >
         {/* Close Button */}
