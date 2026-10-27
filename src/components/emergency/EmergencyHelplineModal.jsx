@@ -45,7 +45,7 @@ const EmergencyHelplineModal = ({ isOpen, onClose }) => {
           maxWidth: '740px',
           maxHeight: '90vh',
           borderRadius: '1.25rem',
-          background: 'var(--bg-card, #111827)',
+          background: 'var(--bg-main)',
           border: '1px solid rgba(239, 68, 68, 0.3)',
           overflow: 'hidden',
           display: 'flex',
