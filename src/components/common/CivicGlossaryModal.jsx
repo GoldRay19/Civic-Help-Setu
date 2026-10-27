@@ -40,6 +40,8 @@ const CivicGlossaryModal = ({
           borderRadius: '1.25rem',
           background: 'var(--bg-main)',
           border: '1px solid var(--border-main)',
+          top:'20rem',
+          position:'relative'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
