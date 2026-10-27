@@ -50,7 +50,9 @@ const EmergencyHelplineModal = ({ isOpen, onClose }) => {
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.25)'
+          boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.25)',
+          position:'relative',
+          top:'20rem'
         }}
       >
         {/* Header */}
