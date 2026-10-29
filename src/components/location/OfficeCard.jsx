@@ -12,16 +12,20 @@ import {
   UserCheck,
   CheckCircle2,
   ExternalLink,
+  Accessibility,
 } from 'lucide-react';
 import { formatDistance } from '../../services/locationService';
 import { useToast } from '../../context/ToastContext';
 import BestTimeToVisitCard from './BestTimeToVisitCard';
+import { OfficeAccessibilityDetails } from './AccessibilityFacilityPanel';
+import IntakeWindowBadge from './IntakeWindowBadge';
 
 const OfficeCard = ({
   office,
   onBookAppointment,
   isSelected = false,
   onSelect = () => {},
+  onAuditAccessibility,
 }) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -139,6 +143,8 @@ const OfficeCard = ({
           </span>
         </p>
 
+        <IntakeWindowBadge office={office} />
+
         {/* Metadata Details Grid */}
         <div
           style={{
@@ -254,6 +260,9 @@ const OfficeCard = ({
 
         {/* Real-time Footfall Rush Forecaster & Best Time to Visit */}
         <BestTimeToVisitCard office={office} />
+
+        {/* Verified Accessibility Facilities and Language Coverage */}
+        <OfficeAccessibilityDetails office={office} />
       </div>
 
       {/* Bottom Action Buttons */}
@@ -309,6 +318,29 @@ const OfficeCard = ({
           <Calendar size={15} />
           Book Visit Token
         </button>
+
+        {onAuditAccessibility && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAuditAccessibility(office);
+            }}
+            className="btn btn-secondary"
+            title="Inspect & Rate Office Physical Accessibility"
+            style={{
+              padding: '0.55rem 0.75rem',
+              fontSize: '0.825rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              borderRadius: '0.5rem',
+            }}
+          >
+            <Accessibility size={15} />
+            <span>Audit</span>
+          </button>
+        )}
 
         <button
           type="button"

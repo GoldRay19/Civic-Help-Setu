@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MOCK_SERVICES } from '../data/services';
+import { getAllServices } from '../services/serviceCatalog';
 import { BookmarkMinus, Bookmark, Search, Layers, Sparkles, Folder } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -32,6 +32,9 @@ import { useConfirm } from '../context/ConfirmationDialogContext';
 const Saved = () => {
   const { toast } = useToast();
   const confirm = useConfirm();
+  // Built-in guides plus the ones the admin saved, read once when the page opens.
+  // Archived guides are kept so an existing saved reference still resolves (shown as retired).
+  const [allServices] = useState(() => getAllServices({ includeArchived: true }));
   const [savedItems, setSavedItems] = useState([]);
   const [reminders, setReminders] = useState([]);
   const [activeFolder, setActiveFolder] = useState(ALL_COLLECTION);
@@ -94,7 +97,7 @@ const Saved = () => {
   };
 
   const handleRemoveItem = async (serviceId) => {
-    const service = MOCK_SERVICES.find((s) => s.id === serviceId);
+    const service = allServices.find((s) => s.id === serviceId);
     const serviceName = service?.name || 'this service guide';
 
     const shouldRemove = await confirm({
@@ -137,12 +140,12 @@ const Saved = () => {
   const populatedItems = useMemo(() => {
     return savedItems
       .map((item) => {
-        const service = MOCK_SERVICES.find((s) => s.id === item.serviceId);
+        const service = allServices.find((s) => s.id === item.serviceId);
         const reminder = reminders.find((r) => r.serviceId === item.serviceId) || null;
         return service ? { item, service, reminder } : null;
       })
       .filter(Boolean);
-  }, [savedItems, reminders]);
+  }, [allServices, savedItems, reminders]);
 
   // Filter by folder, search query, favorites, and upcoming deadlines
   const filteredItems = useMemo(() => {

@@ -1,4 +1,4 @@
-import { services } from '../data/services';
+import { getAllServices } from './serviceCatalog';
 
 const STORAGE_KEY = 'civic_compared_services';
 export const MAX_COMPARE_LIMIT = 3;
@@ -51,6 +51,7 @@ export const comparisonService = {
   },
 
   getComparedServices() {
+    const services = getAllServices();
     return readIds()
       .map((id) => services.find((s) => s.id === id))
       .filter(Boolean);
@@ -64,7 +65,7 @@ export const comparisonService = {
     if (ids.length >= MAX_COMPARE_LIMIT) {
       return { success: false, reason: 'limit_reached', max: MAX_COMPARE_LIMIT, ids };
     }
-    if (!services.some((s) => s.id === serviceId)) {
+    if (!getAllServices().some((s) => s.id === serviceId)) {
       return { success: false, reason: 'unknown_service', ids };
     }
     const updated = [...ids, serviceId];

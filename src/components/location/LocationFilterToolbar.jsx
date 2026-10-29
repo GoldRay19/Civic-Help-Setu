@@ -59,7 +59,7 @@ const LocationFilterToolbar = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
           gap: '1rem',
           alignItems: 'center',
           marginBottom: '1rem',
@@ -116,7 +116,7 @@ const LocationFilterToolbar = ({
         </div>
 
         {/* GPS Location Button */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {userCoords ? (
             <div
               style={{
@@ -239,7 +239,7 @@ const LocationFilterToolbar = ({
 
       {/* Advanced Filter Collapsible Section */}
       {showAdvanced && (
-        <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', paddingTop: '0.5rem' }}>
+        <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1.25rem', paddingTop: '0.5rem' }}>
           {/* State Selector */}
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>

@@ -7,6 +7,7 @@ import {
   getPrivacyAuditLogs,
 } from '../services/privacyConsentService.js';
 import PrivacyConsentCenterModal from '../components/privacy/PrivacyConsentCenterModal';
+import ClearMyDataPanel from '../components/privacy/ClearMyDataPanel';
 import { useToast } from '../context/ToastContext';
 
 const Privacy = () => {
@@ -176,6 +177,10 @@ const Privacy = () => {
             );
           })}
         </div>
+      </div>
+
+      <div style={{ marginBottom: '3rem' }}>
+        <ClearMyDataPanel />
       </div>
 
       {/* Statutory Privacy Policy Details */}

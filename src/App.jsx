@@ -16,6 +16,8 @@ import AccessibilityToolbar from './components/AccessibilityToolbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import OfflineBanner from './components/common/OfflineBanner';
 import BackToTop from './components/common/BackToTop';
+import RouteErrorFallback from './components/common/RouteErrorFallback';
+import RouteErrorBoundary from './components/common/RouteErrorBoundary';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -33,6 +35,7 @@ import Profile from './pages/Profile';
 import OpenSource from './pages/OpenSource';
 import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
+import SharedChecklistView from './pages/SharedChecklistView';
 import NotFound from './pages/NotFound';
 
 const Services = lazy(() => import('./pages/Services'));
@@ -60,6 +63,7 @@ function AppRoot() {
                     <SkipToContent />
                     <Navbar />
                   <main id="main-content" style={{ flex: 1 }} tabIndex="-1">
+                    <RouteErrorBoundary>
                     <Routes>
                       <Route path="/" element={<Home />} />
                       <Route path="/login/*" element={<Login />} />
@@ -75,6 +79,7 @@ function AppRoot() {
                       <Route path="/nearby" element={<NearbyOffices />} />
                       <Route path="/nearby-offices" element={<NearbyOffices />} />
                       <Route path="/track" element={<Track />} />
+                      <Route path="/shared-checklist/:token" element={<SharedChecklistView />} />
 
                       <Route path="/saved" element={
                         <ProtectedRoute>
@@ -105,6 +110,7 @@ function AppRoot() {
 
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </RouteErrorBoundary>
                   </main>
                   <Footer />
                   <BackToTop />
@@ -124,7 +130,7 @@ function AppRoot() {
 
 // A data router is required for useBlocker (unsaved-changes warning).
 // A single splat route keeps all existing <Routes> behaviour unchanged.
-const router = createBrowserRouter([{ path: '*', element: <AppRoot /> }]);
+const router = createBrowserRouter([{ path: '*', element: <AppRoot />, errorElement: <RouteErrorFallback /> }]);
 
 function App() {
   return <RouterProvider router={router} />;

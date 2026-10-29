@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, Menu, X, LogOut, User, Sun, Moon, WifiOff, Wifi, HardDrive, PhoneCall, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { can } from '../services/accessControl';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNetwork } from '../context/NetworkContext';
@@ -32,11 +33,11 @@ const Navbar = () => {
   return (
     <nav id="site-navigation" aria-label="Main Navigation" tabIndex="-1" className="nav-glass animate-fade-in">
       <div className="container flex-between nav-container" style={{ height: '100%' }}>
-        <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: '800', fontSize: '1.5rem', color: 'var(--text-primary)' }}>
+        <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: '800', fontSize: 'clamp(1.1rem, 5vw, 1.5rem)', color: 'var(--text-primary)', minWidth: 0 }}>
           <div className="nav-brand__logo" style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.75rem', background: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Shield size={20} color="var(--bg-main)" fill="currentColor" />
           </div>
-          <span className="nav-brand__text" style={{ letterSpacing: '-0.02em' }}>{t('nav.brand', 'CivicBridge')}</span>
+          <span className="nav-brand__text" style={{ letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('nav.brand', 'CivicBridge')}</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -130,7 +131,7 @@ const Navbar = () => {
             </Link>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '0.5rem' }}>
-              {user.role === 'admin' && (
+              {can('users.read', user) && (
                 <Link to="/admin" className="nav-link" style={{ color: 'var(--accent-main)', fontWeight: '600' }}>
                   {t('nav.admin', 'Admin Portal')}
                 </Link>
@@ -173,7 +174,7 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Nav Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} className="md-hidden nav-mobile-actions">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }} className="md-hidden nav-mobile-actions">
           <LanguageSwitcher variant="mobile" />
           <button style={{ padding: '0.5rem', background: 'var(--glass-bg-hover)', borderRadius: '50%', color: 'var(--text-primary)' }} onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -205,7 +206,7 @@ const Navbar = () => {
           {user && <Link to="/vault" onClick={() => setIsOpen(false)} style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}>{t('nav.vault', 'Document Vault')}</Link>}
           {user && <Link to="/saved" onClick={() => setIsOpen(false)} style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}>{t('nav.saved', 'Saved Guides')}</Link>}
           {user && <Link to="/profile" onClick={() => setIsOpen(false)} style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}>{t('nav.profile', 'My Profile')}</Link>}
-          {user && user.role === 'admin' && <Link to="/admin" onClick={() => setIsOpen(false)} style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--accent-main)' }}>{t('nav.admin', 'Admin Portal')}</Link>}
+          {user && can('users.read', user) && <Link to="/admin" onClick={() => setIsOpen(false)} style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--accent-main)' }}>{t('nav.admin', 'Admin Portal')}</Link>}
 
           <div style={{ width: '100%', height: '1px', background: 'var(--border-main)', margin: '0.5rem 0' }}></div>
 
@@ -217,7 +218,8 @@ const Navbar = () => {
         </div>
       )}
       <style>{`
-        @media (min-width: 768px) {
+        /* The full link row is ~1500px wide, so keep the menu button until there is room for it */
+        @media (min-width: 1600px) {
           .md-flex { display: flex !important; }
           .md-hidden { display: none !important; }
         }

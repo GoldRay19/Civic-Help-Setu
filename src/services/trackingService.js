@@ -1,3 +1,4 @@
+import { logDiagnostic } from '../utils/diagnostics';
 const STORAGE_KEY = 'civicbridge_applications';
 
 export const STATUS_META = {
@@ -105,6 +106,9 @@ export const formatDisplayDate = (value) => {
 // Shared validation prevents calling string methods on unexpected values.
 const normalizeId = (value) =>
   typeof value === 'string' ? value.trim().toUpperCase() : '';
+
+// Error code addManualApplication uses when the reference ID is already tracked.
+export const DUPLICATE_APPLICATION = 'DUPLICATE_APPLICATION';
 
 const normalizeApplication = (app) => {
   const safeApp =
@@ -336,7 +340,7 @@ export const getApplications = () => {
       )
       .map(normalizeApplication);
   } catch (err) {
-    console.error('Failed to parse applications from storage', err);
+    logDiagnostic('Failed to parse applications from storage', err);
     return DEFAULT_APPLICATIONS.map(normalizeApplication);
   }
 };
@@ -477,6 +481,16 @@ export const addManualApplication = ({
   const safeStatus = normalizeStatus(status);
   const all = getApplications();
 
+  // Never replace an application the user is already tracking (its stages,
+  // notes and linked documents would be lost). IDs compare trimmed and upper case.
+  if (all.some((app) => normalizeId(app?.id) === cleanId)) {
+    const error = new Error(
+      `You are already tracking ${cleanId}. Use a different reference ID.`
+    );
+    error.code = DUPLICATE_APPLICATION;
+    throw error;
+  }
+
   const stages = buildStages(safeStatus, [
     {
       title: 'Application Submitted',
@@ -560,10 +574,7 @@ export const addManualApplication = ({
     stages,
   };
 
-  const updated = [
-    newApp,
-    ...all.filter((app) => normalizeId(app?.id) !== cleanId),
-  ];
+  const updated = [newApp, ...all];
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 

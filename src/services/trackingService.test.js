@@ -9,6 +9,7 @@ import {
   getApplicationById,
   createApplication,
   addManualApplication,
+  DUPLICATE_APPLICATION,
   resolveApplicationPendingAction,
   getTrackingMetrics,
 } from './trackingService';
@@ -153,6 +154,55 @@ describe('addManualApplication', () => {
 
   it('stores an unknown status as submitted', () => {
     expect(add('nonsense').status).toBe('submitted');
+  });
+});
+
+describe('addManualApplication with an id that is already tracked', () => {
+  const stored = () => JSON.parse(localStorage.getItem('civicbridge_applications'));
+
+  it('throws DUPLICATE_APPLICATION and keeps the old record untouched', () => {
+    addManualApplication({ referenceId: 'SRV-1', serviceName: 'Test A', initialNote: 'first note' });
+    const before = stored();
+
+    let error;
+    try {
+      addManualApplication({ referenceId: 'SRV-1', serviceName: 'Test B' });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.code).toBe(DUPLICATE_APPLICATION);
+    expect(error.message).toContain('SRV-1');
+    expect(stored()).toEqual(before);
+    const kept = getApplicationById('SRV-1');
+    expect(kept.serviceName).toBe('Test A');
+    expect(kept.notes).toHaveLength(1);
+  });
+
+  it('treats case and surrounding spaces as the same id', () => {
+    addManualApplication({ referenceId: 'SRV-1', serviceName: 'Test A' });
+    expect(() => addManualApplication({ referenceId: '  srv-1 ', serviceName: 'Test B' })).toThrow(
+      /already tracking SRV-1/
+    );
+    expect(stored().filter((app) => app.id === 'SRV-1')).toHaveLength(1);
+  });
+
+  it('refuses an id that clashes with a seeded demo application', () => {
+    expect(() => addManualApplication({ referenceId: 'srv-98234710', serviceName: 'Mine' })).toThrow(
+      expect.objectContaining({ code: DUPLICATE_APPLICATION })
+    );
+    const seeded = getApplicationById('SRV-98234710');
+    expect(seeded.serviceName).toBe('Income Certificate');
+    expect(seeded.notes.length).toBeGreaterThan(0);
+  });
+
+  it('still adds an application with a new id on top of the list', () => {
+    addManualApplication({ referenceId: 'SRV-1', serviceName: 'Test A' });
+    const second = addManualApplication({ referenceId: 'SRV-2', serviceName: 'Test B' });
+    const ids = stored().map((app) => app.id);
+    expect(ids[0]).toBe(second.id);
+    expect(ids).toEqual(expect.arrayContaining(['SRV-1', 'SRV-2']));
   });
 });
 

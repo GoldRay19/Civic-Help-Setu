@@ -18,8 +18,18 @@ Public service information changes frequently. If you notice outdated or incorre
 2. If you've added code that should be tested, add tests.
 3. Ensure the test suite passes.
 4. Make sure your code adheres to our code style (we use ESLint/Prettier).
-5. Update documentation if necessary.
-6. Issue that pull request!
+5. Run the security checks (see below) before you push.
+6. Update documentation if necessary.
+7. Issue that pull request!
+
+## Security checks
+Every PR runs a secret scan, a dependency audit and a lint for unsafe HTML/JS patterns. Locally:
+```bash
+npm run lint:security
+node scripts/security/audit-report.mjs --omit-dev --level high
+gitleaks dir . --config .gitleaks.toml --redact --no-banner   # needs gitleaks installed
+```
+Never commit real keys (frontend `VITE_` variables are public). What each check does, what to do when one fails, and how to handle false positives: [docs/SECURITY_CHECKS.md](docs/SECURITY_CHECKS.md).
 
 ## Code Style
 - We use standard React conventions.

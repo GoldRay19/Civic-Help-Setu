@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MOCK_SERVICES } from '../data/services';
+import { getAllServices } from '../services/serviceCatalog';
 import ServiceCard from '../components/ServiceCard';
 import FilterToolbar from '../components/services/FilterToolbar';
 import DirectoryEmptyState from '../components/services/DirectoryEmptyState';
@@ -10,6 +10,8 @@ import ComparisonFloatingTray from '../components/services/ComparisonFloatingTra
 import { comparisonService, MAX_COMPARE_LIMIT } from '../services/comparisonService';
 import { getSearchSuggestions, rankAndFilterServices } from '../services/searchRankingEngine';
 import { Layers, Scale } from 'lucide-react';
+import { parseServiceFilters, normalizeSearchQuery } from '../utils/searchParams';
+import { parseJurisdictionFilters } from '../services/jurisdictionService';
 import RtiBuilderModal from '../components/services/RtiBuilderModal';
 
 const Services = () => {
@@ -47,27 +49,42 @@ const Services = () => {
     setCompareNotice('Comparison cleared.');
   };
 
-  // Read URL params or set defaults
-  const activeCategory = searchParams.get('cat') || 'All';
-  const searchQuery = searchParams.get('q') || '';
-  const selectedMode = searchParams.get('mode') || 'All';
-  const selectedDifficulty = searchParams.get('diff') || 'All';
-  const selectedDepartment = searchParams.get('dept') || 'All';
-  const selectedFee = searchParams.get('fee') || 'All';
-  const selectedSpeed = searchParams.get('speed') || 'All';
-  const sortBy = searchParams.get('sort') || 'relevance';
+  // Built-in guides plus the ones the admin saved, read once when the page opens.
+  const [allServices] = useState(getAllServices);
 
   const categories = useMemo(() => {
-    return ['All', ...new Set(MOCK_SERVICES.map((s) => s.category))];
-  }, []);
+    return ['All', ...new Set(allServices.map((s) => s.category))];
+  }, [allServices]);
 
   const departments = useMemo(() => {
-    return [...new Set(MOCK_SERVICES.map((s) => s.department).filter(Boolean))];
-  }, []);
+    return [...new Set(allServices.map((s) => s.department).filter(Boolean))];
+  }, [allServices]);
+
+  // The address bar is untrusted: unknown filter or sort values fall back to the defaults and the
+  // search text is cleaned and capped (see src/utils/searchParams.js).
+  const {
+    searchQuery,
+    category: activeCategory,
+    department: selectedDepartment,
+    mode: selectedMode,
+    difficulty: selectedDifficulty,
+    fee: selectedFee,
+    speed: selectedSpeed,
+    sortBy,
+  } = useMemo(
+    () => parseServiceFilters(searchParams, { categories, departments }),
+    [searchParams, categories, departments]
+  );
+
+  const {
+    state: selectedState,
+    district: selectedDistrict,
+    districtOptions,
+  } = useMemo(() => parseJurisdictionFilters(searchParams, allServices), [searchParams, allServices]);
 
   const searchSuggestions = useMemo(
-    () => getSearchSuggestions(MOCK_SERVICES, searchQuery),
-    [searchQuery]
+    () => getSearchSuggestions(allServices, searchQuery),
+    [allServices, searchQuery]
   );
 
   const updateParam = (key, value, defaultValue = 'All') => {
@@ -81,10 +98,18 @@ const Services = () => {
   };
 
   const handleCategoryChange = (cat) => updateParam('cat', cat, 'All');
-  const handleSearchChange = (query) => updateParam('q', query, '');
+  const handleSearchChange = (query) => updateParam('q', normalizeSearchQuery(query), '');
   const handleModeChange = (mode) => updateParam('mode', mode, 'All');
   const handleDifficultyChange = (diff) => updateParam('diff', diff, 'All');
   const handleDepartmentChange = (dept) => updateParam('dept', dept, 'All');
+  const handleStateChange = (state) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('district');
+    if (!state || state === 'All') nextParams.delete('state');
+    else nextParams.set('state', state);
+    setSearchParams(nextParams, { replace: true });
+  };
+  const handleDistrictChange = (district) => updateParam('district', district, 'All');
   const handleFeeChange = (fee) => updateParam('fee', fee, 'All');
   const handleSpeedChange = (speed) => updateParam('speed', speed, 'All');
   const handleSortChange = (sort) => updateParam('sort', sort, 'relevance');
@@ -109,11 +134,12 @@ const Services = () => {
     selectedDepartment !== 'All' ||
     selectedFee !== 'All' ||
     selectedSpeed !== 'All' ||
+    selectedState !== 'All' ||
     sortBy !== 'relevance'
   );
 
   const filteredServices = useMemo(() => {
-    return rankAndFilterServices(MOCK_SERVICES, {
+    return rankAndFilterServices(allServices, {
       searchQuery,
       category: activeCategory,
       department: selectedDepartment,
@@ -121,9 +147,12 @@ const Services = () => {
       difficulty: selectedDifficulty,
       feeType: selectedFee,
       speedFilter: selectedSpeed,
+      state: selectedState,
+      district: selectedDistrict,
       sortBy,
     });
   }, [
+    allServices,
     searchQuery,
     activeCategory,
     selectedDepartment,
@@ -131,6 +160,8 @@ const Services = () => {
     selectedDifficulty,
     selectedFee,
     selectedSpeed,
+    selectedState,
+    selectedDistrict,
     sortBy,
   ]);
 
@@ -243,6 +274,11 @@ const Services = () => {
           departments={departments}
           selectedDepartment={selectedDepartment}
           onDepartmentChange={handleDepartmentChange}
+          selectedState={selectedState}
+          selectedDistrict={selectedDistrict}
+          districtOptions={districtOptions}
+          onStateChange={handleStateChange}
+          onDistrictChange={handleDistrictChange}
           feeType={selectedFee}
           onFeeTypeChange={handleFeeChange}
           speedFilter={selectedSpeed}

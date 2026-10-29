@@ -1,7 +1,11 @@
+import { requirePermission } from './accessControl';
 import { MOCK_SERVICES } from '../data/services';
 import { normalizeName } from './serviceImportService';
+import { CUSTOM_SERVICES_KEY, getAllServices } from './serviceCatalog';
+import { planBulkArchive, planBulkRestore, withArchived, withRestored, describePlan } from './serviceLifecycle';
+import { logDiagnostic } from '../utils/diagnostics';
 
-const SERVICES_KEY = 'civicbridge_custom_services';
+const SERVICES_KEY = CUSTOM_SERVICES_KEY;
 const REPORTS_KEY = 'civicbridge_error_reports';
 const AUDIT_LOGS_KEY = 'civicbridge_audit_logs';
 const USERS_KEY = 'civicbridge_rbac_users';
@@ -104,21 +108,12 @@ const DEFAULT_SUBMISSIONS = [
   },
 ];
 
-export const getAdminServices = () => {
-  try {
-    const raw = localStorage.getItem(SERVICES_KEY);
-    const custom = raw ? JSON.parse(raw) : [];
-    const base = [...MOCK_SERVICES];
-    const customIds = new Set(custom.map((c) => c.id));
-    const merged = base.filter((b) => !customIds.has(b.id)).concat(custom);
-    return merged;
-  } catch (err) {
-    console.error('Failed to load admin services', err);
-    return MOCK_SERVICES;
-  }
-};
+// Same merged list the public pages read, see serviceCatalog.js.
+// The admin list includes archived guides; the lifecycle view separates them.
+export const getAdminServices = () => getAllServices({ includeArchived: true });
 
 export const saveAdminService = (serviceData, actorName = 'SuperAdmin') => {
+  requirePermission('services.write');
   try {
     const raw = localStorage.getItem(SERVICES_KEY);
     const custom = raw ? JSON.parse(raw) : [];
@@ -151,7 +146,7 @@ export const saveAdminService = (serviceData, actorName = 'SuperAdmin') => {
 
     return getAdminServices();
   } catch (err) {
-    console.error('Failed to save service', err);
+    logDiagnostic('Failed to save service', err);
     return getAdminServices();
   }
 };
@@ -161,13 +156,14 @@ export const saveAdminService = (serviceData, actorName = 'SuperAdmin') => {
 // Duplicates are checked again here because the catalog can change between the
 // preview and the confirm (another tab or another admin).
 export const importAdminServices = (services, actorName = 'SuperAdmin') => {
+  requirePermission('services.import');
   let custom;
   try {
     const raw = localStorage.getItem(SERVICES_KEY);
     custom = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(custom)) throw new Error('stored services are not a list');
   } catch (err) {
-    console.error('Failed to read services before import', err);
+    logDiagnostic('Failed to read services before import', err);
     return { ok: false, imported: 0, skipped: [], error: 'Existing service data could not be read, so nothing was imported.' };
   }
 
@@ -196,7 +192,7 @@ export const importAdminServices = (services, actorName = 'SuperAdmin') => {
   try {
     localStorage.setItem(SERVICES_KEY, JSON.stringify([...accepted, ...custom]));
   } catch (err) {
-    console.error('Failed to save imported services', err);
+    logDiagnostic('Failed to save imported services', err);
     return { ok: false, imported: 0, skipped, error: 'Saving failed (browser storage may be full). No services were imported.' };
   }
 
@@ -231,6 +227,7 @@ export const hasLocalServiceCopy = (id) => {
 //   - custom guide: removed, logged as a deletion
 // A failed write is not logged either, the caller sees the unchanged list.
 export const deleteAdminService = (id, actorName = 'SuperAdmin') => {
+  requirePermission('services.delete');
   try {
     const raw = localStorage.getItem(SERVICES_KEY);
     const custom = raw ? JSON.parse(raw) : [];
@@ -252,12 +249,75 @@ export const deleteAdminService = (id, actorName = 'SuperAdmin') => {
 
     return getAdminServices();
   } catch (err) {
-    console.error('Failed to delete service', err);
+    logDiagnostic('Failed to delete service', err);
     return getAdminServices();
   }
 };
 
-export const getReports = () => {
+// Archive / restore. The record is kept (same id), only the `archived` flag
+// changes. The plan is recomputed from fresh storage, so stale ids and records
+// changed in another tab are skipped instead of failing the batch. A built-in
+// guide is archived through a saved copy on top of it, like an edit.
+const applyLifecycle = (kind, ids, actorName) => {
+  const archiving = kind === 'archive';
+  const failure = (error) => ({ ok: false, changed: 0, plan: null, error, services: getAdminServices() });
+  let custom;
+  try {
+    const raw = localStorage.getItem(SERVICES_KEY);
+    custom = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(custom)) throw new Error('stored services are not a list');
+  } catch (err) {
+    logDiagnostic('Failed to read services before archive/restore', err);
+    return failure('Existing service data could not be read, so nothing was changed.');
+  }
+
+  const all = getAdminServices();
+  const plan = archiving ? planBulkArchive(ids, all) : planBulkRestore(ids, all);
+  if (plan.toChange.length === 0) {
+    return { ok: true, changed: 0, plan, error: null, services: all };
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const changeIds = new Set(plan.toChange.map((c) => c.id));
+  const next = [...custom];
+  for (const svc of all) {
+    if (!changeIds.has(svc.id)) continue;
+    const updated = archiving ? withArchived(svc, today) : withRestored(svc);
+    const at = next.findIndex((c) => c.id === svc.id);
+    if (at >= 0) next[at] = updated;
+    else next.unshift(updated);
+  }
+
+  try {
+    localStorage.setItem(SERVICES_KEY, JSON.stringify(next));
+  } catch (err) {
+    logDiagnostic('Failed to save archive/restore', err);
+    return failure('Saving failed (browser storage may be full). Nothing was changed.');
+  }
+
+  const skipped = describePlan(plan);
+  addAuditLog({
+    action: archiving ? 'SERVICES_ARCHIVED' : 'SERVICES_RESTORED',
+    actor: actorName,
+    target: `${plan.toChange.length} service${plan.toChange.length === 1 ? '' : 's'}`,
+    details:
+      `${archiving ? 'Archived' : 'Restored'}: ${plan.toChange.map((c) => c.name).join(', ')}.` +
+      (skipped.length ? ` Skipped: ${skipped.join(', ')}.` : ''),
+  });
+  return { ok: true, changed: plan.toChange.length, plan, error: null, services: getAdminServices() };
+};
+
+export const archiveAdminServices = (ids, actorName = 'SuperAdmin') => {
+  requirePermission('services.archive');
+  return applyLifecycle('archive', ids, actorName);
+};
+
+export const restoreAdminServices = (ids, actorName = 'SuperAdmin') => {
+  requirePermission('services.archive');
+  return applyLifecycle('restore', ids, actorName);
+};
+
+const readReports = () => {
   try {
     const raw = localStorage.getItem(REPORTS_KEY);
     if (!raw) {
@@ -266,13 +326,13 @@ export const getReports = () => {
     }
     return JSON.parse(raw);
   } catch (err) {
-    console.error('Failed to load error reports', err);
+    logDiagnostic('Failed to load error reports', err);
     return DEFAULT_REPORTS;
   }
 };
 
 export const submitErrorReport = ({ serviceId, serviceName, issueType, description, reporterEmail }) => {
-  const current = getReports();
+  const current = readReports();
   const newReport = {
     id: `rep-${Date.now()}`,
     serviceId: serviceId || 'general',
@@ -289,7 +349,8 @@ export const submitErrorReport = ({ serviceId, serviceName, issueType, descripti
 };
 
 export const resolveReport = (id, resolution = 'Verified and updated', actorName = 'SuperAdmin') => {
-  const current = getReports();
+  requirePermission('reports.resolve');
+  const current = readReports();
   const updated = current.map((r) =>
     r.id === id ? { ...r, status: 'resolved', resolutionNotes: resolution } : r
   );
@@ -306,14 +367,15 @@ export const resolveReport = (id, resolution = 'Verified and updated', actorName
 };
 
 export const dismissReport = (id) => {
-  const current = getReports();
+  requirePermission('reports.dismiss');
+  const current = readReports();
   const updated = current.filter((r) => r.id !== id);
   localStorage.setItem(REPORTS_KEY, JSON.stringify(updated));
   return updated;
 };
 
 /* --- AUDIT LOGS --- */
-export const getAuditLogs = () => {
+const readAuditLogs = () => {
   try {
     const raw = localStorage.getItem(AUDIT_LOGS_KEY);
     if (!raw) {
@@ -327,7 +389,8 @@ export const getAuditLogs = () => {
 };
 
 export const addAuditLog = ({ action, actor = 'SuperAdmin', target = '', details = '' }) => {
-  const logs = getAuditLogs();
+  requirePermission('audit.write');
+  const logs = readAuditLogs();
   const newLog = {
     id: `log_${Date.now()}`,
     timestamp: new Date().toISOString(),
@@ -340,13 +403,13 @@ export const addAuditLog = ({ action, actor = 'SuperAdmin', target = '', details
   try {
     localStorage.setItem(AUDIT_LOGS_KEY, JSON.stringify(logs.slice(0, 150))); // Keep last 150
   } catch (err) {
-    console.error('Failed to save audit log:', err);
+    logDiagnostic('Failed to save audit log:', err);
   }
   return logs;
 };
 
 /* --- USER RBAC ROLE MANAGEMENT --- */
-export const getUserList = () => {
+const readUsers = () => {
   try {
     const raw = localStorage.getItem(USERS_KEY);
     if (!raw) {
@@ -360,7 +423,8 @@ export const getUserList = () => {
 };
 
 export const updateUserRole = (userId, newRole, customPermissions = {}, actorName = 'SuperAdmin') => {
-  const users = getUserList();
+  requirePermission('users.updateRole');
+  const users = readUsers();
   const updated = users.map((u) =>
     u.id === userId ? { ...u, role: newRole, permissions: customPermissions } : u
   );
@@ -378,7 +442,7 @@ export const updateUserRole = (userId, newRole, customPermissions = {}, actorNam
 };
 
 /* --- COMMUNITY SUBMISSION REVIEW QUEUE --- */
-export const getServiceSubmissions = () => {
+const readSubmissions = () => {
   try {
     const raw = localStorage.getItem(SUBMISSIONS_KEY);
     if (!raw) {
@@ -392,7 +456,8 @@ export const getServiceSubmissions = () => {
 };
 
 export const approveServiceSubmission = (submissionId, reviewNotes = '', actorName = 'SuperAdmin') => {
-  const submissions = getServiceSubmissions();
+  requirePermission('submissions.review');
+  const submissions = readSubmissions();
   const target = submissions.find((s) => s.id === submissionId);
   if (!target) return submissions;
 
@@ -427,7 +492,8 @@ export const approveServiceSubmission = (submissionId, reviewNotes = '', actorNa
 };
 
 export const rejectServiceSubmission = (submissionId, reviewNotes = '', actorName = 'SuperAdmin') => {
-  const submissions = getServiceSubmissions();
+  requirePermission('submissions.review');
+  const submissions = readSubmissions();
   const target = submissions.find((s) => s.id === submissionId);
   const updated = submissions.map((s) =>
     s.id === submissionId ? { ...s, status: 'rejected', reviewNotes } : s
@@ -442,4 +508,25 @@ export const rejectServiceSubmission = (submissionId, reviewNotes = '', actorNam
   });
 
   return updated;
+};
+
+/* --- Guarded reads: admin-only data. Internal code uses the unguarded read* helpers above. --- */
+export const getReports = () => {
+  requirePermission('reports.read');
+  return readReports();
+};
+
+export const getAuditLogs = () => {
+  requirePermission('audit.read');
+  return readAuditLogs();
+};
+
+export const getUserList = () => {
+  requirePermission('users.read');
+  return readUsers();
+};
+
+export const getServiceSubmissions = () => {
+  requirePermission('submissions.read');
+  return readSubmissions();
 };

@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { AuthenticateWithRedirectCallback, ClerkFailed, ClerkLoaded } from '@clerk/clerk-react';
 import { Loader2, ShieldCheck } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthFallbackBanner from '../components/AuthFallbackBanner';
+import { useAuth } from '../context/AuthContext';
 import { buildAuthPath, sanitizeRedirectPath } from '../utils/authRedirect';
 import { classifyAuthFailure, failureForKind, AUTH_FAILURE_KINDS } from '../utils/authFailure';
 
 // How long to wait for Clerk to finish the callback before offering a way out.
 const CALLBACK_SLOW_MS = 20000;
 
-const SSOCallback = () => {
+const ClerkSSOCallback = () => {
   const [searchParams] = useSearchParams();
   const signInRedirect = sanitizeRedirectPath(searchParams.get('sign_in_force_redirect_url')) || '/';
   const signUpRedirect = sanitizeRedirectPath(searchParams.get('sign_up_force_redirect_url')) || '/';
@@ -58,6 +59,20 @@ const SSOCallback = () => {
       </div>
     </div>
   );
+};
+
+// Without a Clerk key main.jsx does not mount ClerkProvider, and ClerkFailed, ClerkLoaded and
+// AuthenticateWithRedirectCallback throw outside of it. There is no OAuth callback to finish in
+// that case (a stale or bookmarked link), so send the user to /login, which has the demo sign-in.
+const SSOCallback = () => {
+  const { isClerkConfigured } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  if (!isClerkConfigured) {
+    const redirectTo = sanitizeRedirectPath(searchParams.get('sign_in_force_redirect_url'));
+    return <Navigate to={buildAuthPath('/login', redirectTo)} replace />;
+  }
+  return <ClerkSSOCallback />;
 };
 
 export default SSOCallback;

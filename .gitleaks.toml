@@ -1,0 +1,23 @@
+# Config for the "Secret scan" job (.github/workflows/security.yml).
+# Docs and false-positive handling: docs/SECURITY_CHECKS.md
+
+title = "Civic-Help-Setu gitleaks config"
+
+[extend]
+# keep every built-in gitleaks rule
+useDefault = true
+
+# Clerk secret keys. The publishable key (pk_...) is meant to be public, the secret key is not.
+[[rules]]
+id = "clerk-secret-key"
+description = "Clerk secret key"
+regex = '''\bsk_(?:live|test)_[A-Za-z0-9]{20,}\b'''
+keywords = ["sk_live_", "sk_test_"]
+
+# Known false positives go here, each with a comment saying why it is safe.
+# Prefer a narrow regex or a single path over a broad one.
+#
+# [allowlist]
+# description = "reviewed false positives"
+# paths = ['''^docs/example-token\.md$''']
+# regexes = ['''EXAMPLE_NOT_A_REAL_KEY''']

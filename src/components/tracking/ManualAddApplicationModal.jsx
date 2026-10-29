@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, PlusCircle, FileText, Calendar, Tag, AlertCircle } from 'lucide-react';
-import { addManualApplication } from '../../services/trackingService';
+import { addManualApplication, DUPLICATE_APPLICATION } from '../../services/trackingService';
 import { useToast } from '../../context/ToastContext';
+import { logDiagnostic } from '../../utils/diagnostics';
 
 const ManualAddApplicationModal = ({
   isOpen,
@@ -10,6 +11,8 @@ const ManualAddApplicationModal = ({
 }) => {
   const { toast } = useToast();
   const [referenceId, setReferenceId] = useState('');
+  const [referenceError, setReferenceError] = useState('');
+  const referenceInputRef = useRef(null);
   const [serviceName, setServiceName] = useState('');
   const [category, setCategory] = useState('Certificates');
   const [appliedDate, setAppliedDate] = useState(
@@ -28,6 +31,8 @@ const ManualAddApplicationModal = ({
       return;
     }
 
+    setReferenceError('');
+
     try {
       const created = addManualApplication({
         referenceId,
@@ -43,7 +48,12 @@ const ManualAddApplicationModal = ({
       onApplicationAdded(created);
       onClose();
     } catch (err) {
-      console.error(err);
+      if (err?.code === DUPLICATE_APPLICATION) {
+        setReferenceError(err.message);
+        referenceInputRef.current?.focus();
+        return;
+      }
+      logDiagnostic('Could not add the application', err);
       toast.error('Failed to register application.');
     }
   };
@@ -111,10 +121,25 @@ const ManualAddApplicationModal = ({
               className="input-field"
               placeholder="e.g. EDIST-2026-98124 or SRV-88219"
               value={referenceId}
-              onChange={(e) => setReferenceId(e.target.value)}
+              onChange={(e) => {
+                setReferenceId(e.target.value);
+                if (referenceError) setReferenceError('');
+              }}
+              ref={referenceInputRef}
               required
+              aria-invalid={referenceError ? 'true' : undefined}
+              aria-describedby={referenceError ? 'reference-id-error' : undefined}
               style={{ width: '100%' }}
             />
+            {referenceError && (
+              <p
+                id="reference-id-error"
+                role="alert"
+                style={{ color: 'var(--danger, #ef4444)', fontSize: '0.8rem', margin: '0.4rem 0 0' }}
+              >
+                {referenceError}
+              </p>
+            )}
           </div>
 
           <div>

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import SharedDeviceNotice from '../components/privacy/SharedDeviceNotice';
+import { parseReferenceParam } from '../utils/searchParams';
 import { useLocation } from 'react-router-dom';
 import {
   Search,
@@ -31,10 +33,13 @@ import ActionRequiredAlert from '../components/tracking/ActionRequiredAlert';
 import LinkedDocumentsManager from '../components/tracking/LinkedDocumentsManager';
 import ManualAddApplicationModal from '../components/tracking/ManualAddApplicationModal';
 import Checklist from '../components/Checklist';
+import { toRequirementMap } from '../services/requirementTypes';
 import { services } from '../data/services';
 import TrackEmptyState from '../components/tracking/TrackEmptyState';
 import TrackingReceiptModal from '../components/tracking/TrackingReceiptModal';
 import SlaBreachAlertWidget from '../components/tracking/SlaBreachAlertWidget';
+import AppellateEscalationLadder from '../components/tracking/AppellateEscalationLadder';
+import GrievanceEvidenceOrganizerModal from '../components/grievance/GrievanceEvidenceOrganizerModal';
 
 const Track = () => {
   const location = useLocation();
@@ -51,6 +56,7 @@ const Track = () => {
   const [newNoteText, setNewNoteText] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
+  const [isGrievanceModalOpen, setIsGrievanceModalOpen] = useState(false);
 
   useEffect(() => {
     const freshApps = getApplications();
@@ -58,7 +64,7 @@ const Track = () => {
     setMetrics(getTrackingMetrics());
 
     const searchParams = new URLSearchParams(location.search);
-    const queryId = searchParams.get('id') || searchParams.get('ref');
+    const queryId = parseReferenceParam(searchParams.get('id') || searchParams.get('ref'));
 
     if (queryId) {
       setAppIdInput(queryId);
@@ -134,9 +140,10 @@ const Track = () => {
 
   const pendingAction = activeApp ? resolveApplicationPendingAction(activeApp) : null;
   const statusMeta = activeApp ? getStatusMeta(activeApp.status) : null;
-  const requiredDocuments = activeApp
-    ? (services.find((svc) => svc.id === activeApp.serviceId)?.documents || [])
-    : [];
+  const activeService = activeApp
+    ? services.find((svc) => svc.id === activeApp.serviceId)
+    : null;
+  const requiredDocuments = activeService?.documents || [];
 
   if (!applications.length && !activeApp) {
     return (
@@ -158,11 +165,22 @@ const Track = () => {
                 Application Tracking
               </p>
               <h1 style={{ margin: 0, fontSize: 'clamp(2rem, 4vw, 3rem)' }}>Track your civic service status</h1>
+              <SharedDeviceNotice what="tracked applications" />
             </div>
 
-            <button type="button" className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-              <Plus size={16} /> Add Application
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setIsGrievanceModalOpen(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <FileText size={16} color="var(--accent-main)" /> Grievance Organizer
+              </button>
+              <button type="button" className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
+                <Plus size={16} /> Add Application
+              </button>
+            </div>
           </div>
         </header>
 
@@ -266,6 +284,7 @@ const Track = () => {
                       key={activeApp.id}
                       checklistId={activeApp.id}
                       items={requiredDocuments}
+                      requirements={toRequirementMap(activeService)}
                       label={`Documents to prepare for ${activeApp.serviceName || 'this application'}`}
                     />
                   </section>
@@ -300,6 +319,8 @@ const Track = () => {
                   </form>
                 </div>
 
+                <AppellateEscalationLadder application={activeApp} />
+
                 {activeApp.status === 'sla-breach' && (
                   <SlaBreachAlertWidget app={activeApp} />
                 )}
@@ -324,6 +345,12 @@ const Track = () => {
       />
 
       <TrackingReceiptModal app={activeApp} isOpen={showReceipt} onClose={() => setShowReceipt(false)} />
+
+      <GrievanceEvidenceOrganizerModal
+        isOpen={isGrievanceModalOpen}
+        onClose={() => setIsGrievanceModalOpen(false)}
+        defaultServiceId={activeApp?.serviceId}
+      />
     </section>
   );
 };

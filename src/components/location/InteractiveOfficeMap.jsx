@@ -29,6 +29,21 @@ const getCategoryColor = (category = '') => {
   return '#ec4899'; // Pink / Default
 };
 
+// Category colours are fine as pin fills, but too light to read as text on a light panel.
+// Mixing them with the theme's text colour keeps the hue and gets the contrast back.
+const getCategoryTextColor = (category) =>
+  `color-mix(in srgb, ${getCategoryColor(category)} 60%, var(--text-primary))`;
+
+// Outline in the canvas colour so SVG labels stay readable over grid lines and other pins
+const LABEL_HALO = {
+  stroke: 'var(--map-halo)',
+  strokeWidth: 3,
+  strokeLinejoin: 'round',
+  paintOrder: 'stroke',
+};
+
+const LABEL_GAP_PX = 12;
+
 const InteractiveOfficeMap = ({
   offices = [],
   userCoords = null,
@@ -62,15 +77,24 @@ const InteractiveOfficeMap = ({
   }, [userCoords, projectCoords]);
 
   const projectedOffices = useMemo(() => {
-    return offices.map((office) => {
+    const placed = [];
+    offices.forEach((office) => {
       const pt = projectCoords(office.coordinates.lat, office.coordinates.lng);
-      return {
+      // Pins in the same city land on (almost) the same spot. Skip a label that repeats the
+      // one already drawn there and push a different label down so the two do not overlap.
+      const near = placed.filter((o) => Math.abs(o.svgX - pt.x) < 60 && Math.abs(o.svgY - pt.y) < 14);
+      const duplicate = near.find((o) => o.city === office.city);
+      const stacked = new Set(near.filter((o) => o.showLabel).map((o) => o.labelY)).size;
+      placed.push({
         ...office,
         svgX: pt.x,
         svgY: pt.y,
         color: getCategoryColor(office.category),
-      };
+        showLabel: !duplicate,
+        labelY: duplicate ? duplicate.labelY : 20 + stacked * LABEL_GAP_PX,
+      });
     });
+    return placed;
   }, [offices, projectCoords]);
 
   const currentActive = selectedOffice || activePin;
@@ -83,7 +107,7 @@ const InteractiveOfficeMap = ({
         borderRadius: '1rem',
         overflow: 'hidden',
         border: '1px solid var(--border-main)',
-        background: 'var(--card-bg, #1e293b)',
+        background: 'var(--map-panel-bg)',
         boxShadow: 'var(--shadow-lg)',
       }}
     >
@@ -95,7 +119,7 @@ const InteractiveOfficeMap = ({
           alignItems: 'center',
           padding: '0.875rem 1.25rem',
           borderBottom: '1px solid var(--border-light)',
-          background: 'rgba(0, 0, 0, 0.15)',
+          background: 'var(--map-bar-bg)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -108,8 +132,8 @@ const InteractiveOfficeMap = ({
               fontSize: '0.75rem',
               padding: '0.15rem 0.6rem',
               borderRadius: '99px',
-              background: 'rgba(56, 189, 248, 0.15)',
-              color: 'var(--accent-main)',
+              background: 'var(--map-badge-bg)',
+              color: 'var(--map-accent-text)',
               fontWeight: '600',
             }}
           >
@@ -180,7 +204,7 @@ const InteractiveOfficeMap = ({
           width: '100%',
           height: '420px',
           overflow: 'hidden',
-          background: 'radial-gradient(ellipse at 50% 50%, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 1))',
+          background: 'var(--map-canvas-bg)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -203,7 +227,7 @@ const InteractiveOfficeMap = ({
               <path
                 d="M 40 0 L 0 0 0 40"
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.04)"
+                stroke="var(--map-grid)"
                 strokeWidth="1"
               />
             </pattern>
@@ -228,10 +252,9 @@ const InteractiveOfficeMap = ({
               <text
                 y="-14"
                 textAnchor="middle"
-                fill="#38bdf8"
                 fontSize="11"
                 fontWeight="700"
-                style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
+                style={{ fill: 'var(--map-accent-text)', ...LABEL_HALO }}
               >
                 You Are Here
               </text>
@@ -287,18 +310,18 @@ const InteractiveOfficeMap = ({
 
                 {/* Short Office Label */}
                 <text
-                  y="20"
+                  y={office.labelY}
                   textAnchor="middle"
-                  fill="#f1f5f9"
                   fontSize="10"
                   fontWeight={isSelected ? '700' : '500'}
                   style={{
-                    textShadow: '0 2px 4px rgba(0,0,0,0.9)',
+                    fill: 'var(--map-label)',
+                    ...LABEL_HALO,
                     pointerEvents: 'none',
                     userSelect: 'none',
                   }}
                 >
-                  {office.city}
+                  {office.showLabel || isSelected ? office.city : null}
                 </text>
               </g>
             );
@@ -318,7 +341,7 @@ const InteractiveOfficeMap = ({
               padding: '1rem 1.25rem',
               borderRadius: '0.75rem',
               border: `1px solid ${getCategoryColor(currentActive.category)}`,
-              background: 'rgba(15, 23, 42, 0.95)',
+              background: 'var(--map-popover-bg)',
               backdropFilter: 'blur(16px)',
               zIndex: 10,
               boxShadow: 'var(--shadow-xl)',
@@ -331,7 +354,7 @@ const InteractiveOfficeMap = ({
                     fontSize: '0.7rem',
                     fontWeight: '700',
                     textTransform: 'uppercase',
-                    color: getCategoryColor(currentActive.category),
+                    color: getCategoryTextColor(currentActive.category),
                     letterSpacing: '0.5px',
                   }}
                 >
@@ -351,7 +374,7 @@ const InteractiveOfficeMap = ({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--text-tertiary)',
+                  color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   fontSize: '1.25rem',
                   lineHeight: '1',
@@ -369,13 +392,13 @@ const InteractiveOfficeMap = ({
                 alignItems: 'center',
                 gap: '1rem',
                 fontSize: '0.75rem',
-                color: 'var(--text-tertiary)',
+                color: 'var(--text-secondary)',
                 margin: '0.4rem 0 0.8rem 0',
                 flexWrap: 'wrap',
               }}
             >
               {currentActive.distanceKm != null && (
-                <span style={{ color: 'var(--accent-main)', fontWeight: '600' }}>
+                <span style={{ color: 'var(--map-accent-text)', fontWeight: '600' }}>
                   📍 {formatDistance(currentActive.distanceKm)}
                 </span>
               )}
@@ -388,7 +411,7 @@ const InteractiveOfficeMap = ({
                   borderRadius: '99px',
                   fontWeight: '600',
                   background: currentActive.isOpenNow ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  color: currentActive.isOpenNow ? '#10b981' : '#ef4444',
+                  color: currentActive.isOpenNow ? 'var(--map-ok)' : 'var(--map-bad)',
                 }}
               >
                 {currentActive.isOpenNow ? 'Open Now' : 'Closed'}
@@ -443,12 +466,12 @@ const InteractiveOfficeMap = ({
           gap: '1rem',
           padding: '0.75rem 1.25rem',
           borderTop: '1px solid var(--border-light)',
-          background: 'rgba(0, 0, 0, 0.2)',
+          background: 'var(--map-bar-bg)',
           fontSize: '0.75rem',
           color: 'var(--text-secondary)',
         }}
       >
-        <span style={{ fontWeight: '600', color: 'var(--text-tertiary)' }}>Legend:</span>
+        <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Legend:</span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }} /> Revenue & Certificates
         </span>

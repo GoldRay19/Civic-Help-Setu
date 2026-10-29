@@ -2,10 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import {
   User, Mail, Phone, MapPin, Briefcase, Edit3, Check, X,
   Camera, ShieldCheck, LogOut, Star, FileText, BookMarked,
-  ChevronRight, Loader2, AlertCircle, ExternalLink,
+  ChevronRight, Loader2, AlertCircle, ExternalLink, Download,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { describeProviderError, logProviderError } from '../utils/providerError';
+import ClearMyDataPanel from '../components/privacy/ClearMyDataPanel';
+import DataPortabilityModal from '../components/profile/DataPortabilityModal';
 
 /* ─────────────────────────── helpers ─────────────────────────── */
 const Field = ({ icon: Icon, label, value, placeholder, editing, name, onChange, type = 'text' }) => (
@@ -82,6 +85,9 @@ const Profile = () => {
   const [saveError, setSaveError] = useState('');
   const [saveOk, setSaveOk] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  // Bumped after "Clear my data" so counts read from localStorage (Saved Guides) refresh
+  const [, setDataVersion] = useState(0);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   const [form, setForm] = useState({
     firstName: clerkUser?.firstName || '',
@@ -144,8 +150,8 @@ const Profile = () => {
       setEditing(false);
       setTimeout(() => setSaveOk(false), 3000);
     } catch (err) {
-      console.error(err);
-      setSaveError(err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || 'Failed to save. Please try again.');
+      logProviderError('Profile save failed', err);
+      setSaveError(describeProviderError(err, 'Failed to save. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -159,7 +165,7 @@ const Profile = () => {
     try {
       await clerkUser.setProfileImage({ file });
     } catch (err) {
-      console.error('Avatar upload failed:', err);
+      logProviderError('Avatar upload failed', err);
     } finally {
       setAvatarLoading(false);
     }
@@ -495,6 +501,42 @@ const Profile = () => {
                 <ExternalLink size={13} /> Manage account on Clerk Dashboard
               </a>
             </div>
+
+            {/* Citizen Data Portability Export */}
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
+                    Citizen Data Portability
+                  </h3>
+                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Export a portable JSON or CSV copy of your saved guides, checklists, reminders, and draft notes.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExportModalOpen(true)}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.85rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                  }}
+                >
+                  <Download size={15} /> Export My Data
+                </button>
+              </div>
+            </div>
+
+            <ClearMyDataPanel onCleared={() => setDataVersion((v) => v + 1)} />
+
+            <DataPortabilityModal
+              isOpen={exportModalOpen}
+              onClose={() => setExportModalOpen(false)}
+              currentUser={user}
+            />
 
           </div>
         </div>

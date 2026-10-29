@@ -49,4 +49,29 @@ describe('civicFormTemplateEngine - Template Retrieval and Interpolation', () =>
     expect(html).toContain('Standard RTI Application');
     expect(html).toContain('This is test content.');
   });
+
+  it('escapes user-typed text in the printable HTML', () => {
+    const html = generatePrintableHtml({
+      title: 'RTI <script>alert(1)</script>',
+      act: 'Act & "Rules"',
+      filledContent: 'Flat <b>12</b> & Co <img src=x onerror="window.__pwned=1"> costs < Rs 50,000'
+    });
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('<b>12</b>');
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('Flat &lt;b&gt;12&lt;/b&gt; &amp; Co');
+    expect(html).toContain('&lt;img src=x onerror=&quot;window.__pwned=1&quot;&gt;');
+    expect(html).toContain('costs &lt; Rs 50,000');
+    expect(html).toContain('<h2>RTI &lt;script&gt;alert(1)&lt;/script&gt;</h2>');
+    expect(html).toContain('Act &amp; &quot;Rules&quot;');
+  });
+
+  it('inserts values containing $ replacement patterns exactly as typed', () => {
+    const res = populateFormTemplate('rti-section-6', {
+      applicantName: "Cost $& and $' and $$ and $1",
+      publicAuthority: 'PWD'
+    });
+    expect(res.filledContent).toContain("Cost $& and $' and $$ and $1");
+    expect(res.filledContent).not.toContain('{{applicantName}}');
+  });
 });

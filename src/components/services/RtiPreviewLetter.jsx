@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Copy, Printer, Check, Download, AlertTriangle } from 'lucide-react';
+import { buildLetterPrintHtml } from '../../utils/printHtml';
 
 export default function RtiPreviewLetter({ rtiResult }) {
   const [copied, setCopied] = useState(false);
@@ -15,7 +16,7 @@ export default function RtiPreviewLetter({ rtiResult }) {
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`<!DOCTYPE html><html><head><title>RTI Application Form</title><style>body{font-family:serif;font-size:13pt;line-height:1.6;padding:40px;}pre{font-family:inherit;white-space:pre-wrap;}</style></head><body><pre>${rtiResult.applicationText}</pre></body></html>`);
+      printWindow.document.write(buildLetterPrintHtml('RTI Application Form', rtiResult.applicationText));
       printWindow.document.close();
       printWindow.focus();
       setTimeout(() => printWindow.print(), 300);

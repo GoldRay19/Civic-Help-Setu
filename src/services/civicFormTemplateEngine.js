@@ -1,4 +1,5 @@
 import { CIVIC_FORM_TEMPLATES } from '../data/civicFormTemplates';
+import { escapeHtml } from '../utils/printHtml';
 
 /**
  * Returns available templates filtered by service or category
@@ -37,12 +38,13 @@ export function populateFormTemplate(templateId, values = {}) {
       ? context[field.key]
       : field.default || `[${field.label}]`;
     const regex = new RegExp(`{{${field.key}}}`, 'g');
-    rendered = rendered.replace(regex, val);
+    // Replacer function so a value like "$&" or "$'" is inserted as typed
+    rendered = rendered.replace(regex, () => String(val));
   }
 
   // Replace system date and year
-  rendered = rendered.replace(/{{date}}/g, context.date);
-  rendered = rendered.replace(/{{year}}/g, context.year);
+  rendered = rendered.replace(/{{date}}/g, () => context.date);
+  rendered = rendered.replace(/{{year}}/g, () => context.year);
 
   return {
     templateId: template.id,
@@ -63,7 +65,7 @@ export function generatePrintableHtml(filledForm) {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${filledForm.title || 'Civic Application Form'}</title>
+  <title>${escapeHtml(filledForm.title || 'Civic Application Form')}</title>
   <style>
     body { font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.6; padding: 40px; color: #000; }
     h2 { text-align: center; font-size: 16pt; margin-bottom: 4px; text-transform: uppercase; }
@@ -73,9 +75,9 @@ export function generatePrintableHtml(filledForm) {
   </style>
 </head>
 <body>
-  <h2>${filledForm.title}</h2>
-  <div class="subtitle">${filledForm.act || 'Official Administrative Representation'}</div>
-  <pre>${filledForm.filledContent}</pre>
+  <h2>${escapeHtml(filledForm.title)}</h2>
+  <div class="subtitle">${escapeHtml(filledForm.act || 'Official Administrative Representation')}</div>
+  <pre>${escapeHtml(filledForm.filledContent)}</pre>
   <div class="footer">Generated via Civic Help Setu Application Drafting Assistant</div>
 </body>
 </html>`;

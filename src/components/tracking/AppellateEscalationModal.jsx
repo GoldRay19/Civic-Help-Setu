@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, AlertOctagon, Copy, Printer, Check, ShieldAlert, Scale } from 'lucide-react';
 import { useModalKeyboard } from '../../hooks/useModalKeyboard';
 import { evaluateApplicationSla, generateFirstAppealNotice } from '../../services/statutorySlaService';
+import { buildLetterPrintHtml } from '../../utils/printHtml';
 
 export default function AppellateEscalationModal({ isOpen, onClose, application, citizenName = 'Citizen Applicant' }) {
   const modalRef = useModalKeyboard(isOpen, onClose);
@@ -21,7 +22,7 @@ export default function AppellateEscalationModal({ isOpen, onClose, application,
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`<!DOCTYPE html><html><head><title>First Appeal Notice</title><style>body{font-family:serif;font-size:13pt;line-height:1.6;padding:40px;}pre{font-family:inherit;white-space:pre-wrap;}</style></head><body><pre>${appealText}</pre></body></html>`);
+      printWindow.document.write(buildLetterPrintHtml('First Appeal Notice', appealText));
       printWindow.document.close();
       printWindow.focus();
       setTimeout(() => printWindow.print(), 300);
