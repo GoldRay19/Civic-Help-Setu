@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   FileBadge, ShieldCheck, Upload, CreditCard, Car, FileText,
-  Plus, Search, Eye, AlertTriangle, Layers, Download, Tag
+  Plus, Search, Eye, AlertTriangle, Layers, Download, Tag, Stamp, Calendar, Camera
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useConfirm } from '../context/ConfirmationDialogContext';
@@ -16,11 +16,15 @@ import VaultStats from '../components/vault/VaultStats';
 import DocumentModal from '../components/vault/DocumentModal';
 import DocumentPreviewModal from '../components/vault/DocumentPreviewModal';
 import ExpiringDocumentsAlert from '../components/vault/ExpiringDocumentsAlert';
+import VaultRenewalReminderBanner from '../components/vault/VaultRenewalReminderBanner';
 import VaultBackupRestoreModal from '../components/vault/VaultBackupRestoreModal';
 import SharedDeviceNotice from '../components/privacy/SharedDeviceNotice';
 import ServiceTaggingModal from '../components/vault/ServiceTaggingModal';
 import DocumentPreflightChecker from '../components/vault/DocumentPreflightChecker';
 import InactivityLockModal from '../components/vault/InactivityLockModal';
+import WatermarkAttestationModal from '../components/vault/WatermarkAttestationModal';
+import DocumentRenewalDigestModal from '../components/vault/DocumentRenewalDigestModal';
+import DocumentQualityOcrInspectorModal from '../components/vault/DocumentQualityOcrInspectorModal';
 import { Lock, Unlock, ShieldAlert } from 'lucide-react';
 import {
   startInactivityTracker,
@@ -62,7 +66,10 @@ const Vault = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isRenewalDigestOpen, setIsRenewalDigestOpen] = useState(false);
+  const [isOcrInspectorOpen, setIsOcrInspectorOpen] = useState(false);
   const [taggingDoc, setTaggingDoc] = useState(null);
+  const [watermarkDoc, setWatermarkDoc] = useState(null);
   const [expiringDocs, setExpiringDocs] = useState(() => getExpiringDocuments());
   const [isVaultLocked, setIsVaultLocked] = useState(false);
   const [showInactivityWarning, setShowInactivityWarning] = useState(false);
@@ -204,6 +211,25 @@ const Vault = () => {
             <button
               type="button"
               className="btn btn-secondary"
+              onClick={() => setIsRenewalDigestOpen(true)}
+              style={{ padding: '0.75rem 1.15rem', fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Calendar size={17} />
+              <span>Renewal Digest</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsOcrInspectorOpen(true)}
+              aria-label="Consent-Based Document Quality & OCR Check"
+              style={{ padding: '0.75rem 1.15rem', fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Camera size={17} />
+              <span>OCR Quality Check</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
               onClick={() => setIsVaultLocked(true)}
               aria-label="Lock Vault for Privacy"
               style={{ padding: '0.75rem 1.1rem', fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
@@ -222,6 +248,9 @@ const Vault = () => {
             </button>
           </div>
         </div>
+
+        {/* Statutory Document Renewal Reminders */}
+        <VaultRenewalReminderBanner documents={documents} />
 
         {/* Document Expiration Warnings */}
         <ExpiringDocumentsAlert expiringList={expiringDocs} />
@@ -403,6 +432,18 @@ const Vault = () => {
                       title="Tag to Civic Services"
                     >
                       <Tag size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setWatermarkDoc(doc);
+                      }}
+                      style={{ color: 'var(--accent-main)', padding: '0.35rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                      title="Watermark & Attest for Submission"
+                      aria-label={`Watermark and attest ${doc.name || 'document'}`}
+                    >
+                      <Stamp size={17} />
                     </button>
                     <button
                       type="button"
@@ -614,6 +655,14 @@ const Vault = () => {
           onDelete={handleDeleteDocument}
         />
 
+        {/* Purpose Watermark & Attestation Modal */}
+        <WatermarkAttestationModal
+          doc={watermarkDoc}
+          isOpen={Boolean(watermarkDoc)}
+          onClose={() => setWatermarkDoc(null)}
+          defaultCitizenName={user?.name || user?.email?.split('@')[0] || ''}
+        />
+
         {/* Secure Backup & Restore Modal */}
         <VaultBackupRestoreModal
           isOpen={isBackupModalOpen}
@@ -640,6 +689,21 @@ const Vault = () => {
           isOpen={Boolean(taggingDoc)}
           onClose={() => setTaggingDoc(null)}
           document={taggingDoc}
+          onUpdated={refreshVault}
+        />
+
+        {/* Consent-Based Document Quality & OCR Inspector Modal */}
+        <DocumentQualityOcrInspectorModal
+          isOpen={isOcrInspectorOpen}
+          onClose={() => setIsOcrInspectorOpen(false)}
+          documents={documents}
+        />
+
+        {/* Document Renewal Digest & Expiry Alerts Modal */}
+        <DocumentRenewalDigestModal
+          isOpen={isRenewalDigestOpen}
+          onClose={() => setIsRenewalDigestOpen(false)}
+          documents={documents}
           onUpdated={refreshVault}
         />
       </div>

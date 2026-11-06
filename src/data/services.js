@@ -1,38 +1,135 @@
 export const MOCK_SERVICES = [
   {
-    id: 'birth-certificate',
-    name: 'Birth Certificate',
-    shortDescription: 'Official record of a person\'s birth, required for various legal and identity purposes.',
-    category: 'Certificates',
-    department: 'Municipal Administration',
-    type: 'Online / Offline',
-    difficulty: 'Medium',
-    feeType: 'paid',
-    speedDays: 14,
-    popularityScore: 92,
-    eligibilityRuleKey: 'birth-certificate',
-    eligibility: ['Parents of the newborn', 'Individuals without a birth certificate'],
-    documents: [
-      'Proof of birth from hospital (if born in hospital)',
-      'Parents\' identity proof (Aadhaar/Voter ID)',
-      'Marriage certificate of parents (in some regions)'
-    ],
-    documentRequirements: {
-      'Proof of birth from hospital (if born in hospital)': { type: 'conditional', condition: 'The child was born in a hospital.' },
-      'Marriage certificate of parents (in some regions)': { type: 'conditional', condition: 'Your region asks for it. The service record says only some regions do.' }
+    "id": "birth-certificate",
+    "jurisdiction": {
+      "level": "state",
+      "states": [
+        "Tamil Nadu"
+      ],
+      "districts": [],
+      "localBody": ""
     },
-    steps: [
-      { title: 'Register the birth', description: 'Ensure the hospital has registered the birth, or register it locally within 21 days.' },
-      { title: 'Gather documents', description: 'Collect hospital discharge summary and parents\' ID proofs.' },
-      { title: 'Apply online/offline', description: 'Submit the application via the local municipal portal or visit the registrar office.' }
+    "name": "Birth Certificate",
+    "shortDescription": "Register a birth in Tamil Nadu with the Registrar for the place where it occurred, then search or download the official certificate through the Tamil Nadu Civil Registration System.",
+    "category": "Certificates",
+    "department": "Chief Registrar of Births and Deaths, Tamil Nadu / jurisdictional Registrar",
+    "type": "Online / Offline",
+    "difficulty": "Medium",
+    "feeType": "paid",
+    "speedDays": 30,
+    "popularityScore": 92,
+    "eligibility": [
+      "This guide applies when the birth occurred in Tamil Nadu. Registration is handled by the Registrar for the place of occurrence, not simply the family's current residential address.",
+      "For a birth in a hospital or other institution, the institution is responsible for informing the Registrar under the civil-registration process.",
+      "For a home birth, the informant should report the event to the Registrar for the local area within 21 days."
     ],
-    fees: 'Typically ₹20 - ₹100 (varies by state and time elapsed since birth)',
-    processingTime: '7 - 30 days',
-    officialSources: [
-      { name: 'National Government Services Portal', url: 'https://services.india.gov.in', verified: true }
+    "documents": [
+      "Hospital or health-centre birth record / institutional acknowledgement (keep available if requested; confirm the current checklist with the Registrar)",
+      "Evidence of the date and place of birth requested by the jurisdictional Registrar (requirements depend on the circumstances and are not established as one universal checklist by the linked public sources)",
+      "Self-attested supporting document in Form 14 (for delayed reporting after 30 days and within one year, as prescribed by Tamil Nadu Rule 9(2))"
     ],
-    warnings: ['Late registration (after 21 days) may require an affidavit and additional fees.', 'Information may vary by state.'],
-    lastVerified: '2023-10-01'
+    "documentRequirements": {
+      "Hospital or health-centre birth record / institutional acknowledgement (keep available if requested; confirm the current checklist with the Registrar)": {
+        "type": "unverified"
+      },
+      "Evidence of the date and place of birth requested by the jurisdictional Registrar (requirements depend on the circumstances and are not established as one universal checklist by the linked public sources)": {
+        "type": "unverified"
+      },
+      "Self-attested supporting document in Form 14 (for delayed reporting after 30 days and within one year, as prescribed by Tamil Nadu Rule 9(2))": {
+        "type": "conditional",
+        "condition": "The birth is reported after 30 days but within one year of its occurrence."
+      }
+    },
+    "steps": [
+      {
+        "title": "Identify the correct Registrar",
+        "description": "Use the place where the birth occurred to identify the local registration unit and Registrar. A birth occurring outside Tamil Nadu must be registered with the authority for that place."
+      },
+      {
+        "title": "Check who reports the birth",
+        "description": "For a hospital, health centre, maternity home, nursing home or similar institution, the institution is responsible for informing the Registrar. For a home birth, the citizen/informant should report it to the Registrar for the local area."
+      },
+      {
+        "title": "Report within 21 days",
+        "description": "Tamil Nadu Rule 5(3) requires the information to be given within 21 days from the date of birth. Normal registration within this period is free."
+      },
+      {
+        "title": "Use the correct delayed-registration route",
+        "description": "After 21 days but within 30 days: Rule 9(1) sets a ₹100 late fee. After 30 days but within one year: Rule 9(2) requires written permission from the officer for the registration-unit type, a ₹200 late fee and a self-attested supporting document in Form 14. After one year, Rule 9(3) prescribes a ₹500 late fee; the competent authority must be read with amended Section 13 of the central Act effective 1 October 2026: for more than one year but within two years, an order from the District Magistrate, Sub-Divisional Magistrate or an Executive Magistrate authorised by the District Magistrate; after two years, an order from a Judicial Magistrate of the First Class. The authority verifies the event."
+      },
+      {
+        "title": "Search or download the certificate",
+        "description": "The CRSTN public portal provides search and certificate download for births registered from 1 January 2018. The search page asks for RCH ID or details such as gender, district, place of birth and date of birth, with mobile verification."
+      },
+      {
+        "title": "For older or missing records",
+        "description": "For a birth registered before 1 January 2018, contact the relevant local body. If no entry appears, ask the jurisdictional Registrar about a record search or non-availability certificate; do not submit a duplicate registration without checking."
+      },
+      {
+        "title": "Add the child's name or correct an entry",
+        "description": "Under Tamil Nadu Rule 10, the parent or guardian can provide the child's name within 12 months from registration without a late fee; after 12 months but within 15 years, the rule prescribes ₹200. For an error in an existing entry, contact the Registrar and follow the Rule 11 / Section 15 correction process."
+      }
+    ],
+    "dateGuidance": [
+      {
+        "label": "Date of birth",
+        "description": "The event date. It starts the normal 21-day reporting period and determines which delayed-registration period applies."
+      },
+      {
+        "label": "Reporting date",
+        "description": "The date the birth information is given to the Registrar. Keep any acknowledgement or reference number supplied by the institution or Registrar."
+      },
+      {
+        "label": "Registration date",
+        "description": "The date entered in the register. The child's name-addition period under Rule 10 is calculated from this date, not the date of birth."
+      },
+      {
+        "label": "Certificate issue / download date",
+        "description": "Keep the downloaded or issued certificate and note when it was obtained. It is distinct from the date of birth and registration date."
+      }
+    ],
+    "validityNote": "The linked official sources do not specify a general expiry date for a birth certificate. A separate authority may ask for a recently issued copy for a particular application; confirm that requirement with the receiving authority.",
+    "fees": "Normal registration within 21 days: free. After 21 days but within 30 days: ₹100. After 30 days but within one year: ₹200, with written permission and Form 14. After one year: Tamil Nadu Rule 9(3) prescribes ₹500; the competent authority is split by amended Section 13 (1–2 years: District Magistrate / Sub-Divisional Magistrate / authorised Executive Magistrate; over 2 years: Judicial Magistrate First Class). CRSTN online downloads for births registered from 1 January 2018 are free. Separate searches or certified extracts may have Rule 13 fees; confirm the exact service and amount before paying.",
+    "processingTime": "Tamil Nadu Rule 8 describes a 30-day certificate collection/transmission window in specified reporting cases. The reviewed official sources do not state one universal processing guarantee for every route; confirm the current timeline with the jurisdictional Registrar.",
+    "officialSources": [
+      {
+        "name": "Tamil Nadu Directorate of Town Panchayats — Birth and Death Registration",
+        "url": "https://townpanchayat.in/birth_death.php",
+        "verified": true,
+        "lastVerified": "2026-11-05"
+      },
+      {
+        "name": "Tamil Nadu Civil Registration System (CRSTN)",
+        "url": "https://www.crstn.org/birth_death_tn/crs",
+        "verified": true,
+        "lastVerified": "2026-11-05"
+      },
+      {
+        "name": "CRSTN — Birth Certificate Search",
+        "url": "https://www.crstn.org/birth_death_tn/BCert",
+        "verified": true,
+        "lastVerified": "2026-11-05"
+      },
+      {
+        "name": "Tamil Nadu Government Gazette archive — Rules, 2025 (G.O. Ms. No. 351 / SRO A-20(a)/2025)",
+        "url": "https://www.stationeryprinting.tn.gov.in/extra_ordinary_lists.php?id=MjAyNQ%3D%3D",
+        "verified": true,
+        "lastVerified": "2026-11-05"
+      },
+      {
+        "name": "Office of the Registrar General & Census Commissioner — Registration of Births and Deaths (Amendment) Act, 2026",
+        "url": "https://censusindia.mha.gov.in/nada/index.php/catalog/47182",
+        "verified": true,
+        "lastVerified": "2026-11-05"
+      }
+    ],
+    "warnings": [
+      "This guide is specific to births that occurred in Tamil Nadu. Use the Registrar for the place of occurrence if the birth happened in another state or Union Territory.",
+      "The Tamil Nadu Rules, 2025 supersede the 2000 state rules. For delayed reports after one year, also apply the central Registration of Births and Deaths (Amendment) Act, 2026, in force from 1 October 2026: more than two years now requires a Judicial Magistrate of the First Class order.",
+      "Do not assume a universal identity-document checklist. Confirm the current evidence required for the particular birth circumstances with the jurisdictional Registrar.",
+      "CRSTN online download is free for births registered from 1 January 2018; separate record searches, certified extracts and non-availability certificates are different services and may carry separate fees."
+    ],
+    "lastVerified": "2026-11-05"
   },
   {
     id: 'aadhaar-card',
@@ -381,6 +478,141 @@ export const MOCK_SERVICES = [
     ],
     warnings: ['Mandatory e-KYC is required to receive installments. Land holding must be registered in the farmer\'s name.'],
     lastVerified: '2024-01-20'
+  },
+  {
+    id: 'ayushman-bharat-card',
+    jurisdiction: { level: 'national', states: [], districts: [], localBody: '' },
+    name: 'Ayushman Bharat PM-JAY Beneficiary Card',
+    shortDescription: 'Download, verify, or correct the Ayushman Bharat PM-JAY beneficiary card (Ayushman Card) for cashless hospitalization up to ₹5 lakh per family per year at empanelled hospitals. Eligibility is based on SECC 2011 deprivation criteria and state-specific categories; not all residents qualify.',
+    category: 'Health',
+    department: 'National Health Authority (NHA) / State Health Agencies (SHAs)',
+    type: 'Online / Offline (CSC / Empanelled Hospital)',
+    difficulty: 'Medium',
+    feeType: 'free',
+    speedDays: 7,
+    popularityScore: 93,
+    eligibility: [
+      'Households identified as eligible under the Socio-Economic Caste Census (SECC) 2011 deprivation criteria (D1–D5, D7) for rural areas, and occupational categories for urban areas.',
+      'Additional state-specific eligibility categories may apply (e.g., Antyodaya Anna Yojana families, construction workers, street vendors, ASHA/anganwadi workers, etc.). Eligibility varies by state/UT; check the state health agency portal.',
+      'The beneficiary must be a member of an eligible household. Individual enrollment is not open to the general public; the scheme uses pre-identified beneficiary lists.',
+      'Aadhaar-linked mobile number is required for OTP-based e-KYC verification at the time of card generation or download.'
+    ],
+    documents: [
+      'Aadhaar card (or Aadhaar number) of the beneficiary for e-KYC verification',
+      'Ration card or family ID (state-specific) to establish household membership',
+      'Mobile number linked to Aadhaar for OTP verification',
+      'Optional: Any government-issued photo ID (Voter ID, PAN, Driving License) for assisted verification at CSC or empanelled hospital if Aadhaar OTP fails'
+    ],
+    documentRequirements: {
+      'Aadhaar card (or Aadhaar number) of the beneficiary for e-KYC verification': { type: 'required' },
+      'Ration card or family ID (state-specific) to establish household membership': { type: 'required', condition: 'Required to locate the beneficiary in the SECC/state database; exact document name varies by state' },
+      'Mobile number linked to Aadhaar for OTP verification': { type: 'required' },
+      'Optional: Any government-issued photo ID (Voter ID, PAN, Driving License) for assisted verification at CSC or empanelled hospital if Aadhaar OTP fails': { type: 'optional' }
+    },
+    steps: [
+      {
+        title: 'Check eligibility and locate beneficiary record',
+        description: 'Visit the NHA beneficiary portal (https://beneficiary.nha.gov.in) or the state health agency portal. Enter Aadhaar number, ration card number, or mobile number to search the beneficiary database. If the record exists, the system will display the household details and eligible members.'
+      },
+      {
+        title: 'Complete e-KYC verification',
+        description: 'For the selected beneficiary, initiate Aadhaar OTP-based e-KYC. An OTP is sent to the Aadhaar-linked mobile number. Enter the OTP to verify identity. If OTP fails, visit a Common Service Centre (CSC) or empanelled hospital for biometric/assisted verification.'
+      },
+      {
+        title: 'Generate or download the Ayushman Card',
+        description: 'After successful e-KYC, the Ayushman Card (PDF) is generated. Download it from the SETU portal (https://setu.pmjay.gov.in) or the beneficiary portal. The card displays the beneficiary name, PM-JAY ID, family members, and QR code for hospital verification.'
+      },
+      {
+        title: 'Verify card details and family members',
+        description: 'Check that all eligible family members are listed on the card. If a member is missing, they may need separate e-KYC or the household record may need updating at the state level. Do not assume all household members are automatically included.'
+      },
+      {
+        title: 'Use the card at empanelled hospitals',
+        description: 'Present the Ayushman Card (printed or digital) and a valid photo ID at any empanelled public or private hospital. The hospital verifies the card via the PM-JAY Transaction Management System (TMS). Search empanelled hospitals at https://hospitals.pmjay.gov.in.'
+      },
+      {
+        title: 'Request correction if details are wrong',
+        description: 'For errors in name, gender, date of birth, or family member details, raise a grievance through the PM-JAY grievance portal (https://grievance.pmjay.gov.in) or contact the State Health Agency helpline. Corrections require supporting documents (e.g., Aadhaar for DOB/name, birth certificate for new members). The card is re-issued after approval.'
+      }
+    ],
+    dateGuidance: [
+      {
+        label: 'Eligibility verification date',
+        description: 'The date the beneficiary record was confirmed in the SECC/state database. This is not the same as the card download date. Check the beneficiary portal for the verification status and date.'
+      },
+      {
+        label: 'e-KYC completion date',
+        description: 'The date Aadhaar OTP or biometric verification was successfully completed. The card cannot be generated before this step. Keep the e-KYC acknowledgement/reference number.'
+      },
+      {
+        label: 'Card generation date',
+        description: 'The date the Ayushman Card PDF was generated and made available for download. This is the effective date for the current card version.'
+      },
+      {
+        label: 'Card download date',
+        description: 'The date you downloaded or printed the card. Keep a record; some hospitals may ask when the card was last downloaded.'
+      },
+      {
+        label: 'Correction request date',
+        description: 'The date a correction grievance was submitted. Track status via the grievance portal. The revised card will have a new generation date.'
+      },
+      {
+        label: 'Scheme year / validity window',
+        description: 'PM-JAY benefits reset annually (typically April–March). The card remains valid for the scheme year, but hospitals verify eligibility in real-time via TMS. The linked official sources do not specify a fixed card expiry date; confirm with the State Health Agency.'
+      }
+    ],
+    validityNote: 'The Ayushman Card does not have a fixed expiry date printed on it. Eligibility is verified in real-time at the hospital via the PM-JAY TMS. Benefits are available for the ongoing scheme year (typically April–March). If household eligibility changes (e.g., member added/removed), a new card must be generated. The linked official sources do not specify a general card expiry; confirm current validity rules with the State Health Agency.',
+    fees: 'Free on all official portals (beneficiary.nha.gov.in, setu.pmjay.gov.in). Common Service Centres (CSCs) may charge a nominal facilitation fee (typically ₹10–₹30) for assisted download/print; this is not a government fee. Do not pay agents for card generation.',
+    processingTime: 'e-KYC and card generation are near-instant (minutes) if Aadhaar OTP works. Assisted verification at CSC/hospital may take 15–30 minutes. Correction requests via grievance portal: the linked official sources do not specify a statutory timeline; typical resolution is 7–30 days depending on the State Health Agency.',
+    officialSources: [
+      {
+        name: 'National Health Authority — PM-JAY Official Website',
+        url: 'https://pmjay.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'NHA Beneficiary Identification & Verification Portal',
+        url: 'https://beneficiary.nha.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'SETU Portal — Ayushman Card Download',
+        url: 'https://setu.pmjay.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'Empanelled Hospital Search',
+        url: 'https://hospitals.pmjay.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'PM-JAY Grievance Redressal Portal',
+        url: 'https://grievance.pmjay.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      }
+    ],
+    warnings: [
+      'Eligibility is NOT universal. Only pre-identified SECC 2011 households and state-specific categories qualify. You cannot "apply" as an individual; you can only verify if your household is already in the database.',
+      'State implementation varies. Some states/UTs (e.g., West Bengal, Odisha, Delhi, Telangana) have separate or merged health schemes with different eligibility and portals. Always check the State Health Agency portal for your state.',
+      'The Ayushman Card (PM-JAY card) is different from state-specific health cards (e.g., Tamil Nadu CMCHIS, Karnataka Ayushman Arogya Karnataka, Maharashtra MJPJAY). They are not interchangeable.',
+      'e-KYC requires an Aadhaar-linked mobile number. If the mobile number is not linked or has changed, visit a CSC or empanelled hospital for biometric verification.',
+      'Card download is free on official portals. Do not pay third-party agents or unofficial websites.',
+      'The card alone does not guarantee treatment; the hospital must verify eligibility in the TMS at the time of admission. Pre-authorization may be required for certain packages.',
+      'Family members not listed on the card must complete their own e-KYC. Adding members after initial card generation requires a correction request.',
+      'Correction of name, DOB, or gender requires supporting documents (Aadhaar, birth certificate). The linked official sources do not specify a standard correction timeline; escalate to the State Health Agency helpline if delayed.',
+      'Keep identifiers (PM-JAY ID, Aadhaar, ration card) private. Do not share them on public links, social media, or analytics.'
+    ],
+    contacts: [
+      { label: 'NHA Helpline (National)', phone: '14555', url: 'https://pmjay.gov.in' },
+      { label: 'PM-JAY Grievance Portal', url: 'https://grievance.pmjay.gov.in' },
+      { label: 'State Health Agency Contacts', url: 'https://pmjay.gov.in/state-health-agencies' }
+    ],
+    lastVerified: '2026-11-05'
   }
 ];
 

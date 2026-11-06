@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom';
 import {
   Search,
   FileText,
+  FileCheck2,
   ArrowRight,
   Copy,
   Plus,
@@ -13,6 +14,7 @@ import {
   MessageSquare,
   Send,
   Compass,
+  Scale,
 } from 'lucide-react';
 
 import { useToast } from '../context/ToastContext';
@@ -39,7 +41,16 @@ import TrackEmptyState from '../components/tracking/TrackEmptyState';
 import TrackingReceiptModal from '../components/tracking/TrackingReceiptModal';
 import SlaBreachAlertWidget from '../components/tracking/SlaBreachAlertWidget';
 import AppellateEscalationLadder from '../components/tracking/AppellateEscalationLadder';
+import GrievanceEscalationAlertBanner from '../components/tracking/GrievanceEscalationAlertBanner';
 import GrievanceEvidenceOrganizerModal from '../components/grievance/GrievanceEvidenceOrganizerModal';
+import CivicGrievanceDraftingAssistantModal from '../components/grievance/CivicGrievanceDraftingAssistantModal';
+import ApplicationMilestoneTracker from '../components/tracking/ApplicationMilestoneTracker';
+import StatutoryCompensationClaimModal from '../components/tracking/StatutoryCompensationClaimModal';
+import { calculateStatutoryCompensation } from '../services/statutoryCompensationService';
+import DeficiencyCureModal from '../components/tracking/DeficiencyCureModal';
+import RejectionNoticeExplainerModal from '../components/tracking/RejectionNoticeExplainerModal';
+import InlineStatusLegend from '../components/common/InlineStatusLegend';
+import './TrackSearch.css';
 
 const Track = () => {
   const location = useLocation();
@@ -51,12 +62,17 @@ const Track = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [activeApp, setActiveApp] = useState(null);
   const [notFound, setNotFound] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [showReceipt, setShowReceipt] = useState(false);
 
   const [newNoteText, setNewNoteText] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const [isGrievanceModalOpen, setIsGrievanceModalOpen] = useState(false);
+  const [isGrievanceDraftModalOpen, setIsGrievanceDraftModalOpen] = useState(false);
+  const [isCompensationModalOpen, setIsCompensationModalOpen] = useState(false);
+  const [isCureModalOpen, setIsCureModalOpen] = useState(false);
+  const [isExplainerModalOpen, setIsExplainerModalOpen] = useState(false);
 
   useEffect(() => {
     const freshApps = getApplications();
@@ -83,11 +99,14 @@ const Track = () => {
     e?.preventDefault();
     const query = appIdInput.trim();
     if (!query) {
+      setSearchError('Enter the reference ID from your application receipt.');
+      setNotFound(false);
       toast?.warning?.('Please enter an application reference ID to track status.');
       return;
     }
 
     setIsSearching(true);
+    setSearchError('');
     setNotFound(false);
 
     setTimeout(() => {
@@ -98,7 +117,11 @@ const Track = () => {
         toast?.success?.(`Application record ${match.id} loaded successfully.`);
       } else {
         setActiveApp(null);
-        setNotFound(true);
+        if (!parseReferenceParam(query)) {
+          setSearchError('This reference has no readable characters. Check the ID on your receipt.');
+        } else {
+          setNotFound(true);
+        }
         toast?.error?.(`No record found matching "${query}".`);
       }
       setIsSearching(false);
@@ -115,6 +138,7 @@ const Track = () => {
     setActiveApp(app);
     setAppIdInput(app.id);
     setNotFound(false);
+    setSearchError('');
   };
 
   const handleAddNote = (e) => {
@@ -135,11 +159,13 @@ const Track = () => {
     setActiveApp(newApp);
     setAppIdInput(newApp.id);
     setNotFound(false);
+    setSearchError('');
     setIsAddModalOpen(false);
   };
 
   const pendingAction = activeApp ? resolveApplicationPendingAction(activeApp) : null;
   const statusMeta = activeApp ? getStatusMeta(activeApp.status) : null;
+  const compensationClaim = activeApp ? calculateStatutoryCompensation(activeApp) : null;
   const activeService = activeApp
     ? services.find((svc) => svc.id === activeApp.serviceId)
     : null;
@@ -172,6 +198,14 @@ const Track = () => {
               <button
                 type="button"
                 className="btn btn-secondary"
+                onClick={() => setIsGrievanceDraftModalOpen(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <MessageSquare size={16} color="var(--accent-main)" /> Grievance Drafter
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
                 onClick={() => setIsGrievanceModalOpen(true)}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               >
@@ -184,26 +218,34 @@ const Track = () => {
           </div>
         </header>
 
-        <div style={{ display: 'grid', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '1.5rem', minWidth: 0 }}>
           <ActiveApplicationsSummaryGrid metrics={metrics} applications={applications} />
 
-          <div className="card" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-              <form onSubmit={handleSearch} style={{ display: 'flex', flex: 1, minWidth: '260px', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <Search size={18} style={{ position: 'absolute', left: '0.9rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+          <div className="card track-search-card">
+            <div className="track-search-layout">
+              <form onSubmit={handleSearch} className="track-search-form" noValidate>
+                <label htmlFor="track-reference" className="track-search-label">Application reference ID</label>
+                <p id="track-reference-help" className="track-search-help">Use the ID on your receipt, for example SRV-98234710. Formats vary by service. Search checks applications saved on this device.</p>
+                <div className="track-search-controls" aria-busy={isSearching}>
+                  <div className="track-search-input-wrap">
+                  <Search size={18} aria-hidden="true" className="track-search-icon" />
                   <input
+                    id="track-reference"
                     type="text"
                     value={appIdInput}
-                    onChange={(e) => setAppIdInput(e.target.value)}
-                    placeholder="Enter application reference ID"
-                    style={{ width: '100%', padding: '0.9rem 1rem 0.9rem 2.6rem', borderRadius: '0.75rem', border: '1px solid var(--border-main)' }}
+                    onChange={(e) => { setAppIdInput(e.target.value); setSearchError(''); setNotFound(false); }}
+                    placeholder="e.g. SRV-98234710"
+                    disabled={isSearching}
+                    aria-invalid={searchError ? 'true' : undefined}
+                    aria-describedby={searchError ? 'track-reference-help track-reference-error' : 'track-reference-help'}
                   />
+                  </div>
+                  <button type="submit" className="btn btn-primary" disabled={isSearching}>
+                    {isSearching ? 'Searching…' : 'Track application'}
+                  </button>
                 </div>
-
-                <button type="submit" className="btn btn-primary" disabled={isSearching}>
-                  {isSearching ? 'Searching...' : 'Track'}
-                </button>
+                {searchError && <p id="track-reference-error" className="track-search-error" role="alert">{searchError}</p>}
+                <p className="track-search-loading" role="status" aria-live="polite">{isSearching ? 'Searching saved applications…' : ''}</p>
               </form>
 
               <button type="button" className="btn btn-secondary" onClick={() => setIsJourneyModalOpen(true)}>
@@ -212,8 +254,9 @@ const Track = () => {
             </div>
 
             {notFound && (
-              <div style={{ marginTop: '1rem', color: '#ef4444', fontWeight: 600 }}>
-                No application found matching that reference.
+              <div className="track-search-not-found">
+                <p role="status"><strong>No saved application found.</strong> Check the reference on your receipt and try again, or add it to this device.</p>
+                <button type="button" className="btn btn-secondary" onClick={() => setIsAddModalOpen(true)}><Plus size={16} aria-hidden="true" /> Add application</button>
               </div>
             )}
           </div>
@@ -234,6 +277,38 @@ const Track = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      {compensationClaim?.isEligible && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => setIsCompensationModalOpen(true)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            color: '#dc2626',
+                            borderColor: '#fca5a5',
+                            backgroundColor: 'rgba(239, 68, 68, 0.05)'
+                          }}
+                        >
+                          <Scale size={16} /> Claim Delay Compensation
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setIsExplainerModalOpen(true)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          color: '#b45309',
+                          borderColor: '#fcd34d',
+                          backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                        }}
+                      >
+                        <FileText size={16} /> Explain Rejection / Notice
+                      </button>
                       <button type="button" className="btn btn-secondary" onClick={handleCopyId}>
                         <Copy size={16} /> Copy ID
                       </button>
@@ -272,10 +347,39 @@ const Track = () => {
                   />
                 )}
 
+                {pendingAction && (
+                  <div style={{ marginTop: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setIsCureModalOpen(true)}
+                      style={{ fontSize: '0.82rem', padding: '0.4rem 0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      <FileCheck2 size={15} color="#ef4444" />
+                      Statutory Objection Resolution & Rectification
+                    </button>
+                  </div>
+                )}
+
+                <GrievanceEscalationAlertBanner application={activeApp} />
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
                   <ApplicationTimeline stages={activeApp.stages || []} currentStageIndex={activeApp.currentStageIndex || 0} />
                   <LinkedDocumentsManager documents={activeApp.linkedDocs || []} />
                 </div>
+
+                <ApplicationMilestoneTracker application={activeApp} />
+
+                <InlineStatusLegend
+                  categories={[
+                    'application',
+                    'requirement',
+                    'fee',
+                    'eligibility',
+                  ]}
+                  title="Status Legend for Tracking"
+                  fullLegendLabel="View full legend"
+                />
 
                 {requiredDocuments.length > 0 && (
                   <section className="card" style={{ padding: '1.25rem' }} aria-labelledby="track-checklist-title">
@@ -322,7 +426,7 @@ const Track = () => {
                 <AppellateEscalationLadder application={activeApp} />
 
                 {activeApp.status === 'sla-breach' && (
-                  <SlaBreachAlertWidget app={activeApp} />
+                  <SlaBreachAlertWidget app={activeApp} application={activeApp} citizenName={activeApp.applicantName} />
                 )}
               </div>
             </>
@@ -341,7 +445,7 @@ const Track = () => {
       <ManualAddApplicationModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSave={handleManualAdd}
+        onApplicationAdded={handleManualAdd}
       />
 
       <TrackingReceiptModal app={activeApp} isOpen={showReceipt} onClose={() => setShowReceipt(false)} />
@@ -350,6 +454,31 @@ const Track = () => {
         isOpen={isGrievanceModalOpen}
         onClose={() => setIsGrievanceModalOpen(false)}
         defaultServiceId={activeApp?.serviceId}
+      />
+
+      <CivicGrievanceDraftingAssistantModal
+        isOpen={isGrievanceDraftModalOpen}
+        onClose={() => setIsGrievanceDraftModalOpen(false)}
+        defaultApplication={activeApp}
+      />
+
+      <StatutoryCompensationClaimModal
+        isOpen={isCompensationModalOpen}
+        onClose={() => setIsCompensationModalOpen(false)}
+        application={activeApp}
+     />
+      <DeficiencyCureModal
+        application={activeApp}
+        isOpen={isCureModalOpen}
+        onClose={() => setIsCureModalOpen(false)}
+        citizenName={activeApp?.applicantName || 'Citizen Applicant'}
+      />
+
+      <RejectionNoticeExplainerModal
+        isOpen={isExplainerModalOpen}
+        onClose={() => setIsExplainerModalOpen(false)}
+        application={activeApp}
+        initialNotice={activeApp?.rejectionReason || activeApp?.pendingAction?.description || ''}
       />
     </section>
   );

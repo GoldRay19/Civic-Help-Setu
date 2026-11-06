@@ -11,8 +11,10 @@ import {
   Building2,
   CalendarCheck,
   Accessibility,
+  CheckSquare,
 } from 'lucide-react';
 import AccessibilityNeedsPlannerModal from '../components/location/AccessibilityNeedsPlannerModal';
+import PhysicalVisitDossierModal from '../components/location/PhysicalVisitDossierModal';
 import {
   filterCivicOffices,
   requestUserCoordinates,
@@ -24,8 +26,11 @@ import LocationFilterToolbar from '../components/location/LocationFilterToolbar'
 import OfficeCard from '../components/location/OfficeCard';
 import AppointmentModal from '../components/location/AppointmentModal';
 import OfficeAccessibilityRatingModal from '../components/location/OfficeAccessibilityRatingModal';
+import TransitDirectionsGuideModal from '../components/location/TransitDirectionsGuideModal';
+import OfficeFootfallAdvisorModal from '../components/location/OfficeFootfallAdvisorModal';
 import { AccessibilityFilterBar } from '../components/location/AccessibilityFacilityPanel';
 import { filterOfficesByAccessibilityAndLanguage } from '../services/accessibilityMapService';
+import { getServiceById } from '../services/serviceCatalog';
 import LocationPermissionPanel, { LOCATION_REQUEST_BUTTON_ID } from '../components/location/LocationPermissionPanel';
 import {
   LOCATION_STATUS,
@@ -50,6 +55,7 @@ const NearbyOffices = () => {
   const [onlyOpenNow, setOnlyOpenNow] = useState(false);
   const [onlyWheelchair, setOnlyWheelchair] = useState(false);
   const [serviceFilter, setServiceFilter] = useState('');
+  const activeSelectedService = useMemo(() => (serviceFilter ? getServiceById(serviceFilter) : null), [serviceFilter]);
   const [selectedFacilities, setSelectedFacilities] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState([]);
 
@@ -64,7 +70,10 @@ const NearbyOffices = () => {
   const [viewMode, setViewMode] = useState('split'); // 'split' | 'map' | 'list'
   const [selectedOffice, setSelectedOffice] = useState(null);
   const [auditingOffice, setAuditingOffice] = useState(null);
+  const [transitOffice, setTransitOffice] = useState(null);
+  const [footfallOffice, setFootfallOffice] = useState(null);
   const [bookingOffice, setBookingOffice] = useState(null);
+  const [dossierOffice, setDossierOffice] = useState(null);
   const [isAccessibilityModalOpen, setIsAccessibilityModalOpen] = useState(false);
 
   // Initialize service query param if arriving from a specific service details page
@@ -309,6 +318,21 @@ const NearbyOffices = () => {
               <Accessibility size={16} color="var(--success)" />
               <span>Accessibility Needs Planner</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setDossierOffice(selectedOffice || filteredOffices[0] || null)}
+              className="btn btn-secondary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.85rem',
+                padding: '0.45rem 0.85rem',
+              }}
+            >
+              <CheckSquare size={16} color="var(--accent-main)" />
+              <span>Visit Dossier Checklist</span>
+            </button>
 
             {/* View Mode Buttons */}
             <div
@@ -485,10 +509,13 @@ const NearbyOffices = () => {
                   <OfficeCard
                     key={office.id}
                     office={office}
+                    selectedService={activeSelectedService}
                     isSelected={selectedOffice?.id === office.id}
                     onSelect={setSelectedOffice}
                     onBookAppointment={(off) => setBookingOffice(off)}
                     onAuditAccessibility={(off) => setAuditingOffice(off)}
+                    onShowTransit={(off) => setTransitOffice(off)}
+                    onShowFootfall={(off) => setFootfallOffice(off)}
                   />
                 ))}
               </div>
@@ -548,10 +575,13 @@ const NearbyOffices = () => {
                   <OfficeCard
                     key={office.id}
                     office={office}
+                    selectedService={activeSelectedService}
                     isSelected={selectedOffice?.id === office.id}
                     onSelect={setSelectedOffice}
                     onBookAppointment={(off) => setBookingOffice(off)}
                     onAuditAccessibility={(off) => setAuditingOffice(off)}
+                    onShowTransit={(off) => setTransitOffice(off)}
+                    onShowFootfall={(off) => setFootfallOffice(off)}
                   />
                 ))
               )}
@@ -574,11 +604,29 @@ const NearbyOffices = () => {
           onClose={() => setAuditingOffice(null)}
         />
 
+        {/* Transit & Navigation Guide Modal */}
+        <TransitDirectionsGuideModal
+          isOpen={Boolean(transitOffice)}
+          onClose={() => setTransitOffice(null)}
+          office={transitOffice}
+        />
+
         {/* Accessibility Needs Planner Modal */}
         <AccessibilityNeedsPlannerModal
           isOpen={isAccessibilityModalOpen}
           onClose={() => setIsAccessibilityModalOpen(false)}
           initialOfficeId={selectedOffice?.id}
+        />
+        <OfficeFootfallAdvisorModal
+          isOpen={Boolean(footfallOffice)}
+          onClose={() => setFootfallOffice(null)}
+          office={footfallOffice}
+        />
+        <PhysicalVisitDossierModal
+          isOpen={Boolean(dossierOffice)}
+          office={dossierOffice}
+          selectedService={activeSelectedService}
+          onClose={() => setDossierOffice(null)}
         />
       </div>
     </div>

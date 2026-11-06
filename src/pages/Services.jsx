@@ -3,22 +3,25 @@ import { useSearchParams } from 'react-router-dom';
 import { getAllServices } from '../services/serviceCatalog';
 import ServiceCard from '../components/ServiceCard';
 import FilterToolbar from '../components/services/FilterToolbar';
+import QuickFilterPresets, { QUICK_PRESETS } from '../components/services/QuickFilterPresets';
 import DirectoryEmptyState from '../components/services/DirectoryEmptyState';
 import SearchAnalyticsBar from '../components/services/SearchAnalyticsBar';
 import ServiceComparisonModal from '../components/services/ServiceComparisonModal';
 import ComparisonFloatingTray from '../components/services/ComparisonFloatingTray';
 import { comparisonService, MAX_COMPARE_LIMIT } from '../services/comparisonService';
 import { getSearchSuggestions, rankAndFilterServices } from '../services/searchRankingEngine';
-import { Layers, Scale } from 'lucide-react';
+import { Layers, Scale, Building2 } from 'lucide-react';
 import { parseServiceFilters, normalizeSearchQuery } from '../utils/searchParams';
 import { parseJurisdictionFilters } from '../services/jurisdictionService';
 import RtiBuilderModal from '../components/services/RtiBuilderModal';
+import GrievanceClassificationRouterModal from '../components/grievance/GrievanceClassificationRouterModal';
 
 const Services = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [comparedServices, setComparedServices] = useState(() => comparisonService.getComparedServices());
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [isRtiModalOpen, setIsRtiModalOpen] = useState(false);
+  const [isGrievanceRouterOpen, setIsGrievanceRouterOpen] = useState(false);
 
   const [compareNotice, setCompareNotice] = useState('');
   const comparedIds = comparedServices.map((s) => s.id);
@@ -114,6 +117,26 @@ const Services = () => {
   const handleSpeedChange = (speed) => updateParam('speed', speed, 'All');
   const handleSortChange = (sort) => updateParam('sort', sort, 'relevance');
 
+  const handleSelectPreset = (preset) => {
+    if (!preset) {
+      handleResetFilters();
+      return;
+    }
+    const nextParams = new URLSearchParams(searchParams);
+    Object.entries(preset.filterParams).forEach(([k, v]) => {
+      nextParams.set(k, v);
+    });
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const activePresetId = useMemo(() => {
+    for (const preset of QUICK_PRESETS) {
+      const match = Object.entries(preset.filterParams).every(([k, v]) => searchParams.get(k) === v);
+      if (match) return preset.id;
+    }
+    return null;
+  }, [searchParams]);
+
   const handleResetFilters = () => {
     setSearchParams({}, { replace: true });
   };
@@ -192,7 +215,7 @@ const Services = () => {
             Official requirements, eligibility criteria, and step-by-step procedures to obtain essential Indian civic services.
           </p>
 
-          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={() => setIsRtiModalOpen(true)}
@@ -213,6 +236,28 @@ const Services = () => {
             >
               <Scale size={16} />
               <span>Citizen RTI Request Builder (Section 6(1))</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsGrievanceRouterOpen(true)}
+              style={{
+                padding: '0.6rem 1.4rem',
+                borderRadius: '99px',
+                border: '1px solid #ea580c',
+                background: '#fff7ed',
+                color: '#c2410c',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 4px rgba(234,88,12,0.08)'
+              }}
+            >
+              <Building2 size={16} />
+              <span>Civic Grievance & Department Router</span>
             </button>
           </div>
         </div>
@@ -261,6 +306,9 @@ const Services = () => {
           onSelectSuggestion={(sugg) => handleSearchChange(sugg)}
           onSelectChip={handleSelectChip}
         />
+
+        {/* Quick Filter Presets Chips */}
+        <QuickFilterPresets activePresetId={activePresetId} onSelectPreset={handleSelectPreset} />
 
         {/* Multi-Faceted Filter & Search Toolbar */}
         <FilterToolbar
@@ -344,6 +392,12 @@ const Services = () => {
         <RtiBuilderModal
           isOpen={isRtiModalOpen}
           onClose={() => setIsRtiModalOpen(false)}
+        />
+
+        {/* Civic Grievance Classifier & Department Router Modal */}
+        <GrievanceClassificationRouterModal
+          isOpen={isGrievanceRouterOpen}
+          onClose={() => setIsGrievanceRouterOpen(false)}
         />
       </div>
     </div>

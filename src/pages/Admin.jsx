@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   CheckSquare,
   AlertTriangle,
@@ -54,11 +54,17 @@ import {
 } from '../services/serviceOwnershipService';
 import StaleRecordsReviewQueue from '../components/admin/StaleRecordsReviewQueue';
 import LinkHealthPanel from '../components/admin/LinkHealthPanel';
+import ServiceDraftsPanel from '../components/admin/ServiceDraftsPanel';
+import { getDraftForService, listDrafts, saveDraft } from '../services/serviceDrafts';
+import CatalogueMigrationPanel from '../components/admin/CatalogueMigrationPanel';
 import CatalogueCoveragePanel from '../components/admin/CatalogueCoveragePanel';
+import CatalogueCompletenessPanel from '../components/admin/CatalogueCompletenessPanel';
 import EligibilityTestBenchPanel from '../components/admin/EligibilityTestBenchPanel';
+import CatalogueEnrichmentReviewPanel from '../components/admin/CatalogueEnrichmentReviewPanel';
 import BottleneckFeedbackDashboard from '../components/admin/BottleneckFeedbackDashboard';
 import NoticeManagementPanel from '../components/admin/NoticeManagementPanel';
 import AvailabilityNoticePanel from '../components/admin/AvailabilityNoticePanel';
+import { removeNoticesForService } from '../services/serviceAvailabilityNoticeService';
 import { useToast } from '../context/ToastContext';
 import { getAuditReports, resolveAuditReport } from '../services/communityAuditService';
 import { describeAuditReport, countOpenAudits } from '../utils/auditReportView';
@@ -75,6 +81,8 @@ import {
 import SourceConflictReviewQueue from '../components/admin/SourceConflictReviewQueue';
 import BarrierInsightsDashboard from '../components/barriers/BarrierInsightsDashboard';
 import RuleConflictInspectorModal from '../components/admin/RuleConflictInspectorModal';
+import DuplicateServiceDetectorPanel from '../components/admin/DuplicateServiceDetectorPanel';
+import CatalogueConflictDetectorPanel from '../components/admin/CatalogueConflictDetectorPanel';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -86,10 +94,24 @@ const Admin = () => {
   const [communityAudits, setCommunityAudits] = useState([]);
 
   // Modals
+  // serviceId/draftId say where "Save as draft" goes; focusField is set when opened from a validation message.
   const [serviceModal, setServiceModal] = useState({
     isOpen: false,
     service: null,
+    serviceId: null,
+    draftId: null,
+    focusField: null,
   });
+  const [draftsVersion, setDraftsVersion] = useState(0);
+  const draftCount = useMemo(() => {
+    try {
+      return listDrafts().length;
+    } catch {
+      return 0;
+    }
+    // draftsVersion changes whenever a draft is saved, discarded or published
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftsVersion]);
   const [reportModal, setReportModal] = useState({
     isOpen: false,
     report: null,
@@ -146,20 +168,77 @@ const Admin = () => {
       setOwnership(getOwnershipMap());
       setAuditLogs(getAuditLogs());
       toast?.success?.('Review assignment saved. The public guide is unchanged.');
+    } else {
+      toast?.error?.('Review assignment was not saved.');
     }
     return result;
   };
 
   const handleClearOwnership = (serviceId) => {
-    clearServiceOwnership(serviceId, { actorName: user?.username || 'SuperAdmin' });
+    const cleared = clearServiceOwnership(serviceId, { actorName: user?.username || 'SuperAdmin' });
     setOwnership(getOwnershipMap());
     setAuditLogs(getAuditLogs());
-    toast?.success?.('Review assignment cleared.');
+    if (cleared) {
+      toast?.success?.('Review assignment cleared.');
+    } else {
+      toast?.error?.('Review assignment was not cleared.');
+    }
+    return cleared;
   };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const findDraft = (serviceId) => {
+    try {
+      return getDraftForService(serviceId);
+    } catch {
+      return null;
+    }
+  };
+
+  // Editing a guide starts from its saved draft when there is one, otherwise from the published record.
+  const openServiceEditor = (service) => {
+    const draft = findDraft(service.id);
+    setServiceModal({
+      isOpen: true,
+      service: draft ? draft.record : service,
+      serviceId: service.id,
+      draftId: draft ? draft.draftId : null,
+      focusField: null,
+    });
+  };
+
+  const handleEditDraft = (draft, focusField) =>
+    setServiceModal({
+      isOpen: true,
+      service: draft.record,
+      serviceId: draft.serviceId,
+      draftId: draft.draftId,
+      focusField,
+    });
+
+  const handleSaveDraft = (record) => {
+    try {
+      saveDraft(record, {
+        serviceId: serviceModal.serviceId,
+        draftId: serviceModal.draftId,
+        author: user?.username || 'SuperAdmin',
+      });
+      setDraftsVersion((v) => v + 1);
+      toast?.success?.('Draft saved. The public guide is unchanged until you review and publish it in the Drafts tab.');
+    } catch (err) {
+      toast?.error?.(err.message);
+    }
+  };
+
+  const handleDraftsChanged = (text) => {
+    setServices(getAdminServices());
+    setAuditLogs(getAuditLogs());
+    setDraftsVersion((v) => v + 1);
+    if (text) toast?.success?.(text);
   };
 
   const handleSaveService = (serviceData) => {
@@ -196,12 +275,15 @@ const Admin = () => {
     }
   };
 
-  const activeServices = services.filter((svc) => !isArchived(svc));
-  const archivedServices = services.filter(isArchived);
+  const activeServices = useMemo(() => services.filter((svc) => !isArchived(svc)), [services]);
+  const archivedServices = useMemo(() => services.filter(isArchived), [services]);
   
   // Combine catalog view and ownership filter logic safely
   const currentCatalogBase = catalogView === 'archived' ? archivedServices : activeServices;
-  const shownServices = filterByOwnership(currentCatalogBase, ownership, users, ownershipFilter);
+  const shownServices = useMemo(
+    () => filterByOwnership(currentCatalogBase, ownership, users, ownershipFilter),
+    [currentCatalogBase, ownership, users, ownershipFilter]
+  );
 
   const changeCatalogView = (view) => {
     setCatalogView(view);
@@ -303,7 +385,9 @@ const Admin = () => {
         builtIn: pendingAction.builtIn,
         actor,
         deleteService: deleteAdminService,
+        clearOwnership: (serviceId) => clearServiceOwnership(serviceId, { actorName: actor }),
         hadLocalChanges: hasLocalServiceCopy(pendingAction.id),
+        cleanup: [removeNoticesForService],
       });
     });
 
@@ -378,10 +462,7 @@ const Admin = () => {
     const target = services.find((service) => service.id === serviceId);
 
     if (target) {
-      setServiceModal({
-        isOpen: true,
-        service: target,
-      });
+      openServiceEditor(target);
     }
   };
 
@@ -617,6 +698,16 @@ const Admin = () => {
                 badge: null,
               },
               {
+                id: 'enrichment',
+                label: 'Enrichment Queue',
+                badge: null,
+              },
+              {
+                id: 'migrations',
+                label: 'Data Migrations',
+                badge: null,
+              },
+              {
                 id: 'bottlenecks',
                 label: 'Process Bottleneck Loop',
                 badge: null,
@@ -627,10 +718,17 @@ const Admin = () => {
                 badge: null,
               },
               {
+                id: 'drafts',
+                label: `Drafts (${draftCount})`,
+                badge: null,
+              },
+              {
                 id: 'users',
                 label: `User Roles (${users.length})`,
                 badge: null,
               },
+              { id: 'duplicates', label: 'Duplicate Detection', badge: null },
+              { id: 'conflicts', label: 'Requirement Conflicts', badge: null },
               { id: 'audit', label: 'Audit Trail Logs', badge: null },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
@@ -749,7 +847,7 @@ const Admin = () => {
                     <button
                       type="button"
                       onClick={() =>
-                        setServiceModal({ isOpen: true, service: null })
+                        setServiceModal({ isOpen: true, service: null, serviceId: null, draftId: null, focusField: null })
                       }
                       className="btn btn-primary"
                       style={{
@@ -858,7 +956,7 @@ const Admin = () => {
                     users={users}
                     onAssign={(service) => setOwnershipModal({ isOpen: true, service })}
                     onEdit={(service) =>
-                      setServiceModal({ isOpen: true, service })
+                      openServiceEditor(service)
                     }
                     onDelete={catalogView === 'archived' ? undefined : handleDeleteService}
                     selectedIds={selectedIds}
@@ -880,7 +978,7 @@ const Admin = () => {
                 <RuleConflictInspectorModal
                   isOpen={isRuleConflictModalOpen}
                   onClose={() => setIsRuleConflictModalOpen(false)}
-                  services={services}
+                  services={services.filter((s) => s.archived !== true)}
                 />
               </div>
             )}
@@ -1580,14 +1678,47 @@ const Admin = () => {
 
             {/* Catalogue coverage and missing-data dashboard */}
             {activeTab === 'coverage' && (
-              <CatalogueCoveragePanel services={services} onEditService={handleEditServiceFromReport} />
+              <>
+                <CatalogueCompletenessPanel services={services} onEditService={handleEditServiceFromReport} />
+                <CatalogueCoveragePanel services={services} onEditService={handleEditServiceFromReport} />
+              </>
             )}
 
             {/* Official application-link health check */}
             {activeTab === 'link-health' && <LinkHealthPanel />}
+            {activeTab === 'duplicates' && (
+              <DuplicateServiceDetectorPanel services={services} onRefresh={() => setServices(getAdminServices())} />
+            )}
+            {activeTab === 'conflicts' && (
+              <CatalogueConflictDetectorPanel
+                services={services}
+                onRefresh={() => setServices(getAdminServices())}
+                onEditService={handleEditServiceFromReport}
+              />
+            )}
+
+            {/* Private drafts of service guides: review, preview and publish */}
+            {activeTab === 'drafts' && (
+              <ServiceDraftsPanel
+                onEditDraft={handleEditDraft}
+                onChanged={handleDraftsChanged}
+                actor={user?.username || 'SuperAdmin'}
+                refreshKey={draftsVersion}
+              />
+            )}
+            {/* Catalogue data migrations: dry run, backup, apply, rollback */}
+            {activeTab === 'migrations' && (
+              <CatalogueMigrationPanel
+                onChanged={() => {
+                  setServices(getAdminServices());
+                  setAuditLogs(getAuditLogs());
+                }}
+              />
+            )}
 
             {/* Eligibility rule test bench */}
             {activeTab === 'eligibility-tests' && <EligibilityTestBenchPanel />}
+            {activeTab === 'enrichment' && <CatalogueEnrichmentReviewPanel />}
 
             {/* Process Bottleneck Feedback Loop Tab */}
             {activeTab === 'bottlenecks' && (
@@ -1636,9 +1767,11 @@ const Admin = () => {
           isOpen={serviceModal.isOpen}
           serviceToEdit={serviceModal.service}
           onClose={() =>
-            setServiceModal({ isOpen: false, service: null })
+            setServiceModal({ isOpen: false, service: null, serviceId: null, draftId: null, focusField: null })
           }
           onSave={handleSaveService}
+          onSaveDraft={handleSaveDraft}
+          focusField={serviceModal.focusField}
         />
 
         <ReportResolutionModal

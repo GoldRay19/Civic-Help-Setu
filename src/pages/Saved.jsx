@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAllServices } from '../services/serviceCatalog';
-import { BookmarkMinus, Bookmark, Search, Layers, Sparkles, Folder } from 'lucide-react';
+import { BookmarkMinus, Bookmark, Search, Layers, Sparkles, Folder, GitMerge, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   getSavedItems,
@@ -9,6 +9,7 @@ import {
   clearAllSaved,
   toggleFavoriteItem,
 } from '../services/savedStorage';
+import ShareByEmailModal from '../components/services/ShareByEmailModal';
 import {
   getAllReminders,
   calculateDaysRemaining,
@@ -20,6 +21,8 @@ import SavedEmptyState from '../components/saved/SavedEmptyState';
 import SavedItemCard from '../components/saved/SavedItemCard';
 import ReminderScheduleModal from '../components/saved/ReminderScheduleModal';
 import FavoritesQuickBar from '../components/saved/FavoritesQuickBar';
+import DependencyRoadmapModal from '../components/saved/DependencyRoadmapModal';
+import SavedServiceRecommendationsPanel from '../components/saved/SavedServiceRecommendationsPanel';
 import {
   ALL_COLLECTION,
   buildCollections,
@@ -47,6 +50,9 @@ const Saved = () => {
   // Modals state
   const [editingModal, setEditingModal] = useState({ isOpen: false, item: null, service: null });
   const [reminderModal, setReminderModal] = useState({ isOpen: false, service: null });
+  const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState(false);
+  const [shareByEmailModalOpen, setShareByEmailModalOpen] = useState(false);
+  const [shareSelectedIds, setShareSelectedIds] = useState(new Set());
 
   useEffect(() => {
     setSavedItems(getSavedItems());
@@ -232,6 +238,20 @@ const Saved = () => {
               >
                 <BookmarkMinus size={15} /> Clear All
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShareSelectedIds(new Set(populatedItems.map((p) => p.service.id)));
+                  setShareByEmailModalOpen(true);
+                }}
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.85rem',
+                }}
+              >
+                <Mail size={15} /> Share by email
+              </button>
             </div>
           )}
         </div>
@@ -266,6 +286,15 @@ const Saved = () => {
               onSelect={setActiveFolder}
               onCreate={handleCreateCollection}
             />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsRoadmapModalOpen(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+            >
+              <GitMerge size={15} color="#a855f7" />
+              Prerequisite Roadmap Planner
+            </button>
 
             {/* Quick Search */}
             <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
@@ -299,11 +328,18 @@ const Saved = () => {
         )}
 
         {populatedItems.length > 0 && (
-          <p className="collection-help">
+          <p className="collection-help" >
             Each guide is kept in one collection (its folder), so nothing is duplicated and removing a guide
             updates every collection. Collections are saved with your guides; a new empty collection lasts only
             until you reload.
           </p>
+        )}
+
+        {populatedItems.length > 0 && (
+          <SavedServiceRecommendationsPanel
+            savedServices={populatedItems.map((p) => p.service)}
+            catalogueServices={allServices}
+          />
         )}
 
         {/* Main Content Area */}
@@ -383,6 +419,25 @@ const Saved = () => {
           onClose={() => setReminderModal({ isOpen: false, service: null })}
           service={reminderModal.service}
           onReminderUpdated={handleReminderUpdated}
+        />
+        <DependencyRoadmapModal
+          isOpen={isRoadmapModalOpen}
+          onClose={() => setIsRoadmapModalOpen(false)}
+          savedServices={savedItems.map((item) => allServices.find((s) => s.id === item.serviceId)).filter(Boolean)}
+        />
+
+        <ShareByEmailModal
+          isOpen={shareByEmailModalOpen}
+          services={populatedItems.map((p) => p.service)}
+          preSelectedIds={Array.from(shareSelectedIds)}
+          onClose={() => {
+            setShareByEmailModalOpen(false);
+            setShareSelectedIds(new Set());
+          }}
+          onSent={() => {
+            setShareByEmailModalOpen(false);
+            setShareSelectedIds(new Set());
+          }}
         />
       </div>
     </div>

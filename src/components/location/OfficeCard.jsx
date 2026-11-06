@@ -18,14 +18,19 @@ import { formatDistance } from '../../services/locationService';
 import { useToast } from '../../context/ToastContext';
 import BestTimeToVisitCard from './BestTimeToVisitCard';
 import { OfficeAccessibilityDetails } from './AccessibilityFacilityPanel';
+import { safeHttpUrl } from '../../utils/safeContent';
 import IntakeWindowBadge from './IntakeWindowBadge';
+import ExplainableOfficeMatchCard from './ExplainableOfficeMatchCard';
 
 const OfficeCard = ({
   office,
+  selectedService = null,
   onBookAppointment,
   isSelected = false,
   onSelect = () => {},
   onAuditAccessibility,
+  onShowTransit,
+  onShowFootfall,
 }) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -143,6 +148,7 @@ const OfficeCard = ({
           </span>
         </p>
 
+        <ExplainableOfficeMatchCard office={office} service={selectedService} />
         <IntakeWindowBadge office={office} />
 
         {/* Metadata Details Grid */}
@@ -277,7 +283,7 @@ const OfficeCard = ({
         }}
       >
         <a
-          href={office.directionsUrl}
+          href={safeHttpUrl(office.directionsUrl) || undefined}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
@@ -339,6 +345,51 @@ const OfficeCard = ({
           >
             <Accessibility size={15} />
             <span>Audit</span>
+          </button>
+        )}
+
+        {onShowTransit && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShowTransit(office);
+            }}
+            className="btn btn-secondary"
+            title="Transit & Directions Guide"
+            style={{
+              padding: '0.55rem 0.75rem',
+              fontSize: '0.825rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              borderRadius: '0.5rem',
+            }}
+          >
+            <Navigation size={15} />
+            <span>Transit</span>
+          </button>
+        )}
+        {onShowFootfall && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShowFootfall(office);
+            }}
+            className="btn btn-secondary"
+            title="Hourly Footfall & Queue Wait Time Advisor"
+            style={{
+              padding: '0.55rem 0.75rem',
+              fontSize: '0.825rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              borderRadius: '0.5rem',
+            }}
+          >
+            <Clock size={15} />
+            <span>Rush</span>
           </button>
         )}
 

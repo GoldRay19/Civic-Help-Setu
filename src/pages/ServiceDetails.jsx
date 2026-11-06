@@ -1,14 +1,17 @@
-
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Bookmark, Check, Link2, Printer, Share2, Zap, Users } from 'lucide-react';
+import { AlertOctagon, ArrowLeft, Bookmark, Calculator, Check, Link2, Printer, Share2, Zap, Users, Eye, CheckSquare, FileText, Sparkles, RotateCcw, Edit2, ShieldCheck, Mail } from 'lucide-react';
 import { getServiceById } from '../services/serviceCatalog';
 import RetiredServiceNotice from '../components/common/RetiredServiceNotice';
+import ServiceQrHandout from '../components/services/ServiceQrHandout';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import UntranslatedBadge from '../components/common/UntranslatedBadge';
 import { useFocusMode } from '../hooks/useFocusMode';
 import ServiceGuide from '../components/services/ServiceGuide';
+import Checklist from '../components/Checklist';
+import MakeChecklistModal from '../components/services/MakeChecklistModal';
+import { readServiceChecklist, clearServiceChecklist } from '../services/makeChecklistService';
 import DataFreshnessTrustBadge from '../components/services/DataFreshnessTrustBadge';
 import JourneyHandoffModal from '../components/journey/JourneyHandoffModal';
 import NoticeBadge from '../components/notices/NoticeBadge';
@@ -19,6 +22,36 @@ import FeeTransparencyCard from '../components/services/FeeTransparencyCard';
 import ApplicationReadinessScorecard from '../components/services/ApplicationReadinessScorecard';
 import ApplicabilityPanel from '../components/services/ApplicabilityPanel';
 import BenefitEntitlementCalculator from '../components/services/BenefitEntitlementCalculator';
+import DocumentPreflightInspectionCard from '../components/services/DocumentPreflightInspectionCard';
+import OfflineCacheActionCard from '../components/services/OfflineCacheActionCard';
+import IntakeWindowPanel from '../components/services/IntakeWindowPanel';
+import AppointmentVisitPackModal from '../components/location/AppointmentVisitPackModal';
+import BarrierReportModal from '../components/barriers/BarrierReportModal';
+import AccessibleReaderPreferencesModal from '../components/services/AccessibleReaderPreferencesModal';
+import { getReaderPreferences, computeReaderStyle } from '../services/accessibleReaderService';
+import InteractiveFeeEstimatorModal from '../components/services/InteractiveFeeEstimatorModal';
+import ApplicationPreparationPlanModal from '../components/services/ApplicationPreparationPlanModal';
+import { findJargonTerms } from '../data/civicGlossary';
+import TermExplainer from '../components/TermExplainer';
+import InlineStatusLegend from '../components/common/InlineStatusLegend';
+import DocumentTypeGuidanceModal from '../components/services/DocumentTypeGuidanceModal';
+import ApplicationReadinessCheckerModal from '../components/services/ApplicationReadinessCheckerModal';
+import FeeWaiverEligibilityCard from '../components/services/FeeWaiverEligibilityCard';
+import ServiceSlaReliabilityCard from '../components/services/ServiceSlaReliabilityCard';
+
+const getSavedServices = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('civicbridge_saved') || '[]');
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+};
+
+import ServicePrintPacketModal from '../components/services/ServicePrintPacketModal';
+import ShareByEmailModal from '../components/services/ShareByEmailModal';
+import CivicAcronymTooltip from '../components/acronyms/CivicAcronymTooltip.jsx';
+import { CIVIC_ACRONYMS } from '../data/civicAcronyms.js';
 const copyServiceLink = async (url) => {
   try {
     if (navigator?.clipboard?.writeText) {
@@ -40,8 +73,12 @@ const getServiceUrl = (serviceId) => {
   return `${window.location.origin}/services/${encodeURIComponent(serviceId)}`;
 };
 
-const ServiceDetails = () => {
-  const { id } = useParams();
+// `previewService` renders a record that is not published yet (the admin draft preview) with this same
+// page. In that mode links and buttons do nothing, so a preview never saves, shares or applies for anything.
+const ServiceDetails = ({ previewService = null }) => {
+  const { id: routeId } = useParams();
+  const isPreview = Boolean(previewService);
+  const id = previewService?.id ?? routeId;
   const navigate = useNavigate();
 
   const { user } = useAuth();
@@ -51,22 +88,26 @@ const ServiceDetails = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [handoffModalOpen, setHandoffModalOpen] = useState(false);
+  const [showPrintPacketModal, setShowPrintPacketModal] = useState(false);
   const [showLowBandwidthModal, setShowLowBandwidthModal] = useState(false);
-  const [service, setService] = useState(() => getServiceById(id));
+  const [showBarrierModal, setShowBarrierModal] = useState(false);
+  const [showVisitPackModal, setShowVisitPackModal] = useState(false);
+  const [showReaderModal, setShowReaderModal] = useState(false);
+  const [readerStyle, setReaderStyle] = useState(() => computeReaderStyle(getReaderPreferences()));
+  const [showFeeEstimatorModal, setShowFeeEstimatorModal] = useState(false);
+  const [showDocGuidanceModal, setShowDocGuidanceModal] = useState(false);
+  const [showPrepPlanModal, setShowPrepPlanModal] = useState(false);
+  const [showMakeChecklistModal, setShowMakeChecklistModal] = useState(false);
+  const [showReadinessCheckerModal, setShowReadinessCheckerModal] = useState(false);
+  const [showShareByEmailModal, setShowShareByEmailModal] = useState(false);
+  const service = previewService ?? getServiceById(id);
+  const [, setSavedTick] = useState(0);
+  const [customChecklistState, setCustomChecklistState] = useState(null);
+  const customChecklist = customChecklistState === false
+    ? null
+    : (customChecklistState ?? readServiceChecklist(id));
 
-  const [isSaved, setIsSaved] = useState(() =>
-    getSavedServices().some((savedService) => savedService.id === id)
-  );
-
-  useEffect(() => {
-    setService(getServiceById(id));
-
-    const savedServices = getSavedServices();
-
-    setIsSaved(
-      savedServices.some((savedService) => savedService.id === id)
-    );
-  }, [id]);
+  const isSaved = Boolean(service && getSavedServices().some((s) => s.id === service.id));
 
   useEffect(() => {
     if (!linkCopied) return undefined;
@@ -119,7 +160,7 @@ const ServiceDetails = () => {
         JSON.stringify(updatedServices)
       );
 
-      setIsSaved(!alreadySaved);
+      setSavedTick((t) => t + 1);
 
       toast.success(
         alreadySaved
@@ -175,12 +216,21 @@ const ServiceDetails = () => {
     );
   }
 
+  const blockPreviewActions = (event) => {
+    if (event.target.closest?.('a, button, input, select, textarea, summary')) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+
   return (
     <div
       className={`section animate-fade-in${
         focusMode ? ' service-details--focus' : ''
       }`}
-      style={{ paddingBottom: '6rem' }}
+      style={{ paddingBottom: isPreview ? '1rem' : '6rem' }}
+      onClickCapture={isPreview ? blockPreviewActions : undefined}
+      data-preview={isPreview ? 'true' : undefined}
     >
       <div
         className="container"
@@ -204,6 +254,7 @@ const ServiceDetails = () => {
         </div>
 
         <RetiredServiceNotice service={service} />
+        <ServiceQrHandout service={service} preview={isPreview} />
 
         <div
           className="glass-panel service-details__panel"
@@ -441,7 +492,48 @@ const ServiceDetails = () => {
                   />
                   Low-Bandwidth & SMS Copy
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowShareByEmailModal(true)}
+                  className="btn btn-secondary"
+                  aria-label="Share this service by email"
+                  style={{
+                    gridColumn: '1 / -1',
+                    padding: '0.65rem',
+                    fontSize: '0.875rem',
+                    background: 'var(--glass-bg)',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <Mail
+                    size={16}
+                    color="var(--accent-main)"
+                  />
+                  Share by email
+                </button>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPrintPacketModal(true)}
+                className="btn btn-outline"
+                style={{
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                }}
+              >
+                <Printer size={16} />
+                <span>Print CSC Checklist</span>
+              </button>
 
               <button
                 type="button"
@@ -476,6 +568,80 @@ const ServiceDetails = () => {
                 <Users size={16} />
                 <span>Handoff to Helper</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShowDocGuidanceModal(true)}
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <FileText size={16} />
+                <span>Document Guidance</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowMakeChecklistModal(true)}
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                  borderColor: 'rgba(56, 189, 248, 0.3)',
+                  color: 'var(--accent-main)',
+                }}
+              >
+                <Sparkles size={16} />
+                <span>Make checklist</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPrepPlanModal(true)}
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                }}
+              >
+                <CheckSquare size={16} />
+                <span>Preparation Plan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowReadinessCheckerModal(true)}
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  backgroundColor: 'rgba(14, 165, 233, 0.08)',
+                  borderColor: 'rgba(14, 165, 233, 0.3)',
+                  color: '#0284c7',
+                }}
+              >
+                <ShieldCheck size={16} />
+                <span>AI Readiness Checker</span>
+              </button>
             </div>
           </div>
 
@@ -505,18 +671,97 @@ const ServiceDetails = () => {
                 service.shortDescription ||
                 'Details for this service are available in the programme information.'}
             </p>
+
+            {/* Explainable terms used in the service description */}
+            {(() => {
+              const desc = service.description || service.shortDescription || '';
+              const terms = findJargonTerms(desc);
+              if (terms.length === 0) return null;
+              return (
+                <div
+                  style={{
+                    marginTop: '1rem',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      color: 'var(--text-tertiary)',
+                      textTransform: 'uppercase',
+                      marginRight: '0.5rem',
+                    }}
+                  >
+                    Explain terms:
+                  </span>
+                  {terms.slice(0, 4).map((t) => (
+                    <TermExplainer
+                      key={t.id}
+                      term={t.term}
+                      label="Explain this term"
+                      variant="inline"
+                      serviceContext={{
+                        serviceName: service.name,
+                        serviceDescription: desc,
+                        section: 'Overview',
+                      }}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
           </div>
+
+          {/* Related Acronyms & Terms */}
+          {(() => {
+            const relatedAcronyms = CIVIC_ACRONYMS.filter((a) =>
+              a.relatedServiceIds.includes(service.id)
+            );
+            if (relatedAcronyms.length === 0) return null;
+            return (
+              <div
+                style={{
+                  marginTop: '2rem',
+                  paddingTop: '1.5rem',
+                  borderTop: '1px solid var(--border-light)',
+                }}
+              >
+                <h2 style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>
+                  Related Acronyms &amp; Terms
+                </h2>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {relatedAcronyms.map((entry) => (
+                    <CivicAcronymTooltip key={entry.id} acronym={entry.acronym} />
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Official Source Conflict Caution Banner */}
           <SourceConflictCautionBanner
             serviceId={service.id}
           />
 
-<ApplicabilityPanel service={service} />
+          <ApplicabilityPanel service={service} />
 
           {/* Offline In-Office Visit Staging */}
           <OfflineCacheActionCard service={service} />
           <IntakeWindowPanel service={service} />
+          <div style={{ margin: '0.5rem 0', textAlign: 'right' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowFeeEstimatorModal(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+            >
+              <Calculator size={15} color="var(--accent-main)" />
+              Calculate Total Costs & Concessions
+            </button>
+          </div>
 
           {/* Fee Transparency */}
           <FeeTransparencyCard
@@ -524,14 +769,128 @@ const ServiceDetails = () => {
             serviceName={service.name}
           />
 
+          {/* Statutory Fee Waiver & Concession Eligibility Checker */}
+          <FeeWaiverEligibilityCard service={service} />
+
           {/* Statutory Welfare & Subsidy Benefit Estimator */}
           <BenefitEntitlementCalculator serviceId={service.id} serviceName={service.name} />
 
+          {/* Service Turnaround (SLA) & Delivery Reliability Forecaster */}
+          <ServiceSlaReliabilityCard service={service} />
+
           {/* Service Guide */}
-          <ServiceGuide
-            service={service}
-            focusMode={focusMode}
-            onToggleFocusMode={toggleFocusMode}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowReaderModal(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+            >
+              <Eye size={15} color="var(--accent-main)" />
+              Accessible Reader Preferences
+            </button>
+          </div>
+          <div style={readerStyle}>
+            <ServiceGuide
+              service={service}
+              focusMode={focusMode}
+              onToggleFocusMode={toggleFocusMode}
+              onMakeChecklist={() => setShowMakeChecklistModal(true)}
+            />
+          </div>
+
+          {/* Structured Application Checklist (#existing Checklist UI) */}
+          {customChecklist && (
+            <section
+              className="card"
+              style={{ padding: '1.25rem', marginTop: '1.5rem' }}
+              aria-labelledby="service-checklist-title"
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                  marginBottom: '1rem',
+                }}
+              >
+                <div>
+                  <h3 id="service-checklist-title" style={{ margin: 0, fontSize: '1.1rem' }}>
+                    Application Document Checklist
+                  </h3>
+                  <small style={{ color: 'var(--text-secondary)' }}>
+                    Structured from service catalogue requirements
+                  </small>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowMakeChecklistModal(true)}
+                    style={{
+                      fontSize: '0.82rem',
+                      padding: '0.35rem 0.75rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                  >
+                    <Edit2 size={14} /> Edit checklist
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      clearServiceChecklist(service.id);
+                      setCustomChecklistState(false);
+                    }}
+                    style={{
+                      fontSize: '0.82rem',
+                      padding: '0.35rem 0.75rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                  >
+                    <RotateCcw size={14} /> Reset
+                  </button>
+                </div>
+              </div>
+
+              <Checklist
+                key={service.id}
+                checklistId={`service_${service.id}`}
+                items={customChecklist.items}
+                requirements={customChecklist.requirements}
+                label={`Application checklist for ${service.name}`}
+              />
+            </section>
+          )}
+
+          <div style={{ margin: '1rem 0 0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowDocGuidanceModal(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.85rem' }}
+            >
+              <FileText size={15} color="var(--accent-main)" />
+              Document-Type Requirements Guidance
+            </button>
+          </div>
+
+          <InlineStatusLegend
+            categories={[
+              'requirement',
+              'intakeWindow',
+              'fee',
+              'eligibility',
+            ]}
+            title="Status Legend for This Service"
+            fullLegendLabel="View full legend"
           />
 
           <DocumentPreflightInspectionCard service={service} />
@@ -608,10 +967,73 @@ const ServiceDetails = () => {
         currentUser={user}
       />
 
+      <ServicePrintPacketModal
+        isOpen={showPrintPacketModal}
+        onClose={() => setShowPrintPacketModal(false)}
+        service={service}
+      />
+
       <LowBandwidthShareModal
         isOpen={showLowBandwidthModal}
         onClose={() => setShowLowBandwidthModal(false)}
         service={service}
+      />
+
+      <AppointmentVisitPackModal
+        isOpen={showVisitPackModal}
+        onClose={() => setShowVisitPackModal(false)}
+        service={service}
+      />
+
+      <InteractiveFeeEstimatorModal
+        isOpen={showFeeEstimatorModal}
+        onClose={() => setShowFeeEstimatorModal(false)}
+        service={service}
+      />
+
+      <BarrierReportModal
+        isOpen={showBarrierModal}
+        onClose={() => setShowBarrierModal(false)}
+        service={service}
+      />
+
+      <AccessibleReaderPreferencesModal
+        isOpen={showReaderModal}
+        onClose={() => setShowReaderModal(false)}
+        onPreferencesChange={(updated) => setReaderStyle(computeReaderStyle(updated))}
+      />
+
+      <DocumentTypeGuidanceModal
+        isOpen={showDocGuidanceModal}
+        onClose={() => setShowDocGuidanceModal(false)}
+        service={service}
+      />
+
+      <MakeChecklistModal
+        isOpen={showMakeChecklistModal}
+        onClose={() => setShowMakeChecklistModal(false)}
+        service={service}
+        onSaveChecklist={(saved) => setCustomChecklistState(saved)}
+      />
+
+      <ApplicationPreparationPlanModal
+        isOpen={showPrepPlanModal}
+        onClose={() => setShowPrepPlanModal(false)}
+        service={service}
+      />
+
+      <ApplicationReadinessCheckerModal
+        isOpen={showReadinessCheckerModal}
+        onClose={() => setShowReadinessCheckerModal(false)}
+        service={service}
+      />
+
+      <ShareByEmailModal
+        isOpen={showShareByEmailModal}
+        services={[service]}
+        preSelectedIds={[service.id]}
+        onClose={() => setShowShareByEmailModal(false)}
+        onSent={() => setShowShareByEmailModal(false)}
       />
     </div>
   );

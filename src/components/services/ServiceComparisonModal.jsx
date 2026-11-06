@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Trash2, Printer, Scale } from 'lucide-react';
+import { X, Trash2, Printer, Scale, FileDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { comparisonService, NOT_AVAILABLE } from '../../services/comparisonService';
 import { useModalKeyboard } from '../../hooks/useModalKeyboard';
+import EligibilityComparisonExplainerSection from './EligibilityComparisonExplainerSection';
+import ServiceComparisonExportModal from './ServiceComparisonExportModal';
 
 export const ComparisonValue = ({ value }) => {
   if (!value || value.length === 0) {
@@ -21,11 +23,14 @@ export const ComparisonValue = ({ value }) => {
 
 const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, onClear }) => {
   const [highlightDiffs, setHighlightDiffs] = useState(false);
+  const [showOnlyDiffs, setShowOnlyDiffs] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const modalRef = useModalKeyboard(isOpen, onClose);
 
   if (!isOpen) return null;
 
   const matrix = comparisonService.buildComparisonMatrix(comparedServices);
+  const diffSummary = comparisonService.getDifferencesSummary(comparedServices);
 
   const modal = (
     <div
@@ -52,6 +57,9 @@ const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, o
             </p>
           </div>
           <div className="compare-header-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
+              <FileDown size={16} aria-hidden="true" /> Export Dossier
+            </button>
             <button type="button" className="btn btn-secondary" onClick={() => window.print()}>
               <Printer size={16} aria-hidden="true" /> Print
             </button>
@@ -61,8 +69,8 @@ const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, o
           </div>
         </header>
 
-        <div className="compare-toolbar">
-          <label>
+        <div className="compare-toolbar" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={highlightDiffs}
@@ -70,8 +78,23 @@ const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, o
             />
             <span>Highlight rows that differ</span>
           </label>
+          {comparedServices.length > 1 && (
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={showOnlyDiffs}
+                onChange={(e) => setShowOnlyDiffs(e.target.checked)}
+              />
+              <span>Show only differences</span>
+            </label>
+          )}
+          {diffSummary.totalRows > 0 && (
+            <span style={{ fontSize: '0.78rem', padding: '0.2rem 0.6rem', borderRadius: '999px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-main)', fontWeight: 600 }}>
+              {diffSummary.differingRows} of {diffSummary.totalRows} fields differ
+            </span>
+          )}
           {comparedServices.length > 0 && (
-            <button type="button" className="compare-link-btn" onClick={onClear}>
+            <button type="button" className="compare-link-btn" onClick={onClear} style={{ marginLeft: 'auto' }}>
               Clear all
             </button>
           )}
@@ -85,6 +108,7 @@ const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, o
               <p>Tick Compare on up to 3 service cards to see them side by side.</p>
             </div>
           ) : (
+            <>
             <table className="compare-table">
               <caption className="sr-only">Side-by-side comparison of selected services</caption>
               <thead>
@@ -108,11 +132,30 @@ const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, o
                 </tr>
               </thead>
               <tbody>
-                {matrix.map((row) => {
-                  const differs = new Set(row.values.map((v) => v.join('\n'))).size > 1;
-                  return (
-                    <tr key={row.attribute} className={highlightDiffs && differs ? 'compare-diff' : undefined}>
-                      <th scope="row">{row.attribute}</th>
+                {matrix
+                  .filter((row) => {
+                    if (!showOnlyDiffs) return true;
+                    const differs = new Set(row.values.map((v) => v.join('\n'))).size > 1;
+                    return differs;
+                  })
+                  .map((row) => {
+                    const differs = new Set(row.values.map((v) => v.join('\n'))).size > 1;
+                    return (
+                      <tr key={row.attribute} className={highlightDiffs && differs ? 'compare-diff' : undefined}>
+                        <th scope="row">
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
+                            <span>{row.attribute}</span>
+                            {differs && (
+                              <span
+                                className="compare-diff-badge"
+                                aria-label="Attribute differs across services"
+                                style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.1rem 0.35rem', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}
+                              >
+                                Differs
+                              </span>
+                            )}
+                          </div>
+                        </th>
                       {row.values.map((value, i) => (
                         <td key={comparedServices[i].id} data-label={comparedServices[i].name}>
                           <ComparisonValue value={value} />
@@ -133,8 +176,15 @@ const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, o
                 </tr>
               </tbody>
             </table>
+            <EligibilityComparisonExplainerSection comparedServices={comparedServices} />
+            </>
           )}
         </div>
+        <ServiceComparisonExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          comparedServices={comparedServices}
+        />
       </div>
     </div>
   );
