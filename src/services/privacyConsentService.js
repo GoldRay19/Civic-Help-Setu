@@ -5,6 +5,13 @@
  * and cascading account deletion according to the India DPDP Act 2023 & GDPR standards.
  */
 import { logDiagnostic } from '../utils/diagnostics';
+import {
+  createChainedAuditEntry,
+  verifyPrivacyAuditLogIntegrity,
+  signExportPayload,
+  verifyExportedDataIntegrity,
+  MAX_AUDIT_LOG_ENTRIES,
+} from './privacyIntegrityService.js';
 
 const CONSENT_STORAGE_KEY = 'civicbridge_consent_preferences';
 const AUDIT_STORAGE_KEY = 'civicbridge_privacy_audit_log';
@@ -225,6 +232,39 @@ export const CONSENT_CATEGORIES = {
   },
 };
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Maps optional CONSENT_CATEGORIES to the owned storage keys in USER_DATA_STORES
+ * and USER_DATA_SESSION_STORES so consent revocation and retention enforcement
+ * never touch unrelated or mandatory citizen records.
+ */
+export const CONSENT_CATEGORY_STORAGE_MAP = {
+  offline_cache: {
+    localKeys: [
+      'civicbridge_offline_cache',
+      'civicbridge_offline_last_sync',
+      'civicbridge_cached_shelters',
+    ],
+    sessionKeys: ['civicbridge_user_coords'],
+  },
+  chat_session_memory: {
+    localKeys: ['civicbridge_chat_history'],
+    sessionKeys: [],
+  },
+  personalization: {
+    localKeys: [
+      'civicbridge_ai_context_consent',
+      'civicbridge_dismissed_recommendations',
+    ],
+    sessionKeys: [],
+  },
+  analytics_telemetry: {
+    localKeys: [],
+    sessionKeys: [],
+  },
+};
+
 /**
  * Helper to obtain storage safely in all environments
  */
@@ -315,15 +355,87 @@ export function isConsentGranted(categoryId) {
   return !!preferences[categoryId];
 }
 
+function purgeCategoryStores(categoryId, actorId = 'citizen_user', { logEvent = true, reason = 'CONSENT_REVOCATION_PURGE' } = {}) {
+  const mapping = CONSENT_CATEGORY_STORAGE_MAP[categoryId];
+  if (!mapping) return [];
+
+  const storage = getStorage();
+  const session = getSessionStorage();
+  const purgedKeys = [];
+
+  for (const key of mapping.localKeys || []) {
+    if (storage.getItem(key) !== null) {
+      storage.removeItem(key);
+      purgedKeys.push(key);
+    }
+  }
+
+  if (session) {
+    for (const key of mapping.sessionKeys || []) {
+      if (session.getItem(key) !== null) {
+        session.removeItem(key);
+        purgedKeys.push(key);
+      }
+    }
+  }
+
+  if (logEvent && purgedKeys.length > 0) {
+    recordPrivacyAuditLog(
+      reason,
+      {
+        categoryId,
+        purgedKeysCount: purgedKeys.length,
+        purgedKeys,
+      },
+      actorId
+    );
+  }
+
+  return purgedKeys;
+}
+
 /**
- * Updates a consent preference and records a non-sensitive audit entry.
+ * Purges stored non-essential data belonging to a revoked optional consent category.
+ *
+ * @param {string} categoryId
+ * @param {string} actorId
+ * @returns {{ categoryId: string, purgedKeys: string[], purgedCount: number }}
+ */
+export function purgeRevokedCategoryData(categoryId, actorId = 'citizen_user') {
+  const category = CONSENT_CATEGORIES[categoryId];
+  if (!category) {
+    throw new Error(`Unknown consent category: "${categoryId}"`);
+  }
+  if (category.mandatory) {
+    throw new Error(`Cannot purge mandatory category: "${category.title}"`);
+  }
+  const purgedKeys = purgeCategoryStores(categoryId, actorId, {
+    logEvent: true,
+    reason: 'CONSENT_REVOCATION_PURGE',
+  });
+  return {
+    categoryId,
+    purgedKeys,
+    purgedCount: purgedKeys.length,
+  };
+}
+
+/**
+ * Updates a consent preference, records a hash-chained audit entry, and automatically
+ * purges dependent non-essential stores when optional consent is withdrawn.
  *
  * @param {string} categoryId
  * @param {boolean} granted
  * @param {string} actorId - User ID or 'anonymous'
+ * @param {Object} options
  * @returns {boolean} True if successfully updated
  */
-export function updateConsentPreference(categoryId, granted, actorId = 'citizen_user') {
+export function updateConsentPreference(
+  categoryId,
+  granted,
+  actorId = 'citizen_user',
+  options = {}
+) {
   const category = CONSENT_CATEGORIES[categoryId];
   if (!category) {
     throw new Error(`Unknown consent category: "${categoryId}"`);
@@ -351,7 +463,32 @@ export function updateConsentPreference(categoryId, granted, actorId = 'citizen_
     actorId
   );
 
+  const shouldPurge = options.purgeDependentData ?? true;
+  if (!granted && shouldPurge) {
+    purgeCategoryStores(categoryId, actorId, {
+      logEvent: true,
+      reason: 'CONSENT_REVOCATION_PURGE',
+    });
+  }
+
   return true;
+}
+
+/**
+ * Revokes an optional consent category and returns full cascade purge details.
+ *
+ * @param {string} categoryId
+ * @param {string} actorId
+ * @returns {{ updated: boolean, categoryId: string, granted: boolean, purgedKeys: string[], purgedCount: number }}
+ */
+export function revokeConsentAndPurge(categoryId, actorId = 'citizen_user') {
+  updateConsentPreference(categoryId, false, actorId, { purgeDependentData: false });
+  const purgeSummary = purgeRevokedCategoryData(categoryId, actorId);
+  return {
+    updated: true,
+    granted: false,
+    ...purgeSummary,
+  };
 }
 
 /**
@@ -381,7 +518,8 @@ export function enforceAuthorization(actorUserId, resourceOwnerId) {
 }
 
 /**
- * Records an immutable audit log entry strictly stripped of PII, credentials, or document contents.
+ * Records a hash-chained audit log entry strictly stripped of PII, credentials,
+ * or document contents.
  *
  * @param {string} action - Action code
  * @param {Object} metadata - Non-sensitive metadata
@@ -402,7 +540,7 @@ export function recordPrivacyAuditLog(action, metadata = {}, actorId = 'citizen_
   delete safeMeta.documentContent;
   delete safeMeta.fileData;
 
-  const entry = {
+  const baseEntry = {
     id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     timestamp: new Date().toISOString(),
     action,
@@ -413,8 +551,9 @@ export function recordPrivacyAuditLog(action, metadata = {}, actorId = 'citizen_
   try {
     const raw = storage.getItem(AUDIT_STORAGE_KEY);
     const logs = raw ? JSON.parse(raw) : [];
-    // Keep latest 100 entries
-    const updated = [entry, ...logs].slice(0, 100);
+    const safeLogs = Array.isArray(logs) ? logs : [];
+    const entry = createChainedAuditEntry(baseEntry, safeLogs);
+    const updated = [entry, ...safeLogs].slice(0, MAX_AUDIT_LOG_ENTRIES);
     storage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(updated));
   } catch (err) {
     logDiagnostic('Failed to write privacy audit log:', err);
@@ -429,14 +568,305 @@ export function getPrivacyAuditLogs() {
   const storage = getStorage();
   try {
     const raw = storage.getItem(AUDIT_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
 /**
- * Exports all user-owned data into a documented, machine-readable JSON dossier.
+ * Verifies the SHA-256 hash chain integrity of the stored privacy audit log.
+ * @returns {Object}
+ */
+export function verifyStoredAuditLogIntegrity() {
+  return verifyPrivacyAuditLogIntegrity(getPrivacyAuditLogs());
+}
+
+const ISO_DATE_PREFIX_RE = /^\d{4}-\d{2}-\d{2}(?:T|\s|$)/;
+const TIMESTAMP_KEYS = new Set([
+  'timestamp',
+  'cachedAt',
+  'createdAt',
+  'lastModified',
+  'updatedAt',
+  'lastSync',
+]);
+
+function collectTimestamps(value, acc = [], depth = 0) {
+  if (depth > 3 || value === null || value === undefined) return acc;
+
+  if (typeof value === 'string') {
+    if (ISO_DATE_PREFIX_RE.test(value)) {
+      const ms = Date.parse(value);
+      if (Number.isFinite(ms)) acc.push(ms);
+    }
+    return acc;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectTimestamps(item, acc, depth + 1);
+    }
+    return acc;
+  }
+
+  if (typeof value === 'object') {
+    for (const [key, propVal] of Object.entries(value)) {
+      if (TIMESTAMP_KEYS.has(key) && typeof propVal === 'string') {
+        const ms = Date.parse(propVal);
+        if (Number.isFinite(ms)) acc.push(ms);
+      } else if (propVal && typeof propVal === 'object') {
+        collectTimestamps(propVal, acc, depth + 1);
+      }
+    }
+  }
+
+  return acc;
+}
+
+function getRawTimestampsForStore(raw, fallbackGrantMs) {
+  if (raw === null || raw === undefined || raw === '') return [];
+  const timestamps = [];
+  if (ISO_DATE_PREFIX_RE.test(raw.trim())) {
+    const directMs = Date.parse(raw.trim());
+    if (Number.isFinite(directMs)) timestamps.push(directMs);
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    collectTimestamps(parsed, timestamps);
+  } catch {
+    // Non-JSON plain text relies on direct ISO check or grant fallback
+  }
+  if (timestamps.length === 0 && Number.isFinite(fallbackGrantMs)) {
+    timestamps.push(fallbackGrantMs);
+  }
+  return timestamps;
+}
+
+function getLatestGrantTimestampsByCategory(logs) {
+  const map = {};
+  for (const entry of logs) {
+    if (
+      entry?.action === 'CONSENT_PREFERENCE_UPDATED' &&
+      entry?.metadata?.granted === true &&
+      entry?.metadata?.categoryId &&
+      !map[entry.metadata.categoryId]
+    ) {
+      const ms = Date.parse(entry.timestamp);
+      if (Number.isFinite(ms)) {
+        map[entry.metadata.categoryId] = ms;
+      }
+    }
+  }
+  return map;
+}
+
+/**
+ * Evaluates retention compliance across CONSENT_CATEGORIES against stored record
+ * timestamps and current consent state without modifying storage.
+ *
+ * @param {number} nowMs
+ * @returns {Object}
+ */
+export function getRetentionPolicyStatus(nowMs = Date.now()) {
+  const storage = getStorage();
+  const session = getSessionStorage();
+  const preferences = getConsentPreferences();
+  const grantTimestamps = getLatestGrantTimestampsByCategory(getPrivacyAuditLogs());
+
+  let totalExpiredKeys = 0;
+  let totalLeftoverRevokedKeys = 0;
+
+  const categories = Object.values(CONSENT_CATEGORIES).map((category) => {
+    if (category.mandatory) {
+      return {
+        categoryId: category.id,
+        title: category.title,
+        mandatory: true,
+        consentGranted: true,
+        retentionDays: category.retentionDays,
+        hasStoredData: false,
+        storedKeyCount: 0,
+        expiredKeyCount: 0,
+        expiredKeys: [],
+        leftoverKeys: [],
+        oldestRecordTimestamp: null,
+        expiresAt: null,
+        status: 'MANDATORY_PROTECTED',
+      };
+    }
+
+    const mapping = CONSENT_CATEGORY_STORAGE_MAP[category.id] || { localKeys: [], sessionKeys: [] };
+    const consentGranted = !!preferences[category.id];
+    const cutoffMs = nowMs - category.retentionDays * MS_PER_DAY;
+    const fallbackGrantMs = grantTimestamps[category.id] ?? null;
+
+    const storedKeys = [];
+    const expiredKeys = [];
+    let oldestMs = null;
+
+    const inspectKey = (storeApi, key) => {
+      if (!storeApi) return;
+      const raw = storeApi.getItem(key);
+      if (raw === null) return;
+      storedKeys.push(key);
+      const timestamps = getRawTimestampsForStore(raw, fallbackGrantMs);
+      if (timestamps.length > 0) {
+        const keyOldest = Math.min(...timestamps);
+        if (oldestMs === null || keyOldest < oldestMs) {
+          oldestMs = keyOldest;
+        }
+        if (keyOldest < cutoffMs) {
+          expiredKeys.push(key);
+        }
+      }
+    };
+
+    for (const key of mapping.localKeys || []) {
+      inspectKey(storage, key);
+    }
+    for (const key of mapping.sessionKeys || []) {
+      inspectKey(session, key);
+    }
+
+    const leftoverKeys = !consentGranted ? [...storedKeys] : [];
+    totalExpiredKeys += expiredKeys.length;
+    totalLeftoverRevokedKeys += leftoverKeys.length;
+
+    let status = 'EMPTY';
+    if (leftoverKeys.length > 0) {
+      status = 'REVOKED_WITH_LEFTOVER';
+    } else if (expiredKeys.length > 0) {
+      status = 'EXPIRED';
+    } else if (storedKeys.length > 0) {
+      status = 'ACTIVE';
+    }
+
+    return {
+      categoryId: category.id,
+      title: category.title,
+      mandatory: false,
+      consentGranted,
+      retentionDays: category.retentionDays,
+      hasStoredData: storedKeys.length > 0,
+      storedKeyCount: storedKeys.length,
+      expiredKeyCount: expiredKeys.length,
+      expiredKeys,
+      leftoverKeys,
+      oldestRecordTimestamp: oldestMs !== null ? new Date(oldestMs).toISOString() : null,
+      expiresAt:
+        oldestMs !== null
+          ? new Date(oldestMs + category.retentionDays * MS_PER_DAY).toISOString()
+          : null,
+      status,
+    };
+  });
+
+  return {
+    evaluatedAt: new Date(nowMs).toISOString(),
+    categories,
+    totalExpiredKeys,
+    totalLeftoverRevokedKeys,
+    actionRequired: totalExpiredKeys > 0 || totalLeftoverRevokedKeys > 0,
+  };
+}
+
+/**
+ * Enforces configured retentionDays TTLs and revoked-consent cleanups across
+ * non-essential browser storage, recording a hash-chained audit entry.
+ *
+ * @param {Object} options
+ * @param {number} options.nowMs
+ * @param {string} options.actorId
+ * @returns {Object}
+ */
+export function enforceRetentionPolicies({
+  nowMs = Date.now(),
+  actorId = 'system_retention_enforcer',
+} = {}) {
+  const storage = getStorage();
+  const session = getSessionStorage();
+  const report = getRetentionPolicyStatus(nowMs);
+
+  const purgedKeys = [];
+  let prunedRecordsCount = 0;
+
+  for (const cat of report.categories) {
+    if (cat.mandatory) continue;
+    const mapping = CONSENT_CATEGORY_STORAGE_MAP[cat.categoryId] || { localKeys: [], sessionKeys: [] };
+    const cutoffMs = nowMs - cat.retentionDays * MS_PER_DAY;
+
+    // Remove all dependent stores if consent is currently revoked.
+    if (cat.status === 'REVOKED_WITH_LEFTOVER') {
+      const removed = purgeCategoryStores(cat.categoryId, actorId, { logEvent: false });
+      purgedKeys.push(...removed);
+      continue;
+    }
+
+    for (const key of cat.expiredKeys) {
+      // Prune chat messages individually by timestamp when valid recent turns coexist.
+      if (key === 'civicbridge_chat_history' && (mapping.localKeys || []).includes(key)) {
+        const raw = storage.getItem(key);
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              const retained = parsed.filter((msg) => {
+                const ms = typeof msg?.timestamp === 'string' ? Date.parse(msg.timestamp) : NaN;
+                return Number.isFinite(ms) ? ms >= cutoffMs : false;
+              });
+              const pruned = parsed.length - retained.length;
+              if (retained.length > 0 && pruned > 0) {
+                storage.setItem(key, JSON.stringify(retained));
+                prunedRecordsCount += pruned;
+                continue;
+              }
+            }
+          } catch {
+            // Fall through to whole-key deletion if corrupt JSON
+          }
+        }
+      }
+
+      if ((mapping.localKeys || []).includes(key) && storage.getItem(key) !== null) {
+        storage.removeItem(key);
+        purgedKeys.push(key);
+      }
+      if (session && (mapping.sessionKeys || []).includes(key) && session.getItem(key) !== null) {
+        session.removeItem(key);
+        purgedKeys.push(key);
+      }
+    }
+  }
+
+  const actionTaken = purgedKeys.length > 0 || prunedRecordsCount > 0;
+  if (actionTaken) {
+    recordPrivacyAuditLog(
+      'RETENTION_POLICY_ENFORCED',
+      {
+        purgedKeysCount: purgedKeys.length,
+        purgedKeys,
+        prunedRecordsCount,
+      },
+      actorId
+    );
+  }
+
+  return {
+    enforcedAt: new Date(nowMs).toISOString(),
+    purgedKeysCount: purgedKeys.length,
+    purgedKeys,
+    prunedRecordsCount,
+    actionTaken,
+  };
+}
+
+export { verifyPrivacyAuditLogIntegrity, verifyExportedDataIntegrity };
+
+/**
+ * Exports all user-owned data into a documented, machine-readable JSON dossier
+ * sealed with a canonical SHA-256 integrityDigest.
  *
  * @param {string} userId - User identifier
  * @returns {Object} Complete data export package
@@ -478,7 +908,7 @@ export function exportUserData(userId = 'citizen_user') {
   };
 
   recordPrivacyAuditLog('USER_DATA_EXPORTED', { totalCategories: Object.keys(sections).length + 1 }, userId);
-  return exportPayload;
+  return signExportPayload(exportPayload);
 }
 
 /**

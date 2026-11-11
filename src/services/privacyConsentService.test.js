@@ -3,9 +3,14 @@ import {
   getConsentPreferences,
   isConsentGranted,
   updateConsentPreference,
+  revokeConsentAndPurge,
+  getRetentionPolicyStatus,
+  enforceRetentionPolicies,
   enforceAuthorization,
   recordPrivacyAuditLog,
   getPrivacyAuditLogs,
+  verifyStoredAuditLogIntegrity,
+  verifyExportedDataIntegrity,
   exportUserData,
   purgeAllUserData,
   USER_DATA_STORAGE_KEYS,
@@ -186,6 +191,101 @@ describe('Privacy and Consent Management Service (#80)', () => {
       const purgeLog = logs.find((l) => l.action === 'ACCOUNT_DATA_PERMANENTLY_PURGED');
       expect(purgeLog).toBeDefined();
       expect(purgeLog.actorId).toBe('user_delete_me');
+    });
+  });
+
+  describe('Consent-Withdrawal Cascade, Retention Enforcement & Audit Chain (#696)', () => {
+    it('purges dependent non-essential stores when optional consent is revoked while preserving essential data', () => {
+      const storage = globalThis.__mockPrivacyStorage;
+      updateConsentPreference('offline_cache', true, 'citizen_99');
+      updateConsentPreference('chat_session_memory', true, 'citizen_99');
+
+      storage.set('civicbridge_offline_cache', JSON.stringify({ services: { passport: { cachedAt: '2026-11-10T00:00:00.000Z' } } }));
+      storage.set('civicbridge_offline_last_sync', '2026-11-10T00:00:00.000Z');
+      storage.set('civicbridge_chat_history', JSON.stringify([{ id: 'm1', timestamp: '2026-11-10T00:00:00.000Z', text: 'hi' }]));
+      // Mandatory user records must remain untouched
+      storage.set('civicbridge_vault_docs', JSON.stringify([{ id: 'doc-1' }]));
+
+      const offlinePurge = revokeConsentAndPurge('offline_cache', 'citizen_99');
+      expect(offlinePurge.purgedKeys).toEqual(
+        expect.arrayContaining(['civicbridge_offline_cache', 'civicbridge_offline_last_sync'])
+      );
+      expect(storage.get('civicbridge_offline_cache')).toBeUndefined();
+      expect(storage.get('civicbridge_offline_last_sync')).toBeUndefined();
+      expect(storage.get('civicbridge_vault_docs')).toBeDefined();
+
+      // Revoking via updateConsentPreference also triggers dependent cleanup
+      updateConsentPreference('chat_session_memory', false, 'citizen_99');
+      expect(storage.get('civicbridge_chat_history')).toBeUndefined();
+
+      const auditIntegrity = verifyStoredAuditLogIntegrity();
+      expect(auditIntegrity.valid).toBe(true);
+      expect(auditIntegrity.status).toBe('VERIFIED');
+      expect(getPrivacyAuditLogs().some((l) => l.action === 'CONSENT_REVOCATION_PURGE')).toBe(true);
+    });
+
+    it('detects expired non-essential stores beyond retentionDays and prunes stale chat turns without dropping active ones', () => {
+      const storage = globalThis.__mockPrivacyStorage;
+      const nowMs = Date.parse('2026-11-11T00:00:00.000Z');
+
+      updateConsentPreference('offline_cache', true, 'citizen_ttl');
+      updateConsentPreference('chat_session_memory', true, 'citizen_ttl');
+
+      // 45 days old (> 30 days TTL for offline_cache)
+      storage.set(
+        'civicbridge_offline_cache',
+        JSON.stringify({ services: { aadhaar: { cachedAt: '2026-09-27T00:00:00.000Z' } } })
+      );
+      storage.set('civicbridge_offline_last_sync', '2026-09-27T00:00:00.000Z');
+
+      // Mixed chat history: one 25-day-old turn (> 14 days TTL) + one 2-day-old turn (retained)
+      storage.set(
+        'civicbridge_chat_history',
+        JSON.stringify([
+          { id: 'old-msg', timestamp: '2026-10-17T00:00:00.000Z', text: 'stale' },
+          { id: 'fresh-msg', timestamp: '2026-11-09T00:00:00.000Z', text: 'recent' },
+        ])
+      );
+
+      const preview = getRetentionPolicyStatus(nowMs);
+      expect(preview.actionRequired).toBe(true);
+      expect(preview.totalExpiredKeys).toBe(3);
+
+      const enforced = enforceRetentionPolicies({ nowMs, actorId: 'system_cron' });
+      expect(enforced.actionTaken).toBe(true);
+      expect(enforced.purgedKeys).toEqual(
+        expect.arrayContaining(['civicbridge_offline_cache', 'civicbridge_offline_last_sync'])
+      );
+      expect(enforced.prunedRecordsCount).toBe(1);
+
+      const remainingChat = JSON.parse(storage.get('civicbridge_chat_history'));
+      expect(remainingChat).toHaveLength(1);
+      expect(remainingChat[0].id).toBe('fresh-msg');
+      expect(getRetentionPolicyStatus(nowMs).actionRequired).toBe(false);
+    });
+
+    it('seals exported data dossiers with a canonical SHA-256 digest and detects audit log tampering', () => {
+      const storage = globalThis.__mockPrivacyStorage;
+      storage.set('civicbridge_saved_rich', JSON.stringify([{ serviceId: 'passport' }]));
+
+      const exported = exportUserData('citizen_verify');
+      expect(exported.exportMetadata.hashAlgorithm).toBe('SHA-256');
+      expect(verifyExportedDataIntegrity(exported).valid).toBe(true);
+
+      const alteredExport = {
+        ...exported,
+        savedServices: [{ serviceId: 'tampered' }],
+      };
+      expect(verifyExportedDataIntegrity(alteredExport).valid).toBe(false);
+
+      // Tamper stored audit log entry in storage
+      const logs = getPrivacyAuditLogs();
+      logs[0].metadata = { totalCategories: 999 };
+      storage.set('civicbridge_privacy_audit_log', JSON.stringify(logs));
+
+      const tamperReport = verifyStoredAuditLogIntegrity();
+      expect(tamperReport.valid).toBe(false);
+      expect(tamperReport.status).toBe('TAMPERED');
     });
   });
 });
