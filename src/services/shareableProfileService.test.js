@@ -37,6 +37,8 @@ describe('shareableProfileService (#455)', () => {
     // Sensitive fields that MUST NEVER leak
     aadhaarNumber: '1234-5678-9012',
     privateNotes: 'Confidential case history',
+    accessibilityPreferences: ['step_free_access', 'sign_language_support'],
+    requestedAccommodations: ['large print'],
   };
 
   it('generates a hard-to-guess token and stores privacy snapshot', () => {
@@ -69,6 +71,10 @@ describe('shareableProfileService (#455)', () => {
     // Verify sensitive fields are not in the response
     expect(res.profile.aadhaarNumber).toBeUndefined();
     expect(res.profile.privateNotes).toBeUndefined();
+    expect(res.profile.accessibilityPreferences).toBeUndefined();
+    expect(res.profile.requestedAccommodations).toBeUndefined();
+    expect(JSON.stringify(res.profile)).not.toContain('sign_language_support');
+    expect(JSON.stringify(res.profile)).not.toContain('large print');
   });
 
   it('hides fields when visibility is toggled off', () => {

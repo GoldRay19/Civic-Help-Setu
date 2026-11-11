@@ -40,7 +40,6 @@ export const CLOUD_STORES = [
   { key: 'civicbridge_checklists', slug: 'checklists', collection: 'checklists', kind: 'document' },
   { key: 'civicbridge_checklist', slug: 'checklist-items', collection: 'checklists', kind: 'list' },
   { key: 'civicbridge_form_drafts', slug: 'form-drafts', collection: 'drafts', kind: 'list' },
-  { key: 'civic_accessibility_visit_plans', slug: 'visit-plans', collection: 'drafts', kind: 'document' },
   { key: 'civic_grievance_evidence_drafts', slug: 'evidence-drafts', collection: 'drafts', kind: 'list' },
   { key: 'civic_life_event_journeys', slug: 'life-event-journeys', collection: 'drafts', kind: 'document' },
   { key: 'civicbridge_journey_handoffs_v1', slug: 'journey-handoffs', collection: 'drafts', kind: 'list' },
@@ -64,6 +63,7 @@ export const DEVICE_ONLY_STORES = [
   { key: 'civicbridge_barrier_reports', reason: 'Sent as a submission to barrierReports, not kept as a personal record.' },
   { key: 'civicbridge_bottleneck_feedback_v1', reason: 'Sent as a submission to bottleneckFeedback, not kept as a personal record.' },
   { key: 'civicbridge_office_accessibility_audits', reason: 'Crowdsourced office accessibility ratings are community data kept on device.' },
+  { key: 'civic_accessibility_visit_plans', reason: 'Private visit preferences stay on this device and are never cloud-synced.' },
 ];
 
 const byKey = new Map(CLOUD_STORES.map((store) => [store.key, store]));

@@ -12,6 +12,17 @@ import {
   getOfficeAccessibilityAudits,
 } from './accessibilityMapService';
 
+const verifiedAttributeEvidence = Object.fromEntries(
+  Object.values(ACCESSIBILITY_FACILITIES).map((key) => [
+    key,
+    {
+      sourceName: `Official accessibility record for ${key}`,
+      sourceUrl: `https://delhi.gov.in/accessibility/${key}`,
+      verificationDate: '2026-03-01',
+    },
+  ])
+);
+
 describe('Civic Service Accessibility and Language Coverage Map Service (#146)', () => {
   const mockOfficeWithVerifiedData = {
     id: 'off-1',
@@ -42,6 +53,7 @@ describe('Civic Service Accessibility and Language Coverage Map Service (#146)',
       reviewDate: '2026-03-01',
       sourceUrl: 'https://delhi.gov.in/accessibility',
       verificationNotes: 'Ground floor inspected and verified by audit committee.',
+      accessibilityAttributes: verifiedAttributeEvidence,
     },
   };
 
@@ -76,6 +88,9 @@ describe('Civic Service Accessibility and Language Coverage Map Service (#146)',
       supportedLanguages: ['Kannada', 'English', 'Tamil', 'Telugu'],
       helpdeskLanguages: ['Kannada', 'English'],
     },
+    auditMetadata: {
+      accessibilityAttributes: verifiedAttributeEvidence,
+    },
   };
 
   describe('Attribute normalization and "Unknown" state preservation', () => {
@@ -108,13 +123,28 @@ describe('Civic Service Accessibility and Language Coverage Map Service (#146)',
       expect(normalized.accessibility.accessibleRestroom).toBeNull();
       expect(normalized.accessibility.assistiveListening).toBeNull();
 
-      // Language defaults to safe fallback
-      expect(normalized.languageCoverage.supportedLanguages).toContain('English');
-      expect(normalized.languageCoverage.supportedLanguages).toContain('Hindi');
+      expect(normalized.languageCoverage.supportedLanguages).toEqual([]);
 
-      // Audit metadata has fallback
-      expect(normalized.auditMetadata.verifiedBy).toBe('District Facilitation Audit');
+      expect(normalized.auditMetadata.verifiedBy).toBeNull();
       expect(normalized.auditMetadata.reviewDate).toBeNull();
+    });
+
+    it('does not infer verified features from broad labels or office-wide sources', () => {
+      const normalized = normalizeAccessibilityRecord({
+        features: ['wheelchair_accessible', 'parking_available'],
+        accessibility: { wheelchairRamp: true, accessibleParking: true },
+        auditMetadata: {
+          verifiedBy: 'Office staff',
+          reviewDate: '2026-03-01',
+          sourceUrl: 'https://office.gov.in',
+        },
+      });
+
+      expect(normalized.accessibility.wheelchairRamp).toBeNull();
+      expect(normalized.accessibility.accessibleParking).toBeNull();
+      expect(normalized.accessibilityEvidence.wheelchairRamp).toBeNull();
+      expect(normalized.auditMetadata.verifiedBy).toBeNull();
+      expect(normalized.auditMetadata.sourceUrl).toBe('');
     });
 
     it('preserves verified audit metadata when provided', () => {
@@ -198,8 +228,8 @@ describe('Civic Service Accessibility and Language Coverage Map Service (#146)',
         offices,
         requiredLanguages: ['Hindi'],
       });
-      // off-1 has Hindi, off-2 has fallback Hindi
-      expect(hindiResults.map((o) => o.id)).toEqual(['off-1', 'off-2']);
+      // Languages are not assumed when the office has no recorded coverage.
+      expect(hindiResults.map((o) => o.id)).toEqual(['off-1']);
     });
 
     it('searches by locality text query without needing GPS coordinates', () => {
@@ -261,14 +291,14 @@ describe('Community Accessibility Audits & Score Calculation', () => {
     },
   };
 
-  it('calculates score based on facility weights', () => {
+  it('returns an unknown score when attributes lack source-backed verification', () => {
     const { score, level, color } = calculateOfficeAccessibilityScore(sampleOffice);
-    expect(score).toBeGreaterThanOrEqual(70);
-    expect(level).toBe('HIGH');
-    expect(color).toBe('#10b981');
+    expect(score).toBeNull();
+    expect(level).toBe('UNKNOWN');
+    expect(color).toBe('#64748b');
   });
 
-  it('records citizen ground-truth audits and updates office score', () => {
+  it('keeps citizen reports separate from verified office attributes', () => {
     const saved = recordOfficeAccessibilityAudit('off-test-100', {
       facilities: {
         wheelchairRamp: false, // Broken ramp reported by citizen
@@ -283,9 +313,11 @@ describe('Community Accessibility Audits & Score Calculation', () => {
     expect(audits).toHaveLength(1);
     expect(audits[0].notes).toContain('under construction');
 
-    // Re-evaluating score reflects the latest citizen audit override
+    // Community feedback is recorded but cannot verify the office's attributes.
     const updatedScore = calculateOfficeAccessibilityScore(sampleOffice);
-    expect(updatedScore.score).toBeLessThan(70);
+    expect(updatedScore.score).toBeNull();
+    expect(updatedScore.level).toBe('UNKNOWN');
     expect(updatedScore.communityAuditsCount).toBe(1);
+    expect(updatedScore.badges.every((badge) => badge.status === 'unknown')).toBe(true);
   });
 });

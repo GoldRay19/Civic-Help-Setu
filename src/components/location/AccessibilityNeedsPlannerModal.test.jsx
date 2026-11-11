@@ -44,19 +44,27 @@ describe('AccessibilityNeedsPlannerModal (#144)', () => {
     expect(html).toContain('Not Verified');
   });
 
-  it('renders stale warning when office audit is older than 180 days', () => {
-    const html = renderModal({ initialOfficeId: 'delhi-rto-sarai-kale-khan' });
-
-    expect(html).toContain('Stale Audit Record Warning:');
-    expect(html).toContain('over 180 days ago');
-  });
-
-  it('renders personal visit confirmation checklist and contact links', () => {
+  it('shows unknown facility evidence and keeps preferences optional until consent', () => {
     const html = renderModal({ initialOfficeId: 'delhi-south-collectorate' });
 
     expect(html).toContain('Personal Pre-Visit Confirmation Checklist');
     expect(html).toContain('Call Office');
-    expect(html).toContain('Export Checklist');
+    expect(html).toContain('Print Request Note');
     expect(html).toContain('Save Visit Plan');
+    expect(html).toContain('Consent to save my selected visit preferences on this device');
+    expect(html).toContain('Verification date:');
+    expect(html).toContain('Not verified');
+    expect(html).toContain('disabled=""');
+    expect(html).not.toMatch(/<input[^>]+(?:name|id)="[^"]*(?:diagnosis|disability)[^"]*"/i);
+  });
+
+  it('does not put unselected requests in the printable note', () => {
+    const html = renderModal({ initialOfficeId: 'delhi-south-collectorate' });
+    const printNote = html.match(/<section class="accessibility-print-note"[^>]*><pre>(.*?)<\/pre><\/section>/)?.[1];
+
+    expect(printNote).toContain('Office visit request');
+    expect(printNote).toContain('Office:');
+    expect(printNote).not.toContain('Step-Free Entrance');
+    expect(printNote).not.toContain('Verified Available');
   });
 });
