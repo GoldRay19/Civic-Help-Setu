@@ -1,14 +1,13 @@
-import React from 'react';
 import {
   CheckCircle2,
   XCircle,
   HelpCircle,
-  Globe2,
   Calendar,
   ShieldCheck,
   Languages,
   Accessibility as AccessibilityIcon,
   Filter,
+  ExternalLink,
 } from 'lucide-react';
 import {
   ACCESSIBILITY_FACILITIES,
@@ -96,10 +95,10 @@ export const FacilityStatusBadge = ({ facilityKey, value }) => {
         border: '1px dashed rgba(245, 158, 11, 0.4)',
       }}
       title={`${label}: Audit Pending / Status Unknown`}
-      aria-label={`${label}: Status Unknown (Needs Audit)`}
+      aria-label={`${label}: Not verified`}
     >
       <HelpCircle size={13} aria-hidden="true" />
-      <span>{label} (Unknown)</span>
+      <span>{label} (Not verified)</span>
     </span>
   );
 };
@@ -160,13 +159,32 @@ export const OfficeAccessibilityDetails = ({ office }) => {
           marginBottom: '0.75rem',
         }}
       >
-        {Object.entries(ACCESSIBILITY_FACILITIES).map(([name, key]) => (
-          <FacilityStatusBadge
-            key={key}
-            facilityKey={key}
-            value={record.accessibility[key]}
-          />
-        ))}
+        {Object.entries(ACCESSIBILITY_FACILITIES).map(([, key]) => {
+          const evidence = record.accessibilityEvidence[key];
+          return (
+            <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <FacilityStatusBadge facilityKey={key} value={record.accessibility[key]} />
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary, #94a3b8)' }}>
+                Source:{' '}
+                {evidence ? (
+                  <a
+                    href={evidence.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--accent-main, #38bdf8)' }}
+                  >
+                    {evidence.sourceName}
+                    <ExternalLink size={10} aria-hidden="true" />
+                  </a>
+                ) : (
+                  'Not verified'
+                )}
+                {' · Verification date: '}
+                {evidence?.verificationDate || 'Not verified'}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Language Coverage */}
@@ -184,7 +202,7 @@ export const OfficeAccessibilityDetails = ({ office }) => {
           <Languages size={14} color="var(--accent-main, #38bdf8)" aria-hidden="true" />
           <span style={{ fontWeight: 600 }}>Languages Supported:</span>
           <span style={{ color: 'var(--text-secondary, #cbd5e1)' }}>
-            {(record.languageCoverage.supportedLanguages || []).join(', ') || 'English, Hindi'}
+            {(record.languageCoverage.supportedLanguages || []).join(', ') || 'Not verified'}
           </span>
         </div>
         {record.languageCoverage.helpdeskLanguages?.length > 0 && (
@@ -268,7 +286,7 @@ export const AccessibilityFilterBar = ({
           Mandatory Physical & Digital Access Facilities (Verified Only):
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-          {Object.entries(ACCESSIBILITY_FACILITIES).map(([name, key]) => {
+          {Object.entries(ACCESSIBILITY_FACILITIES).map(([, key]) => {
             const isSelected = selectedFacilities.includes(key);
             const label = FACILITY_LABELS[key];
             return (

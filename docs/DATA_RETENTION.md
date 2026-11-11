@@ -52,7 +52,7 @@ Retention for all of these: until deleted by the person (no automatic expiry).
 | `civicbridge_checklists` | `checklistStorage.js` | Which checklist items are ticked, per checklist or application id | Drafts and in-progress work |
 | `civicbridge_preparation_plans_v1` | `applicationPreparationPlanService.js` | Saved application preparation plan and customized checklist progress | Drafts and in-progress work |
 | `civic_journey_progress_<journeyId>` (one per journey) | `journeyDependencyEngine.js` | Completed tasks of a journey plan | Drafts and in-progress work |
-| `civic_accessibility_visit_plans` | `accessibilityPlannerService.js` | Saved citizen accessibility needs, accommodations, and office pre-visit confirmation checklists | Drafts and in-progress work |
+| `civic_accessibility_visit_plans` | `accessibilityPlannerService.js` | Optional visit preferences saved only after explicit consent; kept on this device, not cloud-synced or used in analytics | Drafts and in-progress work |
 | `civic_grievance_evidence_drafts` | `grievanceEvidenceService.js` | Private user-controlled grievance preparation drafts and timelines | Drafts and in-progress work |
 | `civic_grievance_drafts_v1` | `civicGrievanceDraftingService.js` | User-controlled formal civic grievance drafts and facts | Drafts and in-progress work |
 | `civic_life_event_journeys` | `lifeEventNavigatorService.js` | Saved life-event roadmap progress, hidden tasks and regional selections | Drafts and in-progress work |
