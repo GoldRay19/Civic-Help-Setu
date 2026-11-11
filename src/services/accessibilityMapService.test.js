@@ -11,6 +11,7 @@ import {
   recordOfficeAccessibilityAudit,
   getOfficeAccessibilityAudits,
 } from './accessibilityMapService';
+import { CIVIC_OFFICES } from '../data/locationOffices.js';
 
 const verifiedAttributeEvidence = Object.fromEntries(
   Object.values(ACCESSIBILITY_FACILITIES).map((key) => [
@@ -147,6 +148,14 @@ describe('Civic Service Accessibility and Language Coverage Map Service (#146)',
       expect(normalized.auditMetadata.sourceUrl).toBe('');
     });
 
+    it('keeps office catalogue facilities unverified until each has its own source and date', () => {
+      for (const office of CIVIC_OFFICES) {
+        const normalized = normalizeAccessibilityRecord(office);
+        expect(Object.values(normalized.accessibility).every((status) => status === null)).toBe(true);
+        expect(Object.values(normalized.accessibilityEvidence).every((evidence) => evidence === null)).toBe(true);
+      }
+    });
+
     it('preserves verified audit metadata when provided', () => {
       const normalized = normalizeAccessibilityRecord(mockOfficeWithVerifiedData);
       expect(normalized.auditMetadata.verifiedBy).toBe('State Accessibility Audit Directorate');
@@ -269,7 +278,7 @@ describe('Civic Service Accessibility and Language Coverage Map Service (#146)',
 
   describe('Facility Labels and Definitions', () => {
     it('defines labels for all core facility keys', () => {
-      for (const [key, val] of Object.entries(ACCESSIBILITY_FACILITIES)) {
+      for (const val of Object.values(ACCESSIBILITY_FACILITIES)) {
         expect(FACILITY_LABELS[val]).toBeDefined();
         expect(typeof FACILITY_LABELS[val]).toBe('string');
       }

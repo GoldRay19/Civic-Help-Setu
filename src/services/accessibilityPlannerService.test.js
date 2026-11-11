@@ -117,6 +117,15 @@ describe('accessibilityPlannerService (#144)', () => {
       expect(loaded.updatedAt).toBeDefined();
     });
 
+    it('removes legacy plans that were saved before explicit consent was required', () => {
+      mockStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify({
+        'delhi-south-collectorate': { neededFeatureIds: ['step_free_access'] },
+      }));
+
+      expect(loadPersonalVisitPlan('delhi-south-collectorate', mockStorage)).toBeNull();
+      expect(mockStorage.getItem(ACCESSIBILITY_STORAGE_KEY)).toBeNull();
+    });
+
     it('deletes only the selected office plan and removes the key when empty', () => {
       savePersonalVisitPlan('office-one', { neededFeatureIds: ['step_free_access'] }, mockStorage, true);
       savePersonalVisitPlan('office-two', { neededFeatureIds: ['accessible_formats'] }, mockStorage, true);

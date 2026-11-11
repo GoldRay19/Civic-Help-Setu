@@ -1,9 +1,7 @@
-import React from 'react';
 import {
   CheckCircle2,
   XCircle,
   HelpCircle,
-  Globe2,
   Calendar,
   ShieldCheck,
   Languages,
@@ -288,7 +286,7 @@ export const AccessibilityFilterBar = ({
           Mandatory Physical & Digital Access Facilities (Verified Only):
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-          {Object.entries(ACCESSIBILITY_FACILITIES).map(([name, key]) => {
+          {Object.entries(ACCESSIBILITY_FACILITIES).map(([, key]) => {
             const isSelected = selectedFacilities.includes(key);
             const label = FACILITY_LABELS[key];
             return (

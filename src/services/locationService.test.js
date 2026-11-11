@@ -5,6 +5,7 @@ import {
   filterCivicOffices,
   getCachedUserCoordinates,
 } from './locationService';
+import { normalizeAccessibilityRecord } from './accessibilityMapService';
 
 const makeOffice = (over = {}) => ({
   id: 'o1',
@@ -104,6 +105,30 @@ describe('filterCivicOffices with malformed records', () => {
   it('ignores non-finite user coordinates', () => {
     const [o] = filterCivicOffices({ offices: [makeOffice()], userCoords: { lat: NaN, lng: 77 } });
     expect(o.distanceKm).toBeNull();
+  });
+
+  it('does not treat a broad wheelchair feature tag as verified step-free access', () => {
+    const offices = [
+      makeOffice({ features: ['wheelchair_accessible'], accessibility: { wheelchairRamp: true } }),
+      makeOffice({
+        id: 'verified',
+        name: 'Verified Office',
+        accessibility: { wheelchairRamp: true },
+        auditMetadata: {
+          accessibilityAttributes: {
+            wheelchairRamp: {
+              sourceUrl: 'https://office.gov.in/accessibility/ramp',
+              sourceName: 'Office access details',
+              verificationDate: '2026-03-01',
+            },
+          },
+        },
+      }),
+    ];
+
+    expect(normalizeAccessibilityRecord(offices[1]).accessibility.wheelchairRamp).toBe(true);
+    const filtered = filterCivicOffices({ offices, onlyWheelchairAccessible: true });
+    expect(filtered.map((office) => office.id)).toEqual(['verified']);
   });
 });
 

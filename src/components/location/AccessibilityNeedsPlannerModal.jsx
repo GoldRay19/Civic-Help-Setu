@@ -1,12 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   X,
-  Compass,
-  CheckCircle2,
-  Clock,
   ExternalLink,
   ShieldCheck,
-  ShieldAlert,
   Save,
   Phone,
   Accessibility,
@@ -30,7 +26,7 @@ import { useToast } from '../../context/ToastContext.jsx';
 import { safeHttpUrl } from '../../utils/safeContent';
 import './AccessibilityNeedsPlannerModal.css';
 
-const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = null }) => {
+const AccessibilityNeedsPlannerModalContent = ({ isOpen, onClose, initialOfficeId = null }) => {
   const { toast } = useToast();
   const [selectedOfficeId, setSelectedOfficeId] = useState(
     initialOfficeId || CIVIC_OFFICES[0]?.id || 'delhi-south-collectorate'
@@ -40,23 +36,6 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
   const [confirmedQuestionIds, setConfirmedQuestionIds] = useState([]);
   const [consentGiven, setConsentGiven] = useState(false);
   const [hasSavedPlan, setHasSavedPlan] = useState(false);
-
-  // On open or initialOfficeId change
-  useEffect(() => {
-    if (initialOfficeId) {
-      setSelectedOfficeId(initialOfficeId);
-    }
-  }, [initialOfficeId]);
-
-  // Load saved plan for selected office
-  useEffect(() => {
-    if (!selectedOfficeId) return;
-    const saved = loadPersonalVisitPlan(selectedOfficeId);
-    setNeededFeatureIds(Array.isArray(saved?.neededFeatureIds) ? saved.neededFeatureIds : []);
-    setConfirmedQuestionIds(Array.isArray(saved?.confirmedQuestionIds) ? saved.confirmedQuestionIds : []);
-    setConsentGiven(Boolean(saved));
-    setHasSavedPlan(Boolean(saved));
-  }, [selectedOfficeId]);
 
   // Close on Escape key
   useEffect(() => {
@@ -103,6 +82,16 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
         ? current.filter((id) => id !== featureId)
         : [...current, featureId]
     );
+  };
+
+  const handleOfficeChange = (event) => {
+    const officeId = event.target.value;
+    const saved = loadPersonalVisitPlan(officeId);
+    setSelectedOfficeId(officeId);
+    setNeededFeatureIds(Array.isArray(saved?.neededFeatureIds) ? saved.neededFeatureIds : []);
+    setConfirmedQuestionIds(Array.isArray(saved?.confirmedQuestionIds) ? saved.confirmedQuestionIds : []);
+    setConsentGiven(Boolean(saved));
+    setHasSavedPlan(Boolean(saved));
   };
 
   const handleConsentChange = (event) => {
@@ -250,7 +239,7 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
               id="accessibility-office-select"
               className="input-field"
               value={selectedOfficeId}
-              onChange={(e) => setSelectedOfficeId(e.target.value)}
+              onChange={handleOfficeChange}
               style={{ width: '100%', padding: '0.65rem 0.85rem', fontSize: '0.9rem' }}
             >
               {CIVIC_OFFICES.map((office) => (
@@ -350,10 +339,8 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                 const isNeeded = neededFeatureIds.includes(feature.id);
                 const isVerifiedAvailable = feature.status === 'verified_available';
                 const isVerifiedUnavailable = feature.status === 'verified_unavailable';
-                const isNotVerified = feature.status === 'not_verified';
-
                 return (
-                  <label
+                  <div
                     key={feature.id}
                     style={{
                       width: '100%',
@@ -372,17 +359,17 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <label htmlFor={`accessibility-feature-${feature.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                         <input
+                          id={`accessibility-feature-${feature.id}`}
                           type="checkbox"
                           checked={isNeeded}
                           onChange={() => handleToggleNeed(feature.id)}
-                          aria-label={`Add ${feature.title} to the visit request`}
                         />
                         <span style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
                           {feature.title}
                         </span>
-                      </div>
+                      </label>
 
                       {/* Status Badge */}
                       <span
@@ -418,7 +405,6 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                           href={safeHttpUrl(feature.source.url)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={(event) => event.stopPropagation()}
                           style={{ color: 'var(--accent-main)' }}
                         >
                           {feature.source.name || feature.source.url}
@@ -429,7 +415,7 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                       {' · Verification date: '}
                       {feature.verificationDate || 'Not verified'}
                     </p>
-                  </label>
+                  </div>
                 );
               })}
             </div>
@@ -481,10 +467,13 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginTop: '1rem' }}>
                 {visitChecklist.questionsToConfirm.map((q) => (
-                  <div
+                  <button
+                    type="button"
+                    aria-pressed={q.confirmed}
                     key={q.featureId}
                     onClick={() => handleToggleQuestionConfirmed(q.featureId)}
                     style={{
+                      width: '100%',
                       padding: '0.75rem 0.9rem',
                       borderRadius: '0.6rem',
                       background: q.confirmed ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.02)',
@@ -493,6 +482,9 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '0.65rem',
+                      color: 'inherit',
+                      textAlign: 'left',
+                      font: 'inherit',
                     }}
                   >
                     <div style={{ marginTop: '2px' }}>
@@ -523,8 +515,8 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                       <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                         <strong>Question to ask: </strong>"{q.question}"
                       </p>
-                    </div>
                   </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -618,5 +610,12 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
     </div>
   );
 };
+
+const AccessibilityNeedsPlannerModal = (props) => (
+  <AccessibilityNeedsPlannerModalContent
+    key={props.initialOfficeId || 'default'}
+    {...props}
+  />
+);
 
 export default AccessibilityNeedsPlannerModal;

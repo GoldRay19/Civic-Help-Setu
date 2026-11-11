@@ -40,7 +40,6 @@ describe('AccessibilityNeedsPlannerModal (#144)', () => {
     expect(html).toContain('Public-Service Accessibility Needs Planner');
     expect(html).toContain('Select Public Service Office:');
     expect(html).toContain('Step-Free Entrance &amp; Ramp');
-    expect(html).toContain('Verified Available');
     expect(html).toContain('Not Verified');
   });
 
@@ -60,7 +59,7 @@ describe('AccessibilityNeedsPlannerModal (#144)', () => {
 
   it('does not put unselected requests in the printable note', () => {
     const html = renderModal({ initialOfficeId: 'delhi-south-collectorate' });
-    const printNote = html.match(/<section class="accessibility-print-note"[^>]*><pre>(.*?)<\/pre><\/section>/)?.[1];
+    const printNote = html.match(/<section class="accessibility-print-note"[^>]*><pre>([\s\S]*?)<\/pre><\/section>/)?.[1];
 
     expect(printNote).toContain('Office visit request');
     expect(printNote).toContain('Office:');

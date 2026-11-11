@@ -64,6 +64,9 @@ export const DEVICE_ONLY_STORES = [
   { key: 'civicbridge_bottleneck_feedback_v1', reason: 'Sent as a submission to bottleneckFeedback, not kept as a personal record.' },
   { key: 'civicbridge_office_accessibility_audits', reason: 'Crowdsourced office accessibility ratings are community data kept on device.' },
   { key: 'civic_accessibility_visit_plans', reason: 'Private visit preferences stay on this device and are never cloud-synced.' },
+  { key: 'civicbridge_newsletter_subscriptions', reason: 'Newsletter emails, consent, and delivery preferences are handled separately and stay on this device.' },
+  { key: 'civicbridge_sent_digests', reason: 'Newsletter delivery history is local bookkeeping and is never cloud-synced.' },
+  { key: 'civicbridge_newsletter_delivery_failures', reason: 'Newsletter delivery failure details are local bookkeeping and are never cloud-synced.' },
 ];
 
 const byKey = new Map(CLOUD_STORES.map((store) => [store.key, store]));
