@@ -50,4 +50,75 @@ describe('SharedProfileView Component (#455)', () => {
     expect(html).toContain('Shared Profile Link Revoked');
     expect(html).toContain('owner of this citizen profile has revoked public access');
   });
+
+  it('renders passcode prompt, lockout, view-limit, and tamper-detection states (#734)', () => {
+    vi.spyOn(service, 'getPublicSharedProfile').mockReturnValue({
+      status: 'PIN_REQUIRED',
+      remainingAttempts: 5,
+    });
+    const pinHtml = renderToStaticMarkup(
+      <MemoryRouter>
+        <SharedProfileView initialToken="pin-token" />
+      </MemoryRouter>
+    );
+    expect(pinHtml).toContain('Passcode Required to View Shared Profile');
+    expect(pinHtml).toContain('Enter share passcode');
+
+    vi.spyOn(service, 'getPublicSharedProfile').mockReturnValue({
+      status: 'LOCKED',
+      error: 'Too many incorrect passcode attempts.',
+    });
+    const lockedHtml = renderToStaticMarkup(
+      <MemoryRouter>
+        <SharedProfileView initialToken="locked-token" />
+      </MemoryRouter>
+    );
+    expect(lockedHtml).toContain('Shared Profile Access Temporarily Locked');
+
+    vi.spyOn(service, 'getPublicSharedProfile').mockReturnValue({
+      status: 'VIEW_LIMIT_REACHED',
+      error: 'View quota consumed.',
+    });
+    const limitHtml = renderToStaticMarkup(
+      <MemoryRouter>
+        <SharedProfileView initialToken="limit-token" />
+      </MemoryRouter>
+    );
+    expect(limitHtml).toContain('Maximum View Limit Reached');
+
+    vi.spyOn(service, 'getPublicSharedProfile').mockReturnValue({
+      status: 'TAMPERED',
+      error: 'SHA-256 seal mismatch.',
+    });
+    const tamperedHtml = renderToStaticMarkup(
+      <MemoryRouter>
+        <SharedProfileView initialToken="tamper-token" />
+      </MemoryRouter>
+    );
+    expect(tamperedHtml).toContain('Snapshot Integrity Verification Failed');
+  });
+
+  it('displays SHA-256 digest badge and single-use exhaustion notice on final active view (#734)', () => {
+    vi.spyOn(service, 'getPublicSharedProfile').mockReturnValue({
+      status: 'ACTIVE',
+      profile: {
+        fullName: 'Amina Begum',
+        savedServices: [],
+        applicationMilestones: [],
+      },
+      createdAt: Date.now(),
+      expiresAt: null,
+      viewsRemaining: 0,
+      consumedOnThisView: true,
+      integrityDigest: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+    });
+
+    const html = renderToStaticMarkup(
+      <MemoryRouter>
+        <SharedProfileView initialToken="active-sealed-token" />
+      </MemoryRouter>
+    );
+    expect(html).toContain('SHA-256: abcdef1234');
+    expect(html).toContain('Final view consumed');
+  });
 });

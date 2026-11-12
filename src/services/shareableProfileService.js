@@ -1,16 +1,16 @@
 /**
  * shareableProfileService.js
  *
- * Privacy-controlled shareable citizen profile service (#455).
+ * Privacy-controlled, integrity-sealed shareable citizen profile service (#455, #734).
  * Enables citizens to generate revocable, privacy-safe, read-only share links
- * with field-level visibility controls, expiry periods, and secure tokens.
- *
- * Security & Privacy:
- * - Opaque cryptographic/random tokens (never exposes raw user IDs in URL).
- * - Private identity documents, sensitive account credentials, and contact details
- *   are strictly stripped and never included in public views.
- * - Enforces server/client expiration checks and immediate revocation.
+ * with field-level visibility controls, expiry periods, CSPRNG tokens,
+ * recursive PII scrubbing, optional salted SHA-256 PIN gates with brute-force
+ * lockouts, configurable max-view / burn-after-read quotas, and canonical SHA-256
+ * snapshot integrity verification.
  */
+
+import { sha256Hex, canonicalStringify } from './privacyIntegrityService.js';
+import { minimizeForExternal } from '../utils/dataMinimization.js';
 
 export const SHARE_EXPIRY_OPTIONS = {
   HOURS_24: '24h',
@@ -19,10 +19,170 @@ export const SHARE_EXPIRY_OPTIONS = {
   NEVER: 'never',
 };
 
+export const SHARE_VIEW_PRESETS = {
+  UNLIMITED: null,
+  SINGLE_USE: 1,
+  FIVE_VIEWS: 5,
+  TEN_VIEWS: 10,
+};
+
+export const MAX_PIN_ATTEMPTS = 5;
+export const PIN_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+export const MAX_ACCESS_LOG_ENTRIES = 25;
+export const MIN_PASSCODE_LENGTH = 4;
+
 const STORAGE_KEY = 'civicbridge_shareable_citizen_profiles';
+const PASSCODE_DOMAIN = 'civicbridge:share-pin:v1';
 
 /**
- * Calculates Unix timestamp for expiry option
+ * Generates cryptographically strong random bytes using Web Crypto.
+ * Fails closed when no CSPRNG is available rather than falling back to Math.random().
+ */
+function getRandomBytes(byteLength) {
+  const cryptoObj = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined;
+  if (!cryptoObj || typeof cryptoObj.getRandomValues !== 'function') {
+    throw new Error('Cryptographically secure random generator is unavailable.');
+  }
+  const bytes = new Uint8Array(byteLength);
+  cryptoObj.getRandomValues(bytes);
+  return bytes;
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Constant-time string comparison for fixed-length SHA-256 hex digests.
+ */
+function constantTimeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) {
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+/**
+ * Scrubs free-text fields for accidental Aadhaar, PAN, phone, email, secret keys,
+ * and reference IDs before storage or public projection.
+ */
+function scrubText(value, fallback = '') {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+  return minimizeForExternal(trimmed);
+}
+
+function scrubSnapshot(rawProfile = {}) {
+  const savedServices = Array.isArray(rawProfile.savedServices)
+    ? rawProfile.savedServices.map((s) => ({
+        id: scrubText(String(s?.id ?? ''), ''),
+        title: scrubText(s?.title || s?.name, 'Civic Service'),
+        category: scrubText(s?.category || s?.department, ''),
+      }))
+    : [];
+
+  const applicationMilestones = Array.isArray(rawProfile.applications)
+    ? rawProfile.applications.map((a) => ({
+        serviceName: scrubText(a?.serviceName || a?.title, 'Civic Service'),
+        stage: scrubText(a?.stage || a?.status, 'In Progress'),
+        updatedAt: scrubText(a?.updatedAt || a?.date, '') || null,
+      }))
+    : [];
+
+  return {
+    fullName: scrubText(rawProfile.fullName || rawProfile.name, 'Citizen Applicant'),
+    state: scrubText(rawProfile.state || rawProfile.location, ''),
+    district: scrubText(rawProfile.district, ''),
+    category: scrubText(rawProfile.category || rawProfile.socialCategory, ''),
+    occupation: scrubText(rawProfile.occupation, ''),
+    savedServices,
+    applicationMilestones,
+    readinessScore:
+      typeof rawProfile.readinessScore === 'number' && Number.isFinite(rawProfile.readinessScore)
+        ? Math.min(100, Math.max(0, rawProfile.readinessScore))
+        : 85,
+  };
+}
+
+function computeSnapshotSeal({ token, userId, createdAt, profileSnapshot }) {
+  return sha256Hex(
+    canonicalStringify({
+      version: 1,
+      token,
+      userId,
+      createdAt,
+      profileSnapshot,
+    })
+  );
+}
+
+/**
+ * Verifies canonical SHA-256 snapshot seal of a stored share record.
+ */
+export function verifyShareIntegrity(record) {
+  if (!record || typeof record !== 'object' || typeof record.snapshotSeal !== 'string') {
+    return { valid: false, reason: 'MISSING_SEAL' };
+  }
+  const expectedSeal = computeSnapshotSeal({
+    token: record.token,
+    userId: record.userId,
+    createdAt: record.createdAt,
+    profileSnapshot: record.profileSnapshot,
+  });
+  return {
+    valid: constantTimeEqual(record.snapshotSeal, expectedSeal),
+    reason: constantTimeEqual(record.snapshotSeal, expectedSeal) ? null : 'SEAL_MISMATCH',
+    expectedSeal,
+  };
+}
+
+function hashPasscode(pin, salt) {
+  return sha256Hex(`${PASSCODE_DOMAIN}:${salt}:${pin}`);
+}
+
+function normalizePasscode(rawPin) {
+  if (rawPin === undefined || rawPin === null) return null;
+  const trimmed = String(rawPin).trim();
+  if (!trimmed) return null;
+  if (trimmed.length < MIN_PASSCODE_LENGTH) {
+    throw new Error(`Passcode must be at least ${MIN_PASSCODE_LENGTH} characters long.`);
+  }
+  return trimmed;
+}
+
+function normalizeMaxViews(options = {}) {
+  if (options.burnAfterRead === true) return 1;
+  if (options.maxViews === undefined || options.maxViews === null || options.maxViews === '') {
+    return null;
+  }
+  const parsed = Number(options.maxViews);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error('maxViews must be a positive integer.');
+  }
+  return parsed;
+}
+
+function appendAccessLog(record, outcome, details = {}) {
+  const existing = Array.isArray(record.accessLog) ? record.accessLog : [];
+  const nextEntry = {
+    outcome,
+    timestamp: Date.now(),
+    ...details,
+  };
+  record.accessLog = [...existing, nextEntry].slice(-MAX_ACCESS_LOG_ENTRIES);
+}
+
+/**
+ * Calculates Unix timestamp for expiry option.
  */
 export function calculateExpiryTime(option = SHARE_EXPIRY_OPTIONS.DAYS_7) {
   const now = Date.now();
@@ -40,38 +200,26 @@ export function calculateExpiryTime(option = SHARE_EXPIRY_OPTIONS.DAYS_7) {
 }
 
 /**
- * Generates an unguessable 24-character hex token
+ * Generates a cryptographically secure 32-character hex token (128-bit entropy).
  */
 export function generateShareToken() {
-  const bytes = new Uint8Array(12);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(bytes);
-  } else {
-    for (let i = 0; i < bytes.length; i++) {
-      bytes[i] = Math.floor(Math.random() * 256);
-    }
-  }
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  return bytesToHex(getRandomBytes(16));
 }
 
 /**
- * Loads all shareable profile entries from storage
+ * Loads all shareable profile entries from storage.
  */
 export function getAllSharedProfiles() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
-    return JSON.parse(raw) || {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
   }
 }
 
-/**
- * Saves all shareable profile entries to storage
- */
 function saveAllSharedProfiles(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -82,15 +230,18 @@ function saveAllSharedProfiles(data) {
 }
 
 /**
- * Creates or updates a shareable profile configuration for a user.
+ * Creates a privacy-controlled, PII-scrubbed, SHA-256 sealed shareable profile record.
  *
  * @param {string} userId - ID or username of the owner
  * @param {Object} rawProfile - Full citizen profile
- * @param {Object} options - Visibility options and expiry
+ * @param {Object} options - Visibility, expiry, accessPin/passcode, maxViews, burnAfterRead
  * @returns {Object} Created share record
  */
 export function createShareableProfile(userId, rawProfile = {}, options = {}) {
   if (!userId) throw new Error('User ID is required to create a shareable profile');
+
+  const pin = normalizePasscode(options.accessPin ?? options.passcode);
+  const maxViews = normalizeMaxViews(options);
 
   const all = getAllSharedProfiles();
   const token = generateShareToken();
@@ -98,7 +249,6 @@ export function createShareableProfile(userId, rawProfile = {}, options = {}) {
   const expiryOption = options.expiry || SHARE_EXPIRY_OPTIONS.DAYS_7;
   const expiresAt = calculateExpiryTime(expiryOption);
 
-  // Field-level visibility settings
   const visibility = {
     showFullName: options.visibility?.showFullName ?? true,
     showLocation: options.visibility?.showLocation ?? true,
@@ -109,6 +259,21 @@ export function createShareableProfile(userId, rawProfile = {}, options = {}) {
     showReadinessScore: options.visibility?.showReadinessScore ?? true,
   };
 
+  const profileSnapshot = scrubSnapshot(rawProfile);
+  const snapshotSeal = computeSnapshotSeal({
+    token,
+    userId,
+    createdAt,
+    profileSnapshot,
+  });
+
+  let passcodeSalt = null;
+  let passcodeHash = null;
+  if (pin) {
+    passcodeSalt = bytesToHex(getRandomBytes(16));
+    passcodeHash = hashPasscode(pin, passcodeSalt);
+  }
+
   const shareRecord = {
     token,
     userId,
@@ -117,20 +282,16 @@ export function createShareableProfile(userId, rawProfile = {}, options = {}) {
     expiryOption,
     revoked: false,
     visibility,
-    // Store only sanitized snapshot
-    profileSnapshot: {
-      fullName: rawProfile.fullName || rawProfile.name || 'Citizen Applicant',
-      state: rawProfile.state || rawProfile.location || '',
-      district: rawProfile.district || '',
-      category: rawProfile.category || rawProfile.socialCategory || '',
-      occupation: rawProfile.occupation || '',
-      savedServices: Array.isArray(rawProfile.savedServices) ? rawProfile.savedServices : [],
-      applicationMilestones: Array.isArray(rawProfile.applications) ? rawProfile.applications : [],
-      readinessScore: typeof rawProfile.readinessScore === 'number' ? rawProfile.readinessScore : 85,
-    },
-    // Explicit private notes or data that are NEVER published
+    profileSnapshot,
+    snapshotSeal,
+    passcodeSalt,
+    passcodeHash,
+    failedAttempts: 0,
+    lockedUntil: null,
+    maxViews,
     accessCount: 0,
     lastAccessedAt: null,
+    accessLog: [],
   };
 
   all[token] = shareRecord;
@@ -141,40 +302,141 @@ export function createShareableProfile(userId, rawProfile = {}, options = {}) {
 
 /**
  * Retrieves the public, privacy-filtered view of a shared profile by token.
- * Validates expiration, revocation, and strips unselected/private fields.
+ * Validates existence, revocation, expiry, view quota, canonical SHA-256 seal,
+ * and optional salted passcode with brute-force lockout protection.
  *
  * @param {string} token
- * @returns {{ status: 'ACTIVE'|'EXPIRED'|'REVOKED'|'NOT_FOUND', profile?: Object }}
+ * @param {Object} [options]
+ * @param {string} [options.pin]
+ * @param {string} [options.passcode]
+ * @returns {Object} Result status and sanitized public profile when ACTIVE
  */
-export function getPublicSharedProfile(token) {
+export function getPublicSharedProfile(token, options = {}) {
   if (!token || typeof token !== 'string') {
     return { status: 'NOT_FOUND', error: 'Invalid share token' };
   }
 
   const all = getAllSharedProfiles();
-  const record = all[token];
+  if (!Object.prototype.hasOwnProperty.call(all, token)) {
+    return { status: 'NOT_FOUND', error: 'Share link does not exist' };
+  }
 
-  if (!record) {
+  const record = all[token];
+  if (!record || typeof record !== 'object') {
     return { status: 'NOT_FOUND', error: 'Share link does not exist' };
   }
 
   if (record.revoked) {
+    appendAccessLog(record, 'REVOKED_BLOCKED');
+    saveAllSharedProfiles(all);
     return { status: 'REVOKED', error: 'This profile share link has been revoked by the owner' };
   }
 
-  if (record.expiresAt && Date.now() > record.expiresAt) {
+  const now = Date.now();
+  if (record.expiresAt && now > record.expiresAt) {
+    appendAccessLog(record, 'EXPIRED_BLOCKED');
+    saveAllSharedProfiles(all);
     return { status: 'EXPIRED', error: 'This profile share link has expired' };
   }
 
-  // Increment access audit
+  if (typeof record.maxViews === 'number' && (record.accessCount || 0) >= record.maxViews) {
+    appendAccessLog(record, 'VIEW_LIMIT_BLOCKED');
+    saveAllSharedProfiles(all);
+    return {
+      status: 'VIEW_LIMIT_REACHED',
+      maxViews: record.maxViews,
+      accessCount: record.accessCount,
+      viewsRemaining: 0,
+      error: 'This shared profile link has reached its maximum allowed view limit.',
+    };
+  }
+
+  const integrity = verifyShareIntegrity(record);
+  if (!integrity.valid) {
+    appendAccessLog(record, 'TAMPER_DETECTED', { reason: integrity.reason });
+    saveAllSharedProfiles(all);
+    return {
+      status: 'TAMPERED',
+      error: 'Cryptographic integrity check failed for this shared profile snapshot.',
+    };
+  }
+
+  // Optional salted SHA-256 passcode gate + brute-force lockout
+  if (record.passcodeHash && record.passcodeSalt) {
+    if (record.lockedUntil && now < record.lockedUntil) {
+      appendAccessLog(record, 'LOCKED_BLOCKED');
+      saveAllSharedProfiles(all);
+      return {
+        status: 'LOCKED',
+        lockedUntil: record.lockedUntil,
+        retryAfterMs: record.lockedUntil - now,
+        error: 'Too many incorrect passcode attempts. Access is temporarily locked.',
+      };
+    }
+
+    if (record.lockedUntil && now >= record.lockedUntil) {
+      record.lockedUntil = null;
+      record.failedAttempts = 0;
+    }
+
+    const suppliedPin = String(options?.pin ?? options?.passcode ?? '').trim();
+    if (!suppliedPin) {
+      saveAllSharedProfiles(all);
+      return {
+        status: 'PIN_REQUIRED',
+        remainingAttempts: Math.max(0, MAX_PIN_ATTEMPTS - (record.failedAttempts || 0)),
+        expiresAt: record.expiresAt,
+        createdAt: record.createdAt,
+        error: 'A viewer passcode is required to unlock this shared profile.',
+      };
+    }
+
+    const candidateHash = hashPasscode(suppliedPin, record.passcodeSalt);
+    if (!constantTimeEqual(candidateHash, record.passcodeHash)) {
+      record.failedAttempts = (record.failedAttempts || 0) + 1;
+
+      if (record.failedAttempts >= MAX_PIN_ATTEMPTS) {
+        record.lockedUntil = now + PIN_LOCKOUT_MS;
+        appendAccessLog(record, 'LOCKED', { failedAttempts: record.failedAttempts });
+        saveAllSharedProfiles(all);
+        return {
+          status: 'LOCKED',
+          lockedUntil: record.lockedUntil,
+          retryAfterMs: PIN_LOCKOUT_MS,
+          error: 'Too many incorrect passcode attempts. Access is temporarily locked.',
+        };
+      }
+
+      const remainingAttempts = MAX_PIN_ATTEMPTS - record.failedAttempts;
+      appendAccessLog(record, 'INVALID_PIN', { remainingAttempts });
+      saveAllSharedProfiles(all);
+      return {
+        status: 'INVALID_PIN',
+        remainingAttempts,
+        error: `Incorrect passcode. ${remainingAttempts} attempt(s) remaining before temporary lockout.`,
+      };
+    }
+
+    record.failedAttempts = 0;
+    record.lockedUntil = null;
+  }
+
+  // Authorized read: increment view counter & audit trail
   record.accessCount = (record.accessCount || 0) + 1;
-  record.lastAccessedAt = Date.now();
+  record.lastAccessedAt = now;
+  const viewsRemaining =
+    typeof record.maxViews === 'number' ? Math.max(0, record.maxViews - record.accessCount) : null;
+
+  appendAccessLog(record, 'GRANTED', { viewNumber: record.accessCount });
   all[token] = record;
   saveAllSharedProfiles(all);
 
-  // Strip and project fields strictly based on visibility settings
+  // Strip and project sanitized fields strictly based on visibility settings
   const vis = record.visibility || {};
-  const snap = record.profileSnapshot || {};
+  const snap = scrubSnapshot({
+    ...record.profileSnapshot,
+    applications: record.profileSnapshot?.applicationMilestones,
+  });
 
   const publicData = {
     fullName: vis.showFullName ? snap.fullName : 'Citizen Applicant',
@@ -183,20 +445,8 @@ export function getPublicSharedProfile(token) {
       : null,
     category: vis.showCategory ? snap.category : null,
     occupation: vis.showOccupation ? snap.occupation : null,
-    savedServices: vis.showSavedServices
-      ? (snap.savedServices || []).map((s) => ({
-          id: s.id,
-          title: s.title || s.name,
-          category: s.category || s.department,
-        }))
-      : [],
-    applicationMilestones: vis.showApplicationMilestones
-      ? (snap.applicationMilestones || []).map((a) => ({
-          serviceName: a.serviceName || a.title || 'Civic Service',
-          stage: a.stage || a.status || 'In Progress',
-          updatedAt: a.updatedAt || a.date || null,
-        }))
-      : [],
+    savedServices: vis.showSavedServices ? snap.savedServices : [],
+    applicationMilestones: vis.showApplicationMilestones ? snap.applicationMilestones : [],
     readinessScore: vis.showReadinessScore ? snap.readinessScore : null,
   };
 
@@ -206,17 +456,25 @@ export function getPublicSharedProfile(token) {
     expiresAt: record.expiresAt,
     createdAt: record.createdAt,
     readOnly: true,
+    maxViews: record.maxViews ?? null,
+    accessCount: record.accessCount,
+    viewsRemaining,
+    consumedOnThisView: viewsRemaining === 0,
+    pinProtected: Boolean(record.passcodeHash),
+    integrityVerified: true,
+    integrityDigest: record.snapshotSeal,
   };
 }
 
 /**
- * Revokes an existing share link
+ * Revokes an existing share link.
  */
 export function revokeSharedProfile(token) {
   const all = getAllSharedProfiles();
-  if (all[token]) {
+  if (Object.prototype.hasOwnProperty.call(all, token) && all[token]) {
     all[token].revoked = true;
     all[token].revokedAt = Date.now();
+    appendAccessLog(all[token], 'REVOKED_BY_OWNER');
     saveAllSharedProfiles(all);
     return true;
   }
@@ -224,11 +482,11 @@ export function revokeSharedProfile(token) {
 }
 
 /**
- * Updates field visibility on an active share link
+ * Updates field visibility on an active share link.
  */
 export function updateSharedProfileVisibility(token, newVisibility = {}) {
   const all = getAllSharedProfiles();
-  if (!all[token]) return null;
+  if (!Object.prototype.hasOwnProperty.call(all, token) || !all[token]) return null;
 
   all[token].visibility = {
     ...all[token].visibility,
@@ -239,17 +497,49 @@ export function updateSharedProfileVisibility(token, newVisibility = {}) {
 }
 
 /**
- * Finds the latest active share record for a given user
+ * Returns owner-facing security summary for a share record.
+ */
+export function getShareSecuritySummary(record) {
+  if (!record || typeof record !== 'object') {
+    return null;
+  }
+
+  const now = Date.now();
+  const locked = Boolean(record.lockedUntil && now < record.lockedUntil);
+  const viewsRemaining =
+    typeof record.maxViews === 'number'
+      ? Math.max(0, record.maxViews - (record.accessCount || 0))
+      : null;
+
+  return {
+    pinProtected: Boolean(record.passcodeHash),
+    maxViews: record.maxViews ?? null,
+    accessCount: record.accessCount || 0,
+    viewsRemaining,
+    locked,
+    lockedUntil: locked ? record.lockedUntil : null,
+    integrityVerified: verifyShareIntegrity(record).valid,
+    integrityFingerprint:
+      typeof record.snapshotSeal === 'string' ? record.snapshotSeal.slice(0, 12) : null,
+    accessLog: Array.isArray(record.accessLog) ? record.accessLog : [],
+  };
+}
+
+/**
+ * Finds the latest active (non-revoked, non-expired, quota-remaining) share record for a given user.
  */
 export function getActiveShareForUser(userId) {
   if (!userId) return null;
   const all = getAllSharedProfiles();
   const records = Object.values(all)
-    .filter((r) => r.userId === userId && !r.revoked)
+    .filter((r) => r && r.userId === userId && !r.revoked)
     .sort((a, b) => b.createdAt - a.createdAt);
 
+  const now = Date.now();
   for (const r of records) {
-    if (!r.expiresAt || Date.now() <= r.expiresAt) {
+    const withinExpiry = !r.expiresAt || now <= r.expiresAt;
+    const withinViews = typeof r.maxViews !== 'number' || (r.accessCount || 0) < r.maxViews;
+    if (withinExpiry && withinViews) {
       return r;
     }
   }

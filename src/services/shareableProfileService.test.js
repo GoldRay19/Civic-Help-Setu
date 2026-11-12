@@ -1,11 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   createShareableProfile,
   getPublicSharedProfile,
   revokeSharedProfile,
   updateSharedProfileVisibility,
   getActiveShareForUser,
+  getShareSecuritySummary,
+  verifyShareIntegrity,
+  generateShareToken,
   SHARE_EXPIRY_OPTIONS,
+  MAX_PIN_ATTEMPTS,
 } from './shareableProfileService';
 
 describe('shareableProfileService (#455)', () => {
@@ -23,6 +27,11 @@ describe('shareableProfileService (#455)', () => {
         Object.keys(store).forEach((k) => delete store[k]);
       }),
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   const mockProfile = {
@@ -134,5 +143,120 @@ describe('shareableProfileService (#455)', () => {
     const active = getActiveShareForUser('user-xyz');
     expect(active).not.toBeNull();
     expect(active.userId).toBe('user-xyz');
+  });
+
+  describe('Cryptographic Hardening, PIN Lockouts, Burn-After-Read & PII Scrubbing (#734)', () => {
+    it('fails closed in generateShareToken when CSPRNG is unavailable instead of using Math.random', () => {
+      vi.stubGlobal('crypto', undefined);
+      expect(() => generateShareToken()).toThrow(/Cryptographically secure random generator is unavailable/i);
+    });
+
+    it('rejects Object.prototype property names passed as tokens', () => {
+      expect(getPublicSharedProfile('toString').status).toBe('NOT_FOUND');
+      expect(getPublicSharedProfile('constructor').status).toBe('NOT_FOUND');
+      expect(getPublicSharedProfile('__proto__').status).toBe('NOT_FOUND');
+    });
+
+    it('scrubs Aadhaar, PAN, phone, email, and reference IDs inside shared free-text fields', () => {
+      const share = createShareableProfile('user-pii', {
+        fullName: 'Ravi Kumar (citizen@example.com)',
+        state: 'Karnataka',
+        district: 'Bengaluru',
+        savedServices: [
+          {
+            id: 'SRV-98234710',
+            title: 'Pension Aadhaar 1234 5678 9012 update',
+            category: 'PAN ABCDE1234F Support',
+          },
+        ],
+        applications: [
+          {
+            serviceName: 'Grievance GRV-2026-123456',
+            stage: 'Call +91 9876543210 for slot',
+          },
+        ],
+      });
+
+      const res = getPublicSharedProfile(share.token);
+      expect(res.status).toBe('ACTIVE');
+      const serialized = JSON.stringify(res.profile);
+      expect(serialized).not.toContain('citizen@example.com');
+      expect(serialized).not.toContain('1234 5678 9012');
+      expect(serialized).not.toContain('ABCDE1234F');
+      expect(serialized).not.toContain('9876543210');
+      expect(serialized).not.toContain('SRV-98234710');
+      expect(serialized).not.toContain('GRV-2026-123456');
+      expect(serialized).toContain('[REDACTED_EMAIL]');
+      expect(serialized).toContain('[REDACTED_AADHAAR]');
+      expect(serialized).toContain('[REDACTED_PAN]');
+      expect(serialized).toContain('[REDACTED_PHONE]');
+      expect(serialized).toContain('[REDACTED_REF]');
+    });
+
+    it('detects snapshot tampering using canonical SHA-256 verification', () => {
+      const share = createShareableProfile('user-seal', mockProfile);
+      expect(verifyShareIntegrity(share).valid).toBe(true);
+
+      const all = JSON.parse(localStorage.getItem('civicbridge_shareable_citizen_profiles'));
+      all[share.token].profileSnapshot.readinessScore = 100;
+      localStorage.setItem('civicbridge_shareable_citizen_profiles', JSON.stringify(all));
+
+      const tamperedRes = getPublicSharedProfile(share.token);
+      expect(tamperedRes.status).toBe('TAMPERED');
+      expect(tamperedRes.profile).toBeUndefined();
+    });
+
+    it('enforces salted SHA-256 passcode gating and brute-force lockout after invalid attempts', () => {
+      const share = createShareableProfile('user-pin', mockProfile, {
+        accessPin: '7492',
+      });
+      expect(share.passcodeHash).toBeTruthy();
+      expect(share.passcodeHash).not.toContain('7492');
+
+      const challenge = getPublicSharedProfile(share.token);
+      expect(challenge.status).toBe('PIN_REQUIRED');
+      expect(challenge.remainingAttempts).toBe(MAX_PIN_ATTEMPTS);
+
+      for (let i = 1; i < MAX_PIN_ATTEMPTS; i += 1) {
+        const wrong = getPublicSharedProfile(share.token, { pin: '0000' });
+        expect(wrong.status).toBe('INVALID_PIN');
+        expect(wrong.remainingAttempts).toBe(MAX_PIN_ATTEMPTS - i);
+      }
+
+      const locked = getPublicSharedProfile(share.token, { pin: '0000' });
+      expect(locked.status).toBe('LOCKED');
+      expect(locked.retryAfterMs).toBeGreaterThan(0);
+
+      // Even the correct PIN is blocked while locked out
+      const blockedCorrect = getPublicSharedProfile(share.token, { pin: '7492' });
+      expect(blockedCorrect.status).toBe('LOCKED');
+    });
+
+    it('unlocks with valid passcode and enforces single-use burn-after-read maxViews quotas', () => {
+      const share = createShareableProfile('user-burn', mockProfile, {
+        accessPin: '8123',
+        burnAfterRead: true,
+      });
+
+      const unlocked = getPublicSharedProfile(share.token, { pin: '8123' });
+      expect(unlocked.status).toBe('ACTIVE');
+      expect(unlocked.pinProtected).toBe(true);
+      expect(unlocked.integrityVerified).toBe(true);
+      expect(unlocked.viewsRemaining).toBe(0);
+      expect(unlocked.consumedOnThisView).toBe(true);
+
+      // Next read is blocked because single-use quota is exhausted
+      const secondRead = getPublicSharedProfile(share.token, { pin: '8123' });
+      expect(secondRead.status).toBe('VIEW_LIMIT_REACHED');
+
+      // Exhausted link is excluded from getActiveShareForUser
+      expect(getActiveShareForUser('user-burn')).toBeNull();
+
+      const stored = JSON.parse(localStorage.getItem('civicbridge_shareable_citizen_profiles'))[share.token];
+      const summary = getShareSecuritySummary(stored);
+      expect(summary.accessCount).toBe(1);
+      expect(summary.viewsRemaining).toBe(0);
+      expect(summary.accessLog.some((e) => e.outcome === 'GRANTED')).toBe(true);
+    });
   });
 });
