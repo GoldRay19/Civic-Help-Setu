@@ -102,6 +102,15 @@ test('users/{uid}/{collection}: collections that are not in the list are refused
   await assertFails(setDoc(doc(citizen('alice'), 'users/alice/roles/r1'), record()));
 });
 
+test('privacy export payloads and audit metadata are server-only', async () => {
+  for (const collectionName of ['privacyExports', 'privacyExportAudit']) {
+    const path = `${collectionName}/export-1`;
+    await assertFails(getDoc(doc(citizen('alice'), path)));
+    await assertFails(setDoc(doc(citizen('alice'), path), record()));
+    await assertFails(getDoc(doc(admin(), path)));
+  }
+});
+
 test('users/{uid}/{collection}: listing is limited to your own records', async () => {
   await seed('users/alice/saved/a', record({ updatedAt: Timestamp.now() }));
   await seed('users/bob/saved/b', record({ updatedAt: Timestamp.now() }));

@@ -1,22 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   Shield,
   Download,
   Trash2,
   Lock,
-  CheckCircle2,
-  AlertTriangle,
-  History,
   X,
-  FileText,
-  RefreshCw,
   Info,
 } from 'lucide-react';
 import {
   CONSENT_CATEGORIES,
   getConsentPreferences,
   updateConsentPreference,
-  exportUserData,
   purgeAllUserData,
   getPrivacyAuditLogs,
 } from '../../services/privacyConsentService.js';
@@ -25,10 +21,12 @@ import { useToast } from '../../context/ToastContext';
 /**
  * PrivacyConsentCenterModal Component (#80)
  * Comprehensive privacy dashboard for managing consent preferences,
- * viewing audit history, downloading complete data exports, and executing account purges.
+ * viewing audit history, navigating to secure exports, and executing account purges.
  */
 const PrivacyConsentCenterModal = ({ isOpen, onClose }) => {
   const { toast } = useToast?.() || {};
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [preferences, setPreferences] = useState(() => getConsentPreferences());
   const [auditLogs, setAuditLogs] = useState(() => getPrivacyAuditLogs());
@@ -36,19 +34,12 @@ const PrivacyConsentCenterModal = ({ isOpen, onClose }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmPurgeText, setConfirmPurgeText] = useState('');
 
-  useEffect(() => {
-    if (isOpen) {
-      setPreferences(getConsentPreferences());
-      setAuditLogs(getPrivacyAuditLogs());
-    }
-  }, [isOpen]);
-
   // Handle consent toggle
   const handleToggleConsent = (categoryId, currentValue, mandatory) => {
     if (mandatory) return;
 
     try {
-      updateConsentPreference(categoryId, !currentValue);
+      updateConsentPreference(categoryId, !currentValue, user?.id || 'anonymous');
       setPreferences(getConsentPreferences());
       setAuditLogs(getPrivacyAuditLogs());
       toast?.success?.(
@@ -56,30 +47,6 @@ const PrivacyConsentCenterModal = ({ isOpen, onClose }) => {
       );
     } catch (err) {
       toast?.error?.(err.message);
-    }
-  };
-
-  // Handle data export download
-  const handleExportData = () => {
-    try {
-      const data = exportUserData();
-      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-        JSON.stringify(data, null, 2)
-      )}`;
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute('href', jsonString);
-      downloadAnchor.setAttribute(
-        'download',
-        `civicbridge_user_data_export_${new Date().toISOString().slice(0, 10)}.json`
-      );
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-
-      setAuditLogs(getPrivacyAuditLogs());
-      toast?.success?.('Your personal data dossier has been exported successfully.');
-    } catch (err) {
-      toast?.error?.(`Export failed: ${err.message}`);
     }
   };
 
@@ -91,7 +58,7 @@ const PrivacyConsentCenterModal = ({ isOpen, onClose }) => {
     }
 
     try {
-      purgeAllUserData('citizen_user', { preserveAuditTrail: true });
+      purgeAllUserData(user?.id || 'anonymous', { preserveAuditTrail: true });
       setIsDeleting(false);
       setConfirmPurgeText('');
       setPreferences(getConsentPreferences());
@@ -361,15 +328,18 @@ const PrivacyConsentCenterModal = ({ isOpen, onClose }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <Download size={18} color="var(--accent-main, #38bdf8)" />
                   <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
-                    Download Complete Personal Data Dossier
+                    Create a Secure Personal Data Export
                   </h3>
                 </div>
                 <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: 'var(--text-secondary, #cbd5e1)', lineHeight: '1.5' }}>
-                  Export all your locally tracked civic applications, saved roadmaps, document metadata, and consent records in machine-readable JSON format. Sensitive identification numbers are automatically redacted for security.
+                  Preview account-owned categories in the Privacy Centre. Recent authentication is required; the secure download link is account-bound, short-lived and single-use.
                 </p>
                 <button
                   type="button"
-                  onClick={handleExportData}
+                  onClick={() => {
+                    onClose();
+                    navigate('/privacy#privacy-centre');
+                  }}
                   className="btn btn-primary"
                   style={{
                     display: 'inline-flex',
@@ -381,7 +351,7 @@ const PrivacyConsentCenterModal = ({ isOpen, onClose }) => {
                   }}
                 >
                   <Download size={15} />
-                  <span>Export JSON Dossier</span>
+                  <span>Open Privacy Centre</span>
                 </button>
               </div>
 

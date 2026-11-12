@@ -1,7 +1,7 @@
 /**
  * Privacy and Consent Management Service (#80)
  * Implements granular consent category management, authorization guards,
- * auditable security event logging (strictly without PII), complete data export,
+ * auditable security event logging (strictly without PII), secure export routing,
  * and cascading account deletion according to the India DPDP Act 2023 & GDPR standards.
  */
 import { logDiagnostic } from '../utils/diagnostics';
@@ -34,10 +34,9 @@ const redactVaultDocuments = (docs) => {
 
 /**
  * Every localStorage key where the app keeps the user's own data, with the file that writes it.
- * purgeAllUserData deletes all of them and exportUserData builds its sections from the same list,
- * so a service that starts writing a new key only has to be added here.
- * exportAs is the section name in the export (null: deleted on purge but not exported, e.g.
- * caches that only copy data exported elsewhere). `empty` is used when the key is missing or corrupt.
+ * purgeAllUserData deletes all of them, so a service that starts writing a new key only has to be
+ * added here. `exportAs` and `empty` are legacy registry annotations; secure exports use the
+ * account-owned allowlist in privacyExportService.js instead of exporting this global registry.
  * Keys that purge leaves alone on purpose are in RETAINED_STORAGE_KEYS.
  */
 export const USER_DATA_STORES = [
@@ -266,19 +265,6 @@ function getPrefixedUserDataKeys(storage) {
   return keys;
 }
 
-// Parses a stored JSON value. Missing, corrupt or wrong-shaped values give `empty` instead of throwing.
-function readStoredJson(storage, key, empty) {
-  const raw = storage.getItem(key);
-  if (raw === null || raw === undefined || raw === '') return empty;
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(empty) && !Array.isArray(parsed)) return empty;
-    return parsed;
-  } catch {
-    return empty;
-  }
-}
-
 /**
  * Loads current consent settings from persistent storage.
  * @returns {Record<string, boolean>}
@@ -323,7 +309,7 @@ export function isConsentGranted(categoryId) {
  * @param {string} actorId - User ID or 'anonymous'
  * @returns {boolean} True if successfully updated
  */
-export function updateConsentPreference(categoryId, granted, actorId = 'citizen_user') {
+export function updateConsentPreference(categoryId, granted, actorId = 'anonymous') {
   const category = CONSENT_CATEGORIES[categoryId];
   if (!category) {
     throw new Error(`Unknown consent category: "${categoryId}"`);
@@ -387,7 +373,7 @@ export function enforceAuthorization(actorUserId, resourceOwnerId) {
  * @param {Object} metadata - Non-sensitive metadata
  * @param {string} actorId - Acting user identifier
  */
-export function recordPrivacyAuditLog(action, metadata = {}, actorId = 'citizen_user') {
+export function recordPrivacyAuditLog(action, metadata = {}, actorId = 'anonymous') {
   const storage = getStorage();
 
   // Strip potential PII keys
@@ -441,44 +427,8 @@ export function getPrivacyAuditLogs() {
  * @param {string} userId - User identifier
  * @returns {Object} Complete data export package
  */
-export function exportUserData(userId = 'citizen_user') {
-  const storage = getStorage();
-
-  // Collect data across all modules from the shared USER_DATA_STORES list
-  const sections = {};
-  const includedKeys = [];
-  for (const store of USER_DATA_STORES) {
-    if (!store.exportAs) continue;
-    if (storage.getItem(store.key) !== null) includedKeys.push(store.key);
-    const value = readStoredJson(storage, store.key, store.empty);
-    sections[store.exportAs] = store.transform ? store.transform(value) : value;
-  }
-
-  const journeyProgress = {};
-  for (const key of getPrefixedUserDataKeys(storage)) {
-    includedKeys.push(key);
-    if (key.startsWith(JOURNEY_PROGRESS_PREFIX)) {
-      journeyProgress[key.slice(JOURNEY_PROGRESS_PREFIX.length)] = readStoredJson(storage, key, null);
-    }
-  }
-
-  const exportPayload = {
-    exportMetadata: {
-      platform: 'Civic-Help-Setu',
-      version: '1.0.0',
-      exportedAt: new Date().toISOString(),
-      userId,
-      format: 'application/json',
-      retentionPolicy: 'https://civicbridge.org/privacy',
-      includedStorageKeys: includedKeys,
-    },
-    consentPreferences: getConsentPreferences(),
-    ...sections,
-    journeyProgress,
-  };
-
-  recordPrivacyAuditLog('USER_DATA_EXPORTED', { totalCategories: Object.keys(sections).length + 1 }, userId);
-  return exportPayload;
+export function exportUserData() {
+  throw new Error('Direct browser exports are disabled. Use the authenticated Privacy Centre.');
 }
 
 /**

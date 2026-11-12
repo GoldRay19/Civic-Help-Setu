@@ -7,6 +7,7 @@
  */
 
 import { LIFE_EVENT_JOURNEYS, SUPPORTED_REGIONS } from '../data/lifeEventJourneysData.js';
+import { getCurrentActor } from './accessControl';
 
 export const LIFE_EVENT_STORAGE_KEY = 'civic_life_event_journeys';
 
@@ -255,10 +256,15 @@ export function saveUserJourney(
   if (!journeyId || !storage) return false;
   try {
     const all = getAllUserJourneys(storage);
+    const actorId = getCurrentActor()?.id || null;
+    const existing = all[journeyId];
+    const existingOwner = existing?.ownerUserId || existing?.userId || null;
+    if (existingOwner && existingOwner !== actorId) return false;
     all[journeyId] = {
       completedTaskIds: Array.isArray(stateData.completedTaskIds) ? stateData.completedTaskIds : [],
       hiddenTaskIds: Array.isArray(stateData.hiddenTaskIds) ? stateData.hiddenTaskIds : [],
       region: stateData.region || 'all',
+      ...(existingOwner ? { ownerUserId: existingOwner } : !existing && actorId ? { ownerUserId: actorId } : {}),
       updatedAt: new Date().toISOString(),
     };
     storage.setItem(LIFE_EVENT_STORAGE_KEY, JSON.stringify(all));
@@ -278,6 +284,9 @@ export function resetUserJourney(journeyId, storage = typeof localStorage !== 'u
   if (!journeyId || !storage) return false;
   try {
     const all = getAllUserJourneys(storage);
+    const actorId = getCurrentActor()?.id || null;
+    const existingOwner = all[journeyId]?.ownerUserId || all[journeyId]?.userId || null;
+    if (existingOwner && existingOwner !== actorId) return false;
     delete all[journeyId];
     storage.setItem(LIFE_EVENT_STORAGE_KEY, JSON.stringify(all));
     return true;

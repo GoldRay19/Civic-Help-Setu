@@ -18,12 +18,11 @@ import {
 import {
   CONSENT_CATEGORIES,
   getConsentPreferences,
-  exportUserData,
   getPrivacyAuditLogs,
 } from '../services/privacyConsentService.js';
 import PrivacyConsentCenterModal from '../components/privacy/PrivacyConsentCenterModal';
+import PrivacyExportCentre from '../components/privacy/PrivacyExportCentre';
 import ClearMyDataPanel from '../components/privacy/ClearMyDataPanel';
-import { useToast } from '../context/ToastContext';
 
 const POLICY_SECTIONS = [
   { id: 'data-minimization', title: '1. Principles of Data Minimization' },
@@ -34,7 +33,6 @@ const POLICY_SECTIONS = [
 ];
 
 const Privacy = () => {
-  const { toast } = useToast?.() || {};
   const [isCenterOpen, setIsCenterOpen] = useState(false);
   const [preferences, setPreferences] = useState(() => getConsentPreferences());
   const [logsCount, setLogsCount] = useState(() => getPrivacyAuditLogs().length);
@@ -44,28 +42,6 @@ const Privacy = () => {
     setPreferences(getConsentPreferences());
     setLogsCount(getPrivacyAuditLogs().length);
   }, [isCenterOpen]);
-
-  const handleQuickExport = () => {
-    try {
-      const data = exportUserData();
-      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-        JSON.stringify(data, null, 2)
-      )}`;
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute('href', jsonString);
-      downloadAnchor.setAttribute(
-        'download',
-        `civicbridge_user_data_export_${new Date().toISOString().slice(0, 10)}.json`
-      );
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-
-      toast?.success?.('Personal data exported successfully.');
-    } catch (err) {
-      toast?.error?.(`Export failed: ${err.message}`);
-    }
-  };
 
   const scrollToSection = (id) => {
     setActiveSection(id);
@@ -155,7 +131,7 @@ const Privacy = () => {
 
             <button
               type="button"
-              onClick={handleQuickExport}
+              onClick={() => document.getElementById('privacy-centre')?.scrollIntoView({ behavior: 'smooth' })}
               className="btn btn-secondary"
               style={{
                 display: 'inline-flex',
@@ -168,7 +144,7 @@ const Privacy = () => {
               }}
             >
               <Download size={16} />
-              <span>Export My Data (JSON)</span>
+              <span>Preview &amp; export my data</span>
             </button>
           </div>
         </div>
@@ -219,6 +195,8 @@ const Privacy = () => {
           })}
         </div>
       </section>
+
+      <PrivacyExportCentre />
 
       {/* Main Two-Column Layout: Table of Contents & Policy Content */}
       <div

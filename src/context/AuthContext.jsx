@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useMemo, useState, useEffect, useCallback } from 'react';
-import { useUser, useClerk } from '@clerk/clerk-react';
+import { useUser, useClerk, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { resolveRole } from '../services/roleService';
 import { setCurrentActor } from '../services/accessControl';
 
@@ -12,6 +12,7 @@ const DEMO_STORAGE_KEY = 'civicbridge_demo_user';
  */
 const ClerkAuthProvider = ({ children }) => {
   const { user: clerkUser, isLoaded, isSignedIn } = useUser();
+  const { getToken } = useClerkAuth();
   const clerk = useClerk();
 
   const activeUser = useMemo(() => {
@@ -65,6 +66,7 @@ const ClerkAuthProvider = ({ children }) => {
         isDemoMode: false,
         isClerkLoaded: isLoaded,
         clerk,
+        getSessionToken: getToken,
       }}
     >
       {children}
@@ -130,6 +132,7 @@ const LocalFallbackAuthProvider = ({ children }) => {
         isDemoMode: true,
         isClerkLoaded: true,
         clerk: null,
+        getSessionToken: null,
       }}
     >
       {children}

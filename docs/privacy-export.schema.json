@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Civic Help Setu Personal Data Export",
+  "description": "Version 1.0.0 JSON export of account-owned profile and civic workflow data. Secrets, tokens, vault passphrases, document numbers, and vault binaries are not represented.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["exportVersion", "generatedAt", "user", "meta", "data"],
+  "properties": {
+    "exportVersion": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Semantic version of the export document schema."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC time at which the server assembled the export."
+    },
+    "user": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Authenticated Clerk account identifier; assigned from the verified session, never from request data."
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "categories", "recordCount", "vaultMetadataIncluded", "security"],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "const": "Civic Help Setu",
+          "description": "Product that generated the export."
+        },
+        "categories": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["profile", "saved_services", "journey_metadata", "checklist_progress", "consent_history"]
+          },
+          "description": "Selected account data categories; vault metadata requires separate consent and authorization."
+        },
+        "recordCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of exported category records, including the profile as one record when present."
+        },
+        "vaultMetadataIncluded": {
+          "type": "boolean",
+          "description": "True only when the user separately consented and unlocked the encrypted vault."
+        },
+        "security": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["secretsExcluded", "vaultBinariesExcluded"],
+          "properties": {
+            "secretsExcluded": {
+              "type": "boolean",
+              "const": true,
+              "description": "Passwords, tokens, credentials, PINs and passphrases are excluded."
+            },
+            "vaultBinariesExcluded": {
+              "type": "boolean",
+              "const": true,
+              "description": "Raw or encrypted vault files and binary data are excluded."
+            }
+          }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "type": "object",
+          "description": "Name, email and optional profile values read server-side from the authenticated account.",
+          "properties": {
+            "name": { "type": "string", "description": "Account display name." },
+            "email": { "type": "string", "description": "Primary account email." },
+            "phone": { "type": "string", "description": "Optional profile phone field." },
+            "city": { "type": "string", "description": "Optional profile city." },
+            "state": { "type": "string", "description": "Optional profile state or region." },
+            "occupation": { "type": "string", "description": "Optional profile occupation." },
+            "bio": { "type": "string", "description": "Optional profile biography." }
+          }
+        },
+        "savedServices": {
+          "type": "array",
+          "description": "Saved service records explicitly tagged as owned by the authenticated account.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "serviceId": { "type": ["string", "null"], "description": "Service catalogue identifier." },
+              "name": { "type": ["string", "null"], "description": "Service name, if saved with the record." },
+              "folder": { "type": ["string", "null"], "description": "User-defined folder or category." },
+              "priority": { "type": ["string", "null"], "description": "User-selected priority." },
+              "notes": { "type": ["string", "null"], "description": "Personal note saved for the service." },
+              "savedAt": { "type": ["string", "null"], "description": "Save date." },
+              "targetDate": { "type": ["string", "null"], "description": "Optional target date." },
+              "status": { "type": ["string", "null"], "description": "User-selected preparation status." }
+            }
+          }
+        },
+        "journeyMetadata": {
+          "type": "array",
+          "description": "Owned journey/handoff metadata; handoff tokens and recipient secrets are removed.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": ["string", "null"], "description": "Journey or handoff record identifier." },
+              "journeyId": { "type": ["string", "null"], "description": "Journey or service identifier." },
+              "title": { "type": ["string", "null"], "description": "Journey title." },
+              "createdAt": { "type": ["string", "null"], "description": "Creation timestamp." },
+              "updatedAt": { "type": ["string", "null"], "description": "Last update timestamp." },
+              "expiresAt": { "type": ["string", "null"], "description": "Handoff expiry timestamp, when applicable." },
+              "revoked": { "type": "boolean", "description": "Whether a handoff was revoked." },
+              "taskCount": { "type": ["integer", "null"], "description": "Number of handoff tasks." },
+              "completedTaskCount": { "type": ["integer", "null"], "description": "Number of completed handoff tasks." }
+            }
+          }
+        },
+        "checklistProgress": {
+          "type": "array",
+          "description": "Checked task labels and revision data for account-owned checklists.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "checklistId": { "type": "string", "description": "Checklist identifier." },
+              "checked": { "type": "array", "items": { "type": "string" }, "description": "Checked checklist item labels." },
+              "rev": { "type": "integer", "minimum": 0, "description": "Checklist revision number." },
+              "updatedAt": { "type": ["string", "null"], "description": "Last saved timestamp." }
+            }
+          }
+        },
+        "consentHistory": {
+          "type": "array",
+          "description": "Consent preference change records belonging to the authenticated account.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "timestamp": { "type": ["string", "null"], "description": "Time of the consent change." },
+              "action": { "type": "string", "const": "CONSENT_PREFERENCE_UPDATED", "description": "Consent history event type." },
+              "categoryId": { "type": ["string", "null"], "description": "Consent category identifier." },
+              "granted": { "type": ["boolean", "null"], "description": "Whether consent was granted or revoked." }
+            }
+          }
+        },
+        "vaultDocumentMetadata": {
+          "type": "array",
+          "description": "Optional metadata only, included only after separate consent and successful vault passphrase unlock; never includes numbers, credentials or file contents.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": ["string", "null"], "description": "Document type/name." },
+              "category": { "type": ["string", "null"], "description": "Document category." },
+              "issuer": { "type": ["string", "null"], "description": "Issuing authority." },
+              "issueDate": { "type": ["string", "null"], "description": "Issue date, when recorded." },
+              "expiryDate": { "type": ["string", "null"], "description": "Expiry date, when recorded." },
+              "verified": { "type": "boolean", "description": "Whether the user marked the record as verified." },
+              "lastModified": { "type": ["string", "null"], "description": "Last modified or creation timestamp." }
+            }
+          }
+        }
+      }
+    }
+  }
+}
