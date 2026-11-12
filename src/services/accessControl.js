@@ -45,6 +45,7 @@ export const PERMISSIONS = {
   'freshness.review': { roles: ['admin'], resource: 'service review overrides', description: 'Record that a service guide was reviewed' },
   'ownership.read': { roles: ['admin'], resource: 'civicbridge_service_ownership_v1', description: 'Read who is assigned to review each service guide, with private notes' },
   'ownership.manage': { roles: ['admin'], resource: 'civicbridge_service_ownership_v1', description: 'Assign, reassign or clear the reviewer of a service guide' },
+  'civicWorks.moderate': { roles: ['admin'], resource: 'civicbridge_civic_works_reports_v1', description: 'Moderate ward-level civic work reports, cluster duplicates, record official acknowledgements and verify completion evidence' },
 };
 
 export class PermissionDeniedError extends Error {

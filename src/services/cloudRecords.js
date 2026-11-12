@@ -67,6 +67,7 @@ export const DEVICE_ONLY_STORES = [
   { key: 'civicbridge_newsletter_subscriptions', reason: 'Newsletter emails, consent, and delivery preferences are handled separately and stay on this device.' },
   { key: 'civicbridge_sent_digests', reason: 'Newsletter delivery history is local bookkeeping and is never cloud-synced.' },
   { key: 'civicbridge_newsletter_delivery_failures', reason: 'Newsletter delivery failure details are local bookkeeping and are never cloud-synced.' },
+  { key: 'civicbridge_civic_works_reports_v1', reason: 'Ward civic works reports include consent, media, and moderation metadata kept on device.' },
 ];
 
 const byKey = new Map(CLOUD_STORES.map((store) => [store.key, store]));
