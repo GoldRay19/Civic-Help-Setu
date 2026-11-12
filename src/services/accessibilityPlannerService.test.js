@@ -6,6 +6,7 @@ import {
   buildPersonalVisitChecklist,
   savePersonalVisitPlan,
   loadPersonalVisitPlan,
+  deletePersonalVisitPlan,
   exportVisitPlanSummary,
   STALE_AUDIT_DAYS_THRESHOLD,
   ACCESSIBILITY_STORAGE_KEY,
@@ -31,7 +32,7 @@ describe('accessibilityPlannerService (#144)', () => {
   describe('Feature Catalog', () => {
     it('returns standardized public accessibility feature definitions', () => {
       const catalog = getAccessibilityCatalog();
-      expect(catalog.length).toBeGreaterThanOrEqual(6);
+      expect(catalog.length).toBeGreaterThanOrEqual(10);
 
       const ids = catalog.map((f) => f.id);
       expect(ids).toContain('step_free_access');
@@ -39,59 +40,34 @@ describe('accessibilityPlannerService (#144)', () => {
       expect(ids).toContain('accessible_counters');
       expect(ids).toContain('accessible_washrooms');
       expect(ids).toContain('tactile_paving');
+      expect(ids).toContain('sign_language_support');
+      expect(ids).toContain('accessible_formats');
+      expect(ids).toContain('accompanying_helper');
     });
   });
 
-  describe('Acceptance Criteria: Known, Unknown, and Stale Accessibility Details', () => {
-    it('returns known verified accessibility features with source dates for audited offices', () => {
+  describe('Source-backed and unknown accessibility details', () => {
+    it('does not present an office attribute as verified without a direct source and verification date', () => {
       const profile = getOfficeAccessibilityProfile('delhi-south-collectorate');
 
       expect(profile.officeId).toBe('delhi-south-collectorate');
-      expect(profile.hasAuditRecord).toBe(true);
-      expect(profile.lastAuditedDate).toBe('2026-09-15');
-      expect(profile.auditedBy).toContain('DEPwD');
-      expect(profile.officialSource).not.toBeNull();
-      expect(profile.officialSource.url).toContain('accessibleindia.gov.in');
+      expect(profile.hasAuditRecord).toBe(false);
+      expect(profile.officialSource).toBeNull();
+      expect(profile.auditWarning).toContain('unverified');
 
-      // Check verified feature
-      const ramp = profile.features.find((f) => f.id === 'step_free_access');
-      expect(ramp.status).toBe('verified_available');
-      expect(ramp.statusLabel).toBe('Verified Available');
-
-      // Check verified unavailable feature
-      const lift = profile.features.find((f) => f.id === 'elevators');
-      expect(lift.status).toBe('verified_unavailable');
-      expect(lift.statusLabel).toBe('Verified Not Available');
-    });
-
-    it('labels unknown accessibility features as "Not verified" rather than assuming availability', () => {
-      // 1. For an audited office, features not audited must be 'not_verified'
-      const auditedProfile = getOfficeAccessibilityProfile('delhi-south-collectorate');
-      const tactile = auditedProfile.features.find((f) => f.id === 'tactile_paving');
-      expect(tactile.status).toBe('not_verified');
-      expect(tactile.statusLabel).toBe('Not Verified');
-
-      // 2. For an office with NO audit on record at all
-      const unknownOfficeProfile = getOfficeAccessibilityProfile('delhi-dist-court-saket');
-      expect(unknownOfficeProfile.hasAuditRecord).toBe(false);
-      expect(unknownOfficeProfile.lastAuditedDate).toBeNull();
-      expect(unknownOfficeProfile.auditWarning).toContain('unverified');
-
-      for (const feature of unknownOfficeProfile.features) {
+      for (const feature of profile.features) {
         expect(feature.status).toBe('not_verified');
         expect(feature.statusLabel).toBe('Not Verified');
+        expect(feature.source).toBeNull();
+        expect(feature.verificationDate).toBeNull();
       }
     });
 
-    it('detects and warns about stale audits older than 180 days', () => {
+    it('detects stale dates without implying that an office has been audited', () => {
       expect(isAuditDateStale('2026-09-15')).toBe(false); // recent (< 180 days)
       expect(isAuditDateStale('2024-05-10')).toBe(true); // stale (> 180 days)
       expect(isAuditDateStale(null)).toBe(true);
-
-      const staleProfile = getOfficeAccessibilityProfile('delhi-rto-sarai-kale-khan');
-      expect(staleProfile.isStale).toBe(true);
-      expect(staleProfile.auditWarning).toContain('Caution: The accessibility audit');
-      expect(staleProfile.auditWarning).toContain(`over ${STALE_AUDIT_DAYS_THRESHOLD} days ago`);
+      expect(STALE_AUDIT_DAYS_THRESHOLD).toBe(180);
     });
 
     it('handles null, undefined, or empty office IDs gracefully', () => {
@@ -103,11 +79,10 @@ describe('accessibilityPlannerService (#144)', () => {
   });
 
   describe('Personal Visit Checklist Builder & Storage', () => {
-    it('builds confirmation questions linked to official contacts based on citizen needs', () => {
+    it('builds confirmation questions without representing unknown attributes as confirmed', () => {
       const checklist = buildPersonalVisitChecklist('delhi-south-collectorate', [
         'step_free_access',
-        'tactile_paving', // unverified in this office
-        'elevators', // verified unavailable in this office
+        'tactile_paving',
       ]);
 
       expect(checklist.officeName).toContain('District Magistrate Office');
@@ -115,47 +90,73 @@ describe('accessibilityPlannerService (#144)', () => {
       expect(checklist.officialContacts.portalUrl).toBeDefined();
 
       const questions = checklist.questionsToConfirm;
-      expect(questions.length).toBe(3);
-
-      const rampQ = questions.find((q) => q.featureId === 'step_free_access');
-      expect(rampQ.status).toBe('verified_available');
-      expect(rampQ.urgency).toBe('medium');
-
-      const tactileQ = questions.find((q) => q.featureId === 'tactile_paving');
-      expect(tactileQ.status).toBe('not_verified');
-      expect(tactileQ.urgency).toBe('high'); // Unverified items require confirmation
-
-      const liftQ = questions.find((q) => q.featureId === 'elevators');
-      expect(liftQ.status).toBe('verified_unavailable');
-      expect(liftQ.urgency).toBe('critical'); // Unavailable accommodation is critical
+      expect(questions).toHaveLength(2);
+      expect(questions.every((q) => q.status === 'not_verified')).toBe(true);
+      expect(questions.every((q) => q.urgency === 'high')).toBe(true);
     });
 
-    it('saves and loads personal visit plans in storage', () => {
+    it('requires explicit consent and stores only selected preferences', () => {
       const officeId = 'delhi-south-collectorate';
       const planData = {
         neededFeatureIds: ['step_free_access', 'accessible_washrooms'],
         confirmedQuestionIds: ['step_free_access'],
+        diagnosis: 'must not be stored',
       };
 
-      const saved = savePersonalVisitPlan(officeId, planData, mockStorage);
+      expect(savePersonalVisitPlan(officeId, planData, mockStorage)).toBe(false);
+      expect(mockStorage.getItem(ACCESSIBILITY_STORAGE_KEY)).toBeNull();
+
+      const saved = savePersonalVisitPlan(officeId, planData, mockStorage, true);
       expect(saved).toBe(true);
 
       const loaded = loadPersonalVisitPlan(officeId, mockStorage);
       expect(loaded.neededFeatureIds).toEqual(['step_free_access', 'accessible_washrooms']);
       expect(loaded.confirmedQuestionIds).toEqual(['step_free_access']);
+      expect(loaded.diagnosis).toBeUndefined();
+      expect(loaded.consentGivenAt).toBeDefined();
       expect(loaded.updatedAt).toBeDefined();
     });
 
-    it('exports a plain-text markdown visit summary with official contacts', () => {
-      const checklist = buildPersonalVisitChecklist('delhi-south-collectorate', ['step_free_access']);
-      checklist.questionsToConfirm[0].confirmed = true;
+    it('removes legacy plans that were saved before explicit consent was required', () => {
+      mockStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify({
+        'delhi-south-collectorate': { neededFeatureIds: ['step_free_access'] },
+      }));
+
+      expect(loadPersonalVisitPlan('delhi-south-collectorate', mockStorage)).toBeNull();
+      expect(mockStorage.getItem(ACCESSIBILITY_STORAGE_KEY)).toBeNull();
+    });
+
+    it('deletes only the selected office plan and removes the key when empty', () => {
+      savePersonalVisitPlan('office-one', { neededFeatureIds: ['step_free_access'] }, mockStorage, true);
+      savePersonalVisitPlan('office-two', { neededFeatureIds: ['accessible_formats'] }, mockStorage, true);
+
+      expect(deletePersonalVisitPlan('office-one', mockStorage)).toBe(true);
+      expect(loadPersonalVisitPlan('office-one', mockStorage)).toBeNull();
+      expect(loadPersonalVisitPlan('office-two', mockStorage).neededFeatureIds).toEqual(['accessible_formats']);
+      expect(deletePersonalVisitPlan('office-two', mockStorage)).toBe(true);
+      expect(mockStorage.getItem(ACCESSIBILITY_STORAGE_KEY)).toBeNull();
+    });
+
+    it('exports a request note with only explicitly selected details', () => {
+      const checklist = buildPersonalVisitChecklist('delhi-south-collectorate', [
+        'step_free_access',
+        'accessible_formats',
+      ]);
+      checklist.privateNotes = 'do not print';
+      checklist.questionsToConfirm[0].notes = 'unselected audit metadata';
 
       const summary = exportVisitPlanSummary(checklist);
-      expect(summary).toContain('# ACCESSIBILITY & OFFICE VISIT CHECKLIST');
-      expect(summary).toContain('Official Contact:');
-      expect(summary).toContain('[x] **Step-Free Entrance & Ramp** [Status: Verified Available]');
-      expect(summary).toContain('Confirmation question:');
-      expect(summary).toContain('Accommodations are verified based on official audits');
+      expect(summary).toContain('Office visit request');
+      expect(summary).toContain('District Magistrate Office');
+      expect(summary).toContain('- Step-Free Entrance & Ramp');
+      expect(summary).toContain('- Accessible Formats');
+      expect(summary).not.toContain('Sign-Language Support');
+      expect(summary).not.toContain('do not print');
+      expect(summary).not.toContain('unselected audit metadata');
+      expect(summary).not.toContain('Status:');
+      expect(summary).not.toContain('Official Contact');
+      expect(summary).not.toContain('Generated on');
+      expect(summary).not.toContain('diagnosis');
     });
 
     it('returns empty string if export is called with null', () => {

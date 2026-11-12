@@ -8,10 +8,8 @@ import {
   Calendar,
   Copy,
   Check,
-  Building,
   UserCheck,
   CheckCircle2,
-  ExternalLink,
   Accessibility,
 } from 'lucide-react';
 import { formatDistance } from '../../services/locationService';
@@ -216,20 +214,6 @@ const OfficeCard = ({
               {chan === 'in-person' ? '🏛️ In-Person Center' : chan === 'online' ? '🌐 Online Portal' : '📞 Helpline'}
             </span>
           ))}
-          {office.features?.includes('wheelchair_accessible') && (
-            <span
-              style={{
-                fontSize: '0.7rem',
-                padding: '0.15rem 0.5rem',
-                borderRadius: '0.4rem',
-                background: 'rgba(16, 185, 129, 0.1)',
-                color: '#10b981',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-              }}
-            >
-              ♿ Accessible
-            </span>
-          )}
         </div>
 
         {/* Associated Services Provided */}

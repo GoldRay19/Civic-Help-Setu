@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import {
-  MapPin,
   Search,
   Navigation,
   SlidersHorizontal,
   X,
-  Compass,
   Building2,
   Globe,
   Phone,
-  Check,
 } from 'lucide-react';
 import { getAvailableStates, getDistrictsByState } from '../../services/locationService';
 
@@ -328,7 +325,7 @@ const LocationFilterToolbar = ({
                 onChange={(e) => onWheelchairChange(e.target.checked)}
                 style={{ accentColor: 'var(--accent-main)' }}
               />
-              Wheelchair Accessible Only
+              Verified step-free entry only
             </label>
           </div>
 

@@ -52,6 +52,13 @@ describe('the store tables', () => {
     expect(DEVICE_ONLY_STORES.find((s) => s.key === 'civicbridge_vault_pin').reason).toMatch(/secret/);
   });
 
+  it('keeps accessibility preferences device-only and refuses to create cloud records for them', () => {
+    expect(isCloudStore('civic_accessibility_visit_plans')).toBe(false);
+    expect(DEVICE_ONLY_STORES.find((s) => s.key === 'civic_accessibility_visit_plans').reason).toMatch(/never cloud-synced/);
+    expect(() => toCloudRecords('civic_accessibility_visit_plans', { office: ['step_free_access'] }))
+      .toThrow(/not a cloud store/);
+  });
+
   it('give every device-only store a reason and every cloud store a unique slug', () => {
     for (const store of DEVICE_ONLY_STORES) expect(store.reason.length).toBeGreaterThan(10);
     expect(new Set(CLOUD_STORES.map((s) => s.slug)).size).toBe(CLOUD_STORES.length);

@@ -1,6 +1,7 @@
 import { CIVIC_OFFICES } from '../data/locationOffices';
 import { logDiagnostic } from '../utils/diagnostics';
 import { minimizeAppointments, minimizePhoneNumber } from './dataMinimization';
+import { ACCESSIBILITY_FACILITIES, normalizeAccessibilityRecord } from './accessibilityMapService';
 
 const APPOINTMENTS_STORAGE_KEY = 'civicbridge_office_tokens';
 const USER_LOCATION_CACHE_KEY = 'civicbridge_user_coords';
@@ -239,7 +240,8 @@ export const filterCivicOffices = ({
     }
 
     const openNow = isOfficeOpenNow(office);
-    const hasWheelchair = office.features?.includes('wheelchair_accessible') || false;
+    const hasWheelchair =
+      normalizeAccessibilityRecord(office).accessibility[ACCESSIBILITY_FACILITIES.WHEELCHAIR_RAMP] === true;
 
     return {
       ...office,

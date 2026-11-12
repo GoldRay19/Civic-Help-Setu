@@ -1,24 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Shield,
-  Lock,
   Download,
-  Trash2,
   CheckCircle2,
   Sliders,
-  History,
-  FileCheck,
   ChevronRight,
   BookOpen,
-  EyeOff,
-  ServerOff,
   RefreshCw,
-  ExternalLink,
 } from 'lucide-react';
 import {
   CONSENT_CATEGORIES,
   getConsentPreferences,
   getPrivacyAuditLogs,
+  getRetentionPolicyStatus,
+  enforceRetentionPolicies,
+  verifyPrivacyAuditLogIntegrity,
 } from '../services/privacyConsentService.js';
 import PrivacyConsentCenterModal from '../components/privacy/PrivacyConsentCenterModal';
 import PrivacyExportCentre from '../components/privacy/PrivacyExportCentre';
@@ -35,13 +31,70 @@ const POLICY_SECTIONS = [
 const Privacy = () => {
   const [isCenterOpen, setIsCenterOpen] = useState(false);
   const [preferences, setPreferences] = useState(() => getConsentPreferences());
-  const [logsCount, setLogsCount] = useState(() => getPrivacyAuditLogs().length);
+  const [auditLogs, setAuditLogs] = useState(() => getPrivacyAuditLogs());
+  const [retentionStatus, setRetentionStatus] = useState(() => getRetentionPolicyStatus());
   const [activeSection, setActiveSection] = useState('data-minimization');
 
-  useEffect(() => {
+  const logsCount = auditLogs.length;
+  const auditIntegrity = verifyPrivacyAuditLogIntegrity(auditLogs);
+
+  const refreshPrivacyOverview = () => {
     setPreferences(getConsentPreferences());
-    setLogsCount(getPrivacyAuditLogs().length);
-  }, [isCenterOpen]);
+    setAuditLogs(getPrivacyAuditLogs());
+    setRetentionStatus(getRetentionPolicyStatus());
+  };
+
+  const handleOpenConsentCenter = () => {
+    refreshPrivacyOverview();
+    setIsCenterOpen(true);
+  };
+
+  const handleCloseConsentCenter = () => {
+    setIsCenterOpen(false);
+    refreshPrivacyOverview();
+  };
+
+  const handleEnforceRetention = () => {
+    try {
+      const result = enforceRetentionPolicies({ actorId: 'citizen_user' });
+      refreshPrivacyOverview();
+      if (result.actionTaken) {
+        toast?.success?.(
+          `Retention enforced: cleaned ${result.purgedKeysCount} store(s) and pruned ${result.prunedRecordsCount} stale entry(ies).`
+        );
+      } else {
+        toast?.info?.('All local stores are currently within retention limits.');
+      }
+    } catch (err) {
+      toast?.error?.(`Retention check failed: ${err.message}`);
+    }
+  };
+
+  const handleQuickExport = () => {
+    try {
+      const data = exportUserData();
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+        JSON.stringify(data, null, 2)
+      )}`;
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', jsonString);
+      downloadAnchor.setAttribute(
+        'download',
+        `civicbridge_user_data_export_${new Date().toISOString().slice(0, 10)}.json`
+      );
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+
+      refreshPrivacyOverview();
+      const digestPreview = data?.exportMetadata?.integrityDigest
+        ? ` (SHA-256: ${data.exportMetadata.integrityDigest.slice(0, 12)}...)`
+        : '';
+      toast?.success?.(`Personal data exported successfully${digestPreview}.`);
+    } catch (err) {
+      toast?.error?.(`Export failed: ${err.message}`);
+    }
+  };
 
   const scrollToSection = (id) => {
     setActiveSection(id);
@@ -113,7 +166,7 @@ const Privacy = () => {
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => setIsCenterOpen(true)}
+              onClick={handleOpenConsentCenter}
               className="btn btn-primary"
               style={{
                 display: 'inline-flex',
@@ -193,6 +246,58 @@ const Privacy = () => {
               </div>
             );
           })}
+        </div>
+
+        {/* Cryptographic Audit Chain & Retention Compliance Status */}
+        <div
+          role="status"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid var(--border-light, rgba(255, 255, 255, 0.08))',
+            fontSize: '0.8rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: auditIntegrity.valid ? '#34d399' : '#fca5a5', fontWeight: '600' }}>
+              <CheckCircle2 size={15} aria-hidden="true" />
+              {auditIntegrity.status === 'TAMPERED'
+                ? 'Audit Chain: Tampering Detected'
+                : auditIntegrity.status === 'LEGACY_UNCHAINED'
+                  ? `Audit Log: ${auditIntegrity.legacyEntries} legacy entry(ies)`
+                  : auditIntegrity.status === 'EMPTY'
+                    ? 'Audit Chain: Ready (no entries yet)'
+                    : `Audit Chain: Verified (${auditIntegrity.verifiedEntries} SHA-256 entry(ies))`}
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: retentionStatus.actionRequired ? '#fbbf24' : 'var(--text-secondary, #cbd5e1)', fontWeight: '600' }}>
+              <Shield size={15} aria-hidden="true" />
+              {retentionStatus.actionRequired
+                ? `Retention: ${retentionStatus.totalExpiredKeys + retentionStatus.totalLeftoverRevokedKeys} store(s) awaiting cleanup`
+                : 'Retention: Compliant'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleEnforceRetention}
+            className="btn btn-secondary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.4rem 0.9rem',
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              borderRadius: '99px',
+            }}
+          >
+            <RefreshCw size={14} aria-hidden="true" />
+            <span>Enforce Retention</span>
+          </button>
         </div>
       </section>
 
@@ -389,7 +494,8 @@ const Privacy = () => {
       {/* Modal */}
       <PrivacyConsentCenterModal
         isOpen={isCenterOpen}
-        onClose={() => setIsCenterOpen(false)}
+        onClose={handleCloseConsentCenter}
+        onPrivacyDataChanged={refreshPrivacyOverview}
       />
     </div>
   );

@@ -1,22 +1,17 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   X,
-  Compass,
-  CheckCircle2,
-  Clock,
   ExternalLink,
   ShieldCheck,
-  ShieldAlert,
   Save,
-  FileDown,
   Phone,
-  Check,
   Accessibility,
-  Eye,
   Building,
   CheckSquare,
   Square,
   AlertTriangle,
+  Printer,
+  Trash2,
 } from 'lucide-react';
 import { CIVIC_OFFICES } from '../../data/locationOffices.js';
 import {
@@ -24,43 +19,23 @@ import {
   buildPersonalVisitChecklist,
   savePersonalVisitPlan,
   loadPersonalVisitPlan,
+  deletePersonalVisitPlan,
   exportVisitPlanSummary,
 } from '../../services/accessibilityPlannerService.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { safeHttpUrl } from '../../utils/safeContent';
+import './AccessibilityNeedsPlannerModal.css';
 
-const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = null }) => {
+const AccessibilityNeedsPlannerModalContent = ({ isOpen, onClose, initialOfficeId = null }) => {
   const { toast } = useToast();
   const [selectedOfficeId, setSelectedOfficeId] = useState(
     initialOfficeId || CIVIC_OFFICES[0]?.id || 'delhi-south-collectorate'
   );
 
-  // Selected features citizen needs
-  const [neededFeatureIds, setNeededFeatureIds] = useState([
-    'step_free_access',
-    'accessible_counters',
-  ]);
-
-  // Questions confirmed
+  const [neededFeatureIds, setNeededFeatureIds] = useState([]);
   const [confirmedQuestionIds, setConfirmedQuestionIds] = useState([]);
-  const [copiedSummary, setCopiedSummary] = useState(false);
-
-  // On open or initialOfficeId change
-  useEffect(() => {
-    if (initialOfficeId) {
-      setSelectedOfficeId(initialOfficeId);
-    }
-  }, [initialOfficeId]);
-
-  // Load saved plan for selected office
-  useEffect(() => {
-    if (!selectedOfficeId) return;
-    const saved = loadPersonalVisitPlan(selectedOfficeId);
-    if (saved) {
-      if (Array.isArray(saved.neededFeatureIds)) setNeededFeatureIds(saved.neededFeatureIds);
-      if (Array.isArray(saved.confirmedQuestionIds)) setConfirmedQuestionIds(saved.confirmedQuestionIds);
-    }
-  }, [selectedOfficeId]);
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [hasSavedPlan, setHasSavedPlan] = useState(false);
 
   // Close on Escape key
   useEffect(() => {
@@ -89,23 +64,48 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
       })),
     };
   }, [selectedOfficeId, neededFeatureIds, confirmedQuestionIds]);
+  const printableNote = useMemo(() => exportVisitPlanSummary(visitChecklist), [visitChecklist]);
 
   if (!isOpen) return null;
 
   const handleToggleNeed = (featureId) => {
-    if (neededFeatureIds.includes(featureId)) {
-      setNeededFeatureIds(neededFeatureIds.filter((id) => id !== featureId));
-    } else {
-      setNeededFeatureIds([...neededFeatureIds, featureId]);
-    }
+    setNeededFeatureIds((current) =>
+      current.includes(featureId)
+        ? current.filter((id) => id !== featureId)
+        : [...current, featureId]
+    );
   };
 
   const handleToggleQuestionConfirmed = (featureId) => {
-    if (confirmedQuestionIds.includes(featureId)) {
-      setConfirmedQuestionIds(confirmedQuestionIds.filter((id) => id !== featureId));
-    } else {
-      setConfirmedQuestionIds([...confirmedQuestionIds, featureId]);
+    setConfirmedQuestionIds((current) =>
+      current.includes(featureId)
+        ? current.filter((id) => id !== featureId)
+        : [...current, featureId]
+    );
+  };
+
+  const handleOfficeChange = (event) => {
+    const officeId = event.target.value;
+    const saved = loadPersonalVisitPlan(officeId);
+    setSelectedOfficeId(officeId);
+    setNeededFeatureIds(Array.isArray(saved?.neededFeatureIds) ? saved.neededFeatureIds : []);
+    setConfirmedQuestionIds(Array.isArray(saved?.confirmedQuestionIds) ? saved.confirmedQuestionIds : []);
+    setConsentGiven(Boolean(saved));
+    setHasSavedPlan(Boolean(saved));
+  };
+
+  const handleConsentChange = (event) => {
+    const granted = event.target.checked;
+    if (!granted && hasSavedPlan) {
+      if (!deletePersonalVisitPlan(selectedOfficeId)) {
+        toast.error('Could not remove the saved plan while withdrawing consent.');
+        return;
+      }
+      setNeededFeatureIds([]);
+      setConfirmedQuestionIds([]);
+      setHasSavedPlan(false);
     }
+    setConsentGiven(granted);
   };
 
   const handleSavePlan = () => {
@@ -113,25 +113,24 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
       neededFeatureIds,
       confirmedQuestionIds,
       officeName: profile.office?.name,
-    });
+    }, undefined, consentGiven);
     if (ok) {
+      setHasSavedPlan(true);
       toast.success('Accessibility visit plan saved locally.');
     } else {
-      toast.error('Failed to save visit plan.');
+      toast.error(consentGiven ? 'Failed to save visit plan.' : 'Give consent to save this plan on this device.');
     }
   };
 
-  const handleExportSummary = async () => {
-    const summary = exportVisitPlanSummary(visitChecklist);
-    try {
-      if (navigator?.clipboard) {
-        await navigator.clipboard.writeText(summary);
-        setCopiedSummary(true);
-        toast.success('Accessibility checklist copied to clipboard.');
-        setTimeout(() => setCopiedSummary(false), 2500);
-      }
-    } catch {
-      toast.error('Could not copy summary. Please try again.');
+  const handleDeletePlan = () => {
+    if (deletePersonalVisitPlan(selectedOfficeId)) {
+      setNeededFeatureIds([]);
+      setConfirmedQuestionIds([]);
+      setConsentGiven(false);
+      setHasSavedPlan(false);
+      toast.success('Saved visit plan deleted from this device.');
+    } else {
+      toast.error('Could not delete the saved visit plan.');
     }
   };
 
@@ -140,6 +139,7 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
       role="dialog"
       aria-modal="true"
       aria-labelledby="accessibility-planner-title"
+      className="accessibility-planner-backdrop"
       style={{
         position: 'fixed',
         inset: 0,
@@ -156,7 +156,7 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
       }}
     >
       <div
-        className="card"
+        className="card accessibility-planner-dialog"
         style={{
           width: '100%',
           maxWidth: '920px',
@@ -204,7 +204,7 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                 Public-Service Accessibility Needs Planner
               </h2>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Prepare for in-person office visits with verified facility audits & pre-visit confirmation checklists
+                Choose practical visit requests, check what is verified, and prepare a private note without sharing a diagnosis.
               </p>
             </div>
           </div>
@@ -239,7 +239,7 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
               id="accessibility-office-select"
               className="input-field"
               value={selectedOfficeId}
-              onChange={(e) => setSelectedOfficeId(e.target.value)}
+              onChange={handleOfficeChange}
               style={{ width: '100%', padding: '0.65rem 0.85rem', fontSize: '0.9rem' }}
             >
               {CIVIC_OFFICES.map((office) => (
@@ -339,13 +339,11 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                 const isNeeded = neededFeatureIds.includes(feature.id);
                 const isVerifiedAvailable = feature.status === 'verified_available';
                 const isVerifiedUnavailable = feature.status === 'verified_unavailable';
-                const isNotVerified = feature.status === 'not_verified';
-
                 return (
                   <div
                     key={feature.id}
-                    onClick={() => handleToggleNeed(feature.id)}
                     style={{
+                      width: '100%',
                       padding: '0.85rem 1rem',
                       borderRadius: '0.75rem',
                       background: isNeeded ? 'rgba(56, 189, 248, 0.08)' : 'var(--glass-bg)',
@@ -355,19 +353,23 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                       flexDirection: 'column',
                       gap: '0.4rem',
                       transition: 'all 0.15s ease',
+                      color: 'inherit',
+                      textAlign: 'left',
+                      font: 'inherit',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {isNeeded ? (
-                          <CheckSquare size={16} color="var(--accent-main)" />
-                        ) : (
-                          <Square size={16} color="var(--text-tertiary)" />
-                        )}
+                      <label htmlFor={`accessibility-feature-${feature.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          id={`accessibility-feature-${feature.id}`}
+                          type="checkbox"
+                          checked={isNeeded}
+                          onChange={() => handleToggleNeed(feature.id)}
+                        />
                         <span style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)' }}>
                           {feature.title}
                         </span>
-                      </div>
+                      </label>
 
                       {/* Status Badge */}
                       <span
@@ -395,6 +397,23 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
 
                     <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
                       {feature.notes}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                      Source:{' '}
+                      {feature.source?.url && safeHttpUrl(feature.source.url) ? (
+                        <a
+                          href={safeHttpUrl(feature.source.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'var(--accent-main)' }}
+                        >
+                          {feature.source.name || feature.source.url}
+                        </a>
+                      ) : (
+                        'Not verified'
+                      )}
+                      {' · Verification date: '}
+                      {feature.verificationDate || 'Not verified'}
                     </p>
                   </div>
                 );
@@ -448,10 +467,13 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginTop: '1rem' }}>
                 {visitChecklist.questionsToConfirm.map((q) => (
-                  <div
+                  <button
+                    type="button"
+                    aria-pressed={q.confirmed}
                     key={q.featureId}
                     onClick={() => handleToggleQuestionConfirmed(q.featureId)}
                     style={{
+                      width: '100%',
                       padding: '0.75rem 0.9rem',
                       borderRadius: '0.6rem',
                       background: q.confirmed ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.02)',
@@ -460,6 +482,9 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '0.65rem',
+                      color: 'inherit',
+                      textAlign: 'left',
+                      font: 'inherit',
                     }}
                   >
                     <div style={{ marginTop: '2px' }}>
@@ -490,8 +515,8 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                       <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                         <strong>Question to ask: </strong>"{q.question}"
                       </p>
-                    </div>
                   </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -511,14 +536,30 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
             gap: '0.75rem',
           }}
         >
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-            All accommodation details are sourced from public audits.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', flex: '1 1 300px' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <input
+                type="checkbox"
+                checked={consentGiven}
+                onChange={handleConsentChange}
+                aria-label="Consent to save my selected visit preferences on this device"
+              />
+              <span>
+                I agree to save my selected preferences on this device. They are not sent to analytics
+                or included in public profiles. This optional planner does not ask for a diagnosis.
+              </span>
+            </label>
+            {hasSavedPlan && (
+              <span role="status" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                A plan for this office is saved on this device.
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <button
               type="button"
-              onClick={handleExportSummary}
+              onClick={() => window.print()}
               className="btn btn-secondary"
               style={{
                 display: 'inline-flex',
@@ -528,14 +569,27 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
                 padding: '0.5rem 0.95rem',
               }}
             >
-              {copiedSummary ? <Check size={15} color="var(--success)" /> : <FileDown size={15} />}
-              <span>{copiedSummary ? 'Copied!' : 'Export Checklist'}</span>
+              <Printer size={15} />
+              <span>Print Request Note</span>
             </button>
+
+            {hasSavedPlan && (
+              <button
+                type="button"
+                onClick={handleDeletePlan}
+                className="btn btn-secondary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', padding: '0.5rem 0.95rem' }}
+              >
+                <Trash2 size={15} />
+                <span>Delete Plan</span>
+              </button>
+            )}
 
             <button
               type="button"
               onClick={handleSavePlan}
               className="btn btn-primary"
+              disabled={!consentGiven}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -545,13 +599,23 @@ const AccessibilityNeedsPlannerModal = ({ isOpen, onClose, initialOfficeId = nul
               }}
             >
               <Save size={15} />
-              <span>Save Visit Plan</span>
+              <span>{hasSavedPlan ? 'Update Visit Plan' : 'Save Visit Plan'}</span>
             </button>
           </div>
         </div>
+        <section className="accessibility-print-note" aria-hidden="true">
+          <pre>{printableNote}</pre>
+        </section>
       </div>
     </div>
   );
 };
+
+const AccessibilityNeedsPlannerModal = (props) => (
+  <AccessibilityNeedsPlannerModalContent
+    key={props.initialOfficeId || 'default'}
+    {...props}
+  />
+);
 
 export default AccessibilityNeedsPlannerModal;

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ShieldCheck,
+  ShieldAlert,
   AlertTriangle,
   Lock,
   Clock,
-  Calendar,
   CheckCircle2,
   FileText,
   User,
@@ -13,25 +13,16 @@ import {
   Briefcase,
   Layers,
   ArrowLeft,
-  ExternalLink,
+  KeyRound,
+  Eye,
 } from 'lucide-react';
 import { getPublicSharedProfile } from '../services/shareableProfileService';
 
-export default function SharedProfileView({ initialToken }) {
-  const params = useParams();
-  const token = initialToken || params?.token;
+function SharedProfileViewBody({ token }) {
   const [data, setData] = useState(() => (token ? getPublicSharedProfile(token) : null));
-  const [loading, setLoading] = useState(() => !token || !data);
+  const [pinInput, setPinInput] = useState('');
 
-  useEffect(() => {
-    if (token) {
-      const res = getPublicSharedProfile(token);
-      setData(res);
-      setLoading(false);
-    }
-  }, [token]);
-
-  if (loading) {
+  if (!token) {
     return (
       <div className="section container" style={{ textAlign: 'center', padding: '5rem 1rem' }}>
         <p style={{ color: 'var(--text-secondary)' }}>Loading verified shared profile...</p>
@@ -39,9 +30,125 @@ export default function SharedProfileView({ initialToken }) {
     );
   }
 
+  const handleUnlockSubmit = (e) => {
+    e.preventDefault();
+    const res = getPublicSharedProfile(token, { pin: pinInput });
+    setData(res);
+    if (res?.status !== 'ACTIVE') {
+      setPinInput('');
+    }
+  };
+
+  if (data && (data.status === 'PIN_REQUIRED' || data.status === 'INVALID_PIN')) {
+    const isInvalidAttempt = data.status === 'INVALID_PIN';
+    return (
+      <div className="section container" style={{ maxWidth: '520px', margin: '4rem auto', padding: '0 1rem' }}>
+        <div
+          style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '0.75rem',
+            padding: '2.25rem 2rem',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div
+            style={{
+              width: '3.75rem',
+              height: '3.75rem',
+              borderRadius: '50%',
+              background: isInvalidAttempt ? 'rgba(239, 68, 68, 0.1)' : 'rgba(79, 70, 229, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem',
+              color: isInvalidAttempt ? '#ef4444' : '#4f46e5',
+            }}
+          >
+            <KeyRound className="w-7 h-7" />
+          </div>
+
+          <h2 style={{ fontSize: '1.35rem', fontWeight: '700', color: 'var(--text-primary)', textAlign: 'center', marginBottom: '0.5rem' }}>
+            Passcode Required to View Shared Profile
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, textAlign: 'center', marginBottom: '1.5rem' }}>
+            {isInvalidAttempt
+              ? data.error
+              : 'The citizen who shared this profile protected it with a passcode.'}
+          </p>
+
+          <form onSubmit={handleUnlockSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            <input
+              type="password"
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value)}
+              aria-label="Enter share passcode"
+              placeholder="Enter viewer passcode"
+              autoComplete="off"
+              style={{
+                width: '100%',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '0.45rem',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-secondary, transparent)',
+                color: 'var(--text-primary)',
+                fontSize: '0.95rem',
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                padding: '0.7rem 1.25rem',
+                borderRadius: '0.45rem',
+                border: 'none',
+                background: 'var(--accent-main)',
+                color: '#ffffff',
+                fontWeight: '600',
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+              }}
+            >
+              Unlock Shared Profile
+            </button>
+          </form>
+
+          {typeof data.remainingAttempts === 'number' && (
+            <p style={{ marginTop: '0.9rem', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+              Attempts remaining before lockout: {data.remainingAttempts}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (!data || data.status !== 'ACTIVE') {
     const isExpired = data?.status === 'EXPIRED';
     const isRevoked = data?.status === 'REVOKED';
+    const isLocked = data?.status === 'LOCKED';
+    const isViewLimit = data?.status === 'VIEW_LIMIT_REACHED';
+    const isTampered = data?.status === 'TAMPERED';
+    const isDanger = isRevoked || isLocked || isTampered;
+
+    let heading = 'Profile View Not Found';
+    let description = 'This profile share URL is invalid or has been permanently removed.';
+    if (isRevoked) {
+      heading = 'Shared Profile Link Revoked';
+      description = 'The owner of this citizen profile has revoked public access. The shared information is no longer accessible.';
+    } else if (isLocked) {
+      heading = 'Shared Profile Access Temporarily Locked';
+      description = data?.error || 'Too many failed passcode attempts triggered a protective lockout.';
+    } else if (isTampered) {
+      heading = 'Snapshot Integrity Verification Failed';
+      description = data?.error || 'Cryptographic SHA-256 verification failed for this shared profile record.';
+    } else if (isViewLimit) {
+      heading = 'Maximum View Limit Reached';
+      description = data?.error || 'This share link has consumed all permitted views and is now closed.';
+    } else if (isExpired) {
+      heading = 'Shared Profile Link Expired';
+      description = 'This time-limited shared link has passed its expiration window. Please request an updated share link from the profile owner.';
+    }
 
     return (
       <div className="section container" style={{ maxWidth: '640px', margin: '4rem auto', padding: '0 1rem' }}>
@@ -60,31 +167,31 @@ export default function SharedProfileView({ initialToken }) {
               width: '4rem',
               height: '4rem',
               borderRadius: '50%',
-              background: isRevoked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+              background: isDanger ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 1.5rem',
-              color: isRevoked ? '#ef4444' : '#f59e0b',
+              color: isDanger ? '#ef4444' : '#f59e0b',
             }}
           >
-            {isRevoked ? <Lock className="w-8 h-8" /> : <Clock className="w-8 h-8" />}
+            {isTampered ? (
+              <ShieldAlert className="w-8 h-8" />
+            ) : isDanger ? (
+              <Lock className="w-8 h-8" />
+            ) : isViewLimit ? (
+              <AlertTriangle className="w-8 h-8" />
+            ) : (
+              <Clock className="w-8 h-8" />
+            )}
           </div>
 
           <h2 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-            {isRevoked
-              ? 'Shared Profile Link Revoked'
-              : isExpired
-                ? 'Shared Profile Link Expired'
-                : 'Profile View Not Found'}
+            {heading}
           </h2>
 
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>
-            {isRevoked
-              ? 'The owner of this citizen profile has revoked public access. The shared information is no longer accessible.'
-              : isExpired
-                ? 'This time-limited shared link has passed its expiration window. Please request an updated share link from the profile owner.'
-                : 'This profile share URL is invalid or has been permanently removed.'}
+            {description}
           </p>
 
           <Link
@@ -110,7 +217,7 @@ export default function SharedProfileView({ initialToken }) {
     );
   }
 
-  const { profile, expiresAt, createdAt } = data;
+  const { profile, expiresAt, createdAt, viewsRemaining, consumedOnThisView, integrityDigest } = data;
 
   return (
     <div className="shared-profile-view section" style={{ padding: '2rem 1rem' }}>
@@ -183,6 +290,22 @@ export default function SharedProfileView({ initialToken }) {
                 >
                   Verified Citizen Share
                 </span>
+                {integrityDigest && (
+                  <span
+                    title={integrityDigest}
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: '600',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '0.35rem',
+                      background: 'rgba(14, 165, 233, 0.1)',
+                      color: '#0284c7',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    SHA-256: {integrityDigest.slice(0, 10)}
+                  </span>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -227,7 +350,7 @@ export default function SharedProfileView({ initialToken }) {
             )}
           </div>
 
-          {/* Expiry metadata footer */}
+          {/* Expiry and view quota metadata footer */}
           <div
             style={{
               display: 'flex',
@@ -243,6 +366,12 @@ export default function SharedProfileView({ initialToken }) {
             }}
           >
             <span>Shared on: {new Date(createdAt).toLocaleDateString()}</span>
+            {typeof viewsRemaining === 'number' && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: consumedOnThisView ? '#ef4444' : '#0284c7' }}>
+                <Eye className="w-3.5 h-3.5" />
+                {consumedOnThisView ? 'Final view consumed — link closed' : `${viewsRemaining} view(s) remaining`}
+              </span>
+            )}
             {expiresAt && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: '#f59e0b' }}>
                 <Clock className="w-3.5 h-3.5" />
@@ -359,4 +488,10 @@ export default function SharedProfileView({ initialToken }) {
       </div>
     </div>
   );
+}
+
+export default function SharedProfileView({ initialToken }) {
+  const params = useParams();
+  const token = initialToken || params?.token || '';
+  return <SharedProfileViewBody key={token} token={token} />;
 }

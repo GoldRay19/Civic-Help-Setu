@@ -68,6 +68,20 @@ export const getAttributeStatus = (val) => {
   return 'unknown';
 };
 
+const isValidVerificationDate = (date) =>
+  typeof date === 'string' &&
+  /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+  !Number.isNaN(Date.parse(`${date}T00:00:00Z`));
+
+const isDirectSourceUrl = (url) => {
+  if (typeof url !== 'string') return false;
+  try {
+    return new URL(url).protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Normalizes an office's accessibility and language metadata safely.
  */
@@ -75,17 +89,29 @@ export const normalizeAccessibilityRecord = (raw = {}) => {
   const rawAccess = raw.accessibility || {};
   const rawLang = raw.languageCoverage || {};
   const rawAudit = raw.auditMetadata || {};
-
-  const accessibility = {
-    wheelchairRamp: normalizeAttributeStatus(rawAccess.wheelchairRamp ?? (raw.features?.includes('wheelchair_accessible') ? true : null)),
-    elevator: normalizeAttributeStatus(rawAccess.elevator),
-    accessibleRestroom: normalizeAttributeStatus(rawAccess.accessibleRestroom),
-    brailleSignage: normalizeAttributeStatus(rawAccess.brailleSignage),
-    assistiveListening: normalizeAttributeStatus(rawAccess.assistiveListening),
-    signLanguageSupport: normalizeAttributeStatus(rawAccess.signLanguageSupport),
-    tactilePaving: normalizeAttributeStatus(rawAccess.tactilePaving),
-    accessibleParking: normalizeAttributeStatus(rawAccess.accessibleParking ?? (raw.features?.includes('parking_available') ? true : null)),
-  };
+  const attributeKeys = Object.values(ACCESSIBILITY_FACILITIES);
+  const accessibilityEvidence = Object.fromEntries(
+    attributeKeys.map((key) => {
+      const evidence = rawAudit.accessibilityAttributes?.[key];
+      if (!evidence || !isDirectSourceUrl(evidence.sourceUrl) || !isValidVerificationDate(evidence.verificationDate)) {
+        return [key, null];
+      }
+      return [
+        key,
+        {
+          sourceUrl: evidence.sourceUrl,
+          sourceName: typeof evidence.sourceName === 'string' ? evidence.sourceName.trim() : evidence.sourceUrl,
+          verificationDate: evidence.verificationDate,
+        },
+      ];
+    })
+  );
+  const accessibility = Object.fromEntries(
+    attributeKeys.map((key) => [
+      key,
+      accessibilityEvidence[key] ? normalizeAttributeStatus(rawAccess[key]) : null,
+    ])
+  );
 
   const cleanLangList = (list) =>
     Array.isArray(list)
@@ -93,22 +119,24 @@ export const normalizeAccessibilityRecord = (raw = {}) => {
       : [];
 
   const languageCoverage = {
-    supportedLanguages: cleanLangList(rawLang.supportedLanguages?.length ? rawLang.supportedLanguages : ['English', 'Hindi']),
+    supportedLanguages: cleanLangList(rawLang.supportedLanguages),
     helpdeskLanguages: cleanLangList(rawLang.helpdeskLanguages),
     formsAvailableLanguages: cleanLangList(rawLang.formsAvailableLanguages),
     hasSignLanguageInterpreter: normalizeAttributeStatus(rawLang.hasSignLanguageInterpreter),
   };
 
+  const hasAttributeEvidence = Object.values(accessibilityEvidence).some(Boolean);
   const auditMetadata = {
-    verifiedBy: typeof rawAudit.verifiedBy === 'string' ? rawAudit.verifiedBy.trim() : 'District Facilitation Audit',
-    reviewDate: typeof rawAudit.reviewDate === 'string' && rawAudit.reviewDate.trim() ? rawAudit.reviewDate.trim() : raw.lastVerified || null,
-    sourceUrl: typeof rawAudit.sourceUrl === 'string' ? rawAudit.sourceUrl.trim() : raw.contact?.portalUrl || '',
-    verificationNotes: typeof rawAudit.verificationNotes === 'string' ? rawAudit.verificationNotes.trim() : '',
+    verifiedBy: hasAttributeEvidence && typeof rawAudit.verifiedBy === 'string' ? rawAudit.verifiedBy.trim() : null,
+    reviewDate: hasAttributeEvidence && isValidVerificationDate(rawAudit.reviewDate) ? rawAudit.reviewDate : null,
+    sourceUrl: hasAttributeEvidence && isDirectSourceUrl(rawAudit.sourceUrl) ? rawAudit.sourceUrl.trim() : '',
+    verificationNotes: hasAttributeEvidence && typeof rawAudit.verificationNotes === 'string' ? rawAudit.verificationNotes.trim() : '',
   };
 
   return {
     ...raw,
     accessibility,
+    accessibilityEvidence,
     languageCoverage,
     auditMetadata,
   };
@@ -285,7 +313,7 @@ export const recordOfficeAccessibilityAudit = (officeId, auditPayload = {}) => {
 
 export const calculateOfficeAccessibilityScore = (office) => {
   if (!office) {
-    return { score: 0, level: 'UNKNOWN', color: '#64748b', badges: [] };
+    return { score: null, level: 'UNKNOWN', color: '#64748b', badges: [] };
   }
 
   const record = normalizeAccessibilityRecord(office);
@@ -296,13 +324,8 @@ export const calculateOfficeAccessibilityScore = (office) => {
   const badges = [];
 
   for (const [facilityKey, weight] of Object.entries(FACILITY_WEIGHTS)) {
-    let status = record.accessibility[facilityKey];
-
-    if (communityAudits.length > 0 && communityAudits[0].facilities?.[facilityKey] !== undefined) {
-      status = communityAudits[0].facilities[facilityKey];
-    }
-
-    totalPossible += weight;
+    const status = record.accessibility[facilityKey];
+    if (status !== null) totalPossible += weight;
     if (status === true) {
       earnedPoints += weight;
       badges.push({ id: facilityKey, label: FACILITY_LABELS[facilityKey], status: 'available' });
@@ -311,6 +334,17 @@ export const calculateOfficeAccessibilityScore = (office) => {
     } else {
       badges.push({ id: facilityKey, label: FACILITY_LABELS[facilityKey], status: 'unknown' });
     }
+  }
+
+  if (totalPossible === 0) {
+    return {
+      score: null,
+      level: 'UNKNOWN',
+      color: '#64748b',
+      badges,
+      communityAuditsCount: communityAudits.length,
+      lastAudited: null,
+    };
   }
 
   const score = Math.round((earnedPoints / (totalPossible || 1)) * 100);
