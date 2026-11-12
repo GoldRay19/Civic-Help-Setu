@@ -39,6 +39,7 @@ import DocumentTypeGuidanceModal from '../components/services/DocumentTypeGuidan
 import ApplicationReadinessCheckerModal from '../components/services/ApplicationReadinessCheckerModal';
 import FeeWaiverEligibilityCard from '../components/services/FeeWaiverEligibilityCard';
 import ServiceSlaReliabilityCard from '../components/services/ServiceSlaReliabilityCard';
+import AadhaarGuide from '../components/services/AadhaarGuide';
 
 const getSavedServices = () => {
   try {
@@ -101,6 +102,7 @@ const ServiceDetails = ({ previewService = null }) => {
   const [showMakeChecklistModal, setShowMakeChecklistModal] = useState(false);
   const [showReadinessCheckerModal, setShowReadinessCheckerModal] = useState(false);
   const [showShareByEmailModal, setShowShareByEmailModal] = useState(false);
+  const [showDedicatedAadhaarGuide, setShowDedicatedAadhaarGuide] = useState(false);
   const service = previewService ?? getServiceById(id);
   const [, setSavedTick] = useState(0);
   const [customChecklistState, setCustomChecklistState] = useState(null);
@@ -781,25 +783,78 @@ const ServiceDetails = ({ previewService = null }) => {
           <ServiceSlaReliabilityCard service={service} />
 
           {/* Service Guide */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setShowReaderModal(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+          {service.id === 'aadhaar-card' && (
+            <div
+              className="card"
+              style={{
+                padding: '1.25rem',
+                marginBottom: '1.25rem',
+                border: '1px solid var(--accent-main, #3b82f6)',
+                background: 'var(--bg-card)',
+                borderRadius: '1rem',
+              }}
             >
-              <Eye size={15} color="var(--accent-main)" />
-              Accessible Reader Preferences
-            </button>
-          </div>
-          <div style={readerStyle}>
-            <ServiceGuide
-              service={service}
-              focusMode={focusMode}
-              onToggleFocusMode={toggleFocusMode}
-              onMakeChecklist={() => setShowMakeChecklistModal(true)}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ maxWidth: '650px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <ShieldCheck size={18} color="var(--accent-main, #3b82f6)" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
+                      Dedicated Aadhaar Enrolment &amp; Demographic Update Guide
+                    </h3>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Detailed 28-digit EID and 14-digit URN tracking guide, authorised ASK centre locator, statutory fee ceiling caps, and client-side milestone simulator.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setShowDedicatedAadhaarGuide((v) => !v)}
+                    style={{ fontSize: '0.85rem' }}
+                  >
+                    {showDedicatedAadhaarGuide ? 'Switch to Standard Guide' : 'Open Interactive Aadhaar Guide'}
+                  </button>
+                  <Link
+                    to="/services/aadhaar-guide"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.85rem', textDecoration: 'none' }}
+                  >
+                    Dedicated Page
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {service.id === 'aadhaar-card' && showDedicatedAadhaarGuide ? (
+            <AadhaarGuide
+              initialState={service.jurisdiction?.states?.[0] || 'Delhi'}
+              onBack={() => setShowDedicatedAadhaarGuide(false)}
             />
-          </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowReaderModal(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+                >
+                  <Eye size={15} color="var(--accent-main)" />
+                  Accessible Reader Preferences
+                </button>
+              </div>
+              <div style={readerStyle}>
+                <ServiceGuide
+                  service={service}
+                  focusMode={focusMode}
+                  onToggleFocusMode={toggleFocusMode}
+                  onMakeChecklist={() => setShowMakeChecklistModal(true)}
+                />
+              </div>
+            </>
+          )}
 
           {/* Structured Application Checklist (#existing Checklist UI) */}
           {customChecklist && (

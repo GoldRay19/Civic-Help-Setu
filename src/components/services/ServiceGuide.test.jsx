@@ -29,7 +29,7 @@ describe('ServiceGuide focus mode', () => {
     [false, true].forEach((mode) => {
       const html = render(mode);
       service.warnings.forEach((w) => expect(html).toContain(w.replace(/'/g, '&#x27;')));
-      service.steps.forEach((step) => expect(html).toContain(step.title));
+      service.steps.forEach((step) => expect(html).toContain(step.title.replace(/'/g, '&#x27;')));
       expect(html).toContain('Hospital or health-centre birth record');
       expect(html).toContain('href="https://townpanchayat.in/birth_death.php"');
       expect(html).toContain('Before you apply');
