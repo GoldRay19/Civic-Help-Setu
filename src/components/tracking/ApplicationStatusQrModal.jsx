@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   QrCode,
   RotateCcw,
@@ -6,49 +6,51 @@ import {
   Copy,
   Check,
   ShieldCheck,
-  Clock,
-  ExternalLink,
-  Printer,
+  Lock,
+  Eye,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   createOrRotateStatusToken,
   revokeStatusToken,
   buildStatusQrPath,
+  getStatusSecuritySummary,
+  getActiveStatusTokenForApplication,
+  STATUS_QR_VIEW_PRESETS,
+  MIN_PASSCODE_LENGTH,
 } from '../../services/applicationStatusQrService';
 
-export default function ApplicationStatusQrModal({
-  isOpen,
+function ApplicationStatusQrModalBody({
   onClose,
   application,
   initialRecord,
 }) {
-  const [tokenRecord, setTokenRecord] = useState(() => {
-    if (initialRecord) return initialRecord;
-    if (isOpen && application?.id) {
-      return createOrRotateStatusToken(application.id, application);
-    }
-    return null;
-  });
+  const [tokenRecord, setTokenRecord] = useState(
+    () =>
+      initialRecord ||
+      getActiveStatusTokenForApplication(application?.id) ||
+      createOrRotateStatusToken(application.id, application)
+  );
+  const [accessPin, setAccessPin] = useState('');
+  const [maxViews, setMaxViews] = useState('');
+  const [formError, setFormError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && application?.id && !tokenRecord) {
-      const record = createOrRotateStatusToken(application.id, application);
-      setTokenRecord(record);
-    }
-  }, [isOpen, application, tokenRecord]);
+  const origin =
+    typeof window !== 'undefined' && window.location
+      ? window.location.origin
+      : 'https://civichelpsetu.gov.in';
 
-  if (!isOpen || !application) return null;
-
-  const origin = typeof window !== 'undefined' && window.location ? window.location.origin : 'https://civichelpsetu.gov.in';
-  const lookupUrl = tokenRecord
-    ? `${origin}/app-status/${tokenRecord.token}`
-    : '';
+  const lookupUrl =
+    tokenRecord && !tokenRecord.revoked
+      ? `${origin}/app-status/${tokenRecord.token}`
+      : '';
 
   const qrData = lookupUrl ? buildStatusQrPath(lookupUrl) : null;
+  const securitySummary = tokenRecord ? getStatusSecuritySummary(tokenRecord) : null;
 
   const handleCopy = () => {
-    if (!lookupUrl) return;
+    if (!lookupUrl || typeof navigator === 'undefined' || !navigator.clipboard) return;
     navigator.clipboard.writeText(lookupUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
@@ -56,8 +58,24 @@ export default function ApplicationStatusQrModal({
   };
 
   const handleRotate = () => {
-    const record = createOrRotateStatusToken(application.id, application);
-    setTokenRecord(record);
+    setFormError('');
+    const trimmedPin = accessPin.trim();
+    if (trimmedPin && trimmedPin.length < MIN_PASSCODE_LENGTH) {
+      setFormError(`Passcode must be at least ${MIN_PASSCODE_LENGTH} characters (or leave blank).`);
+      return;
+    }
+
+    try {
+      const parsedMaxViews = maxViews ? Number(maxViews) : null;
+      const record = createOrRotateStatusToken(application.id, application, {
+        accessPin: trimmedPin || undefined,
+        maxViews: parsedMaxViews,
+      });
+      setTokenRecord(record);
+      setAccessPin('');
+    } catch (err) {
+      setFormError(err.message || 'Unable to rotate status token.');
+    }
   };
 
   const handleRevoke = () => {
@@ -87,12 +105,14 @@ export default function ApplicationStatusQrModal({
         style={{
           background: 'var(--card-bg)',
           borderRadius: '0.75rem',
-          maxWidth: '500px',
+          maxWidth: '520px',
           width: '100%',
           border: '1px solid var(--border-color)',
           padding: '1.75rem',
           boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
           textAlign: 'center',
+          maxHeight: '90vh',
+          overflowY: 'auto',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -105,6 +125,7 @@ export default function ApplicationStatusQrModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close Application Status QR Modal"
             style={{
               background: 'none',
               border: 'none',
@@ -206,11 +227,170 @@ export default function ApplicationStatusQrModal({
                 borderRadius: '0.4rem',
                 border: '1px solid rgba(16, 185, 129, 0.2)',
                 textAlign: 'left',
+                width: '100%',
               }}
             >
               <ShieldCheck className="w-4 h-4 flex-shrink-0" />
-              <span>Opaque token protection: QR encodes no applicant personal details or documents.</span>
+              <span>Opaque token protection: QR encodes no applicant personal details or documents, and milestones are scrubbed before SHA-256 sealing.</span>
             </div>
+
+            {/* Security summary status pills */}
+            {securitySummary && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '0.45rem',
+                  width: '100%',
+                  justifyContent: 'center',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    fontSize: '0.72rem',
+                    fontWeight: '600',
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: '99px',
+                    background: securitySummary.integrityVerified ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                    color: securitySummary.integrityVerified ? '#059669' : '#dc2626',
+                  }}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  {securitySummary.integrityVerified
+                    ? `SHA-256 Sealed (${securitySummary.integrityFingerprint || 'verified'})`
+                    : 'Integrity Warning'}
+                </span>
+
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    fontSize: '0.72rem',
+                    fontWeight: '600',
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: '99px',
+                    background: securitySummary.pinProtected ? 'rgba(79, 70, 229, 0.12)' : 'rgba(100, 116, 139, 0.12)',
+                    color: securitySummary.pinProtected ? '#4f46e5' : 'var(--text-secondary)',
+                  }}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  {securitySummary.pinProtected ? 'Passcode Protected' : 'Open QR Access'}
+                </span>
+
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    fontSize: '0.72rem',
+                    fontWeight: '600',
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: '99px',
+                    background: 'rgba(14, 165, 233, 0.12)',
+                    color: '#0284c7',
+                  }}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  {securitySummary.maxViews
+                    ? `${securitySummary.viewsRemaining} of ${securitySummary.maxViews} views left`
+                    : `${securitySummary.accessCount} view(s) • Unlimited`}
+                </span>
+              </div>
+            )}
+
+            {/* Passcode & View Cap Rotation Settings */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.75rem',
+                width: '100%',
+                marginTop: '0.25rem',
+                textAlign: 'left',
+              }}
+            >
+              <div>
+                <label
+                  htmlFor="qr-passcode-input"
+                  style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}
+                >
+                  Optional Passcode (PIN)
+                </label>
+                <input
+                  id="qr-passcode-input"
+                  type="password"
+                  value={accessPin}
+                  onChange={(e) => {
+                    setAccessPin(e.target.value);
+                    if (formError) setFormError('');
+                  }}
+                  placeholder="Set 4+ digit PIN"
+                  autoComplete="new-password"
+                  style={{
+                    width: '100%',
+                    padding: '0.45rem 0.65rem',
+                    borderRadius: '0.35rem',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-secondary, transparent)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.8rem',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="qr-max-views-select"
+                  style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}
+                >
+                  Maximum View Cap
+                </label>
+                <select
+                  id="qr-max-views-select"
+                  value={maxViews}
+                  onChange={(e) => setMaxViews(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.45rem 0.65rem',
+                    borderRadius: '0.35rem',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <option value="">Unlimited Views</option>
+                  <option value={String(STATUS_QR_VIEW_PRESETS.SINGLE_USE)}>Single-Use (Burn After Read)</option>
+                  <option value={String(STATUS_QR_VIEW_PRESETS.FIVE_VIEWS)}>5 Views Max</option>
+                  <option value={String(STATUS_QR_VIEW_PRESETS.TEN_VIEWS)}>10 Views Max</option>
+                </select>
+              </div>
+            </div>
+
+            {formError && (
+              <div
+                role="alert"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.35rem',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  color: '#dc2626',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  width: '100%',
+                }}
+              >
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
 
             {/* Management Buttons */}
             <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
@@ -300,5 +480,21 @@ export default function ApplicationStatusQrModal({
         )}
       </div>
     </div>
+  );
+}
+
+export default function ApplicationStatusQrModal({
+  isOpen,
+  onClose,
+  application,
+  initialRecord,
+}) {
+  if (!isOpen || !application) return null;
+  return (
+    <ApplicationStatusQrModalBody
+      onClose={onClose}
+      application={application}
+      initialRecord={initialRecord}
+    />
   );
 }
