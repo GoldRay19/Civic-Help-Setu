@@ -42,6 +42,7 @@ import PublicApplicationStatusView from './pages/PublicApplicationStatusView';
 import SharedProfileView from './pages/SharedProfileView';
 import NotFound from './pages/NotFound';
 import VerifyEmail from './pages/VerifyEmail';
+import AadhaarGuidePage from './pages/AadhaarGuidePage';
 import CivicWorksBoard from './pages/CivicWorksBoard';
 
 const Services = lazy(() => import('./pages/Services'));
@@ -81,6 +82,8 @@ function AppRoot() {
                       <Route path="/verify-email" element={<VerifyEmail />} />
                       <Route path="/assistant" element={<Assistant />} />
                       <Route path="/services" element={<Suspense fallback={<ServicesFallback />}><Services /></Suspense>} />
+                      <Route path="/services/aadhaar-guide" element={<AadhaarGuidePage />} />
+                      <Route path="/aadhaar-guide" element={<AadhaarGuidePage />} />
                       <Route path="/services/:id" element={<ServiceDetails />} />
                       <Route path="/acronyms" element={<Acronyms />} />
                       <Route path="/eligibility" element={<Eligibility />} />

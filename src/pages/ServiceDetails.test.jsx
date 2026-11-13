@@ -34,4 +34,12 @@ describe('ServiceDetails', () => {
   it('says so when the guide does not exist', () => {
     expect(render('/services/no-such-guide')).toContain('Service not found');
   });
+
+  it('renders the dedicated Aadhaar guide entry card when viewing the aadhaar-card service (#530)', () => {
+    const html = render('/services/aadhaar-card');
+    expect(html).toContain('Aadhaar Card Enrollment');
+    expect(html).toContain('Dedicated Aadhaar Enrolment &amp; Demographic Update Guide');
+    expect(html).toContain('Open Interactive Aadhaar Guide');
+    expect(html).toContain('/services/aadhaar-guide');
+  });
 });

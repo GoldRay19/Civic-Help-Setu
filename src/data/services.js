@@ -135,33 +135,102 @@ export const MOCK_SERVICES = [
     id: 'aadhaar-card',
     jurisdiction: { level: 'national', states: [], districts: [], localBody: '' },
     name: 'Aadhaar Card Enrollment',
-    shortDescription: '12-digit unique identity number based on biometric and demographic data.',
+    shortDescription: '12-digit unique identity number based on biometric and demographic data issued by UIDAI. Enrolment is free; demographic updates (address online, name/DoB at centre) carry capped fees.',
     category: 'Identity',
-    department: 'UIDAI',
-    type: 'Offline (Appointment Online)',
+    department: 'Unique Identification Authority of India (UIDAI)',
+    type: 'Offline (ASK / Centre) / Online (myAadhaar for Address)',
     difficulty: 'Medium',
     feeType: 'free',
     speedDays: 30,
     popularityScore: 99,
-    eligibility: ['Any resident of India'],
+    eligibility: [
+      'Any resident individual who has resided in India for 182 days or more in the 12 months immediately preceding application.',
+      'Newborns and children of all ages (Baal Aadhaar for children under 5 years, with facial photo linked to parent).',
+      'Non-Resident Indians (NRIs) holding a valid Indian passport on arrival.'
+    ],
     documents: [
-      'Proof of Identity (POI) (e.g., PAN, Passport, Voter ID)',
-      'Proof of Address (POA) (e.g., Passport, Bank Statement, Utility Bill)',
-      'Proof of Date of Birth (DOB) (e.g., Birth Certificate, SSLC Certificate)'
+      'Proof of Identity (POI) (Original Passport, PAN Card, Voter ID, Driving Licence, or Govt Photo ID)',
+      'Proof of Address (POA) (Original Passport, Bank Passbook with photo, Voter ID, Utility Bill not older than 3 months, or Registered Rent Agreement)',
+      'Proof of Date of Birth (DOB) (Birth Certificate issued by Registrar/Local Body; SSLC/Matriculation Certificate; or Passport)',
+      'Proof of Relationship (POR) (Birth Certificate, Ration Card, or Marriage Certificate — required for children <5 years or Head of Family address update)',
+      'Optional: Active Personal Mobile Number and Email Address (voluntary at enrolment, but essential for OTP and myAadhaar tracking)'
     ],
+    documentRequirements: {
+      'Proof of Identity (POI) (Original Passport, PAN Card, Voter ID, Driving Licence, or Govt Photo ID)': {
+        type: 'official'
+      },
+      'Proof of Address (POA) (Original Passport, Bank Passbook with photo, Voter ID, Utility Bill not older than 3 months, or Registered Rent Agreement)': {
+        type: 'official'
+      },
+      'Proof of Date of Birth (DOB) (Birth Certificate issued by Registrar/Local Body; SSLC/Matriculation Certificate; or Passport)': {
+        type: 'official'
+      },
+      'Proof of Relationship (POR) (Birth Certificate, Ration Card, or Marriage Certificate — required for children <5 years or Head of Family address update)': {
+        type: 'conditional',
+        condition: 'Mandatory when enrolling minors under 5 years or applying for Head of Family (HoF) based address update.'
+      },
+      'Optional: Active Personal Mobile Number and Email Address (voluntary at enrolment, but essential for OTP and myAadhaar tracking)': {
+        type: 'optional'
+      }
+    },
     steps: [
-      { title: 'Locate an Enrollment Center', description: 'Find a nearby Aadhaar Seva Kendra or authorized bank/post office.' },
-      { title: 'Book an Appointment (Optional)', description: 'Book online to save time.' },
-      { title: 'Visit the Center', description: 'Carry original documents. Provide biometrics (fingerprints, iris) and demographic details.' },
-      { title: 'Collect Acknowledgment Slip', description: 'Keep the 14-digit EID number safe to track status.' }
+      {
+        title: 'Determine service path and assemble original proofs',
+        description: 'Decide whether you need New Enrolment (first-time, free) or Demographic Update (existing Aadhaar holder, ₹50 at ASK or free online document upload). Gather unexpired original documents (photocopies without originals are not accepted).'
+      },
+      {
+        title: 'Locate an authorised centre or open myAadhaar',
+        description: 'For address-only updates, use the myAadhaar portal (https://myaadhaar.uidai.gov.in) with mobile OTP. For new enrolment, photo, mobile, or DoB updates, locate an authorised Aadhaar Seva Kendra, Bank, or Post Office centre at https://appointments.uidai.gov.in.'
+      },
+      {
+        title: 'Book an appointment online (optional but recommended)',
+        description: 'Book an advance slot on appointments.uidai.gov.in to save time, or obtain a walk-in token directly at an Aadhaar Seva Kendra.'
+      },
+      {
+        title: 'Visit the centre for data capture and screen review',
+        description: 'Present original documents for colour scanning. Certified operator captures biometrics (10 fingerprints, 2 iris scans, photo). Scrutinize the resident-facing monitor carefully before signing off.'
+      },
+      {
+        title: 'Collect and verify Enrolment Acknowledgement Slip',
+        description: 'Verify your name spelling, mobile number, and address on the printed slip. Note your 28-digit Enrolment ID (EID) or 14-digit Update Request Number (URN).'
+      },
+      {
+        title: 'Track CIDR validation status',
+        description: 'Track the application on https://myaadhaar.uidai.gov.in/CheckAadhaarStatus using your 28-digit EID. CIDR executes automated de-duplication and document verification.'
+      },
+      {
+        title: 'Download digital e-Aadhaar and receive physical card',
+        description: 'Once generated, download digitally signed e-Aadhaar immediately for free (PDF password: first 4 letters of name in CAPITAL + 4-digit Year of Birth). Physical Aadhaar letter is delivered via India Post Speed Post.'
+      }
     ],
-    fees: 'Free for new enrollment',
-    processingTime: 'Up to 90 days',
+    fees: 'Free for new enrolment and minor Mandatory Biometric Updates (ages 5-7, 15-17); ₹50 (inclusive of GST) for demographic updates at centres; ₹100 for biometric updates; ₹50 for official PVC card.',
+    processingTime: 'Up to 30 to 90 days under UIDAI Citizens\' Charter (e-Aadhaar often available in 5–15 days).',
+    dateGuidance: [
+      { label: 'Application Date', description: 'Date the resident submits the online form or visits an authorised enrolment centre.' },
+      { label: 'Appointment Date', description: 'Reserved date and time slot at the Aadhaar Seva Kendra.' },
+      { label: 'Enrolment Date', description: 'Timestamp when operator captures biometrics and demographic particulars at the counter.' },
+      { label: 'Verification Date', description: 'Date UIDAI CIDR backend scrutinizes submitted supporting documents.' },
+      { label: 'Acknowledgement Date', description: 'Date printed on the official Acknowledgement Slip containing the 28-digit EID or 14-digit URN.' },
+      { label: 'Issue Date', description: 'Date the 12-digit Aadhaar number is generated or demographic update is committed.' },
+      { label: 'Dispatch Date', description: 'Date India Post Speed Post tracking number is assigned to the physical letter.' },
+      { label: 'Delivery Date', description: 'Date India Post delivers the printed Aadhaar packet to the citizen\'s residential address.' },
+      { label: 'Validity Expiry Date', description: 'Adult Aadhaar has lifelong validity. Baal Aadhaar (under 5 years) expires at age 5 and requires mandatory biometric update.' },
+      { label: 'Statutory Turnaround', description: 'Standard timeframe under UIDAI Citizens\' Charter: up to 30 to 90 days from data capture.' }
+    ],
+    validityNote: 'Aadhaar has lifelong validity for adult residents. For children under 5 (Baal Aadhaar), validity requires mandatory biometric update between ages 5-7 and ages 15-17.',
     officialSources: [
-      { name: 'UIDAI Official Website', url: 'https://uidai.gov.in', verified: true }
+      { name: 'UIDAI Official Website', url: 'https://uidai.gov.in', verified: true },
+      { name: 'myAadhaar Citizen Portal', url: 'https://myaadhaar.uidai.gov.in', verified: true },
+      { name: 'UIDAI Appointment Booking Portal', url: 'https://appointments.uidai.gov.in', verified: true },
+      { name: 'UIDAI Grievance Redressal Portal', url: 'https://myaadhaar.uidai.gov.in/file-complaint', verified: true }
     ],
-    warnings: ['Always carry original documents to the center for verification.', 'Do not share your Aadhaar OTP with anyone.'],
-    lastVerified: '2023-11-05'
+    warnings: [
+      'An Enrolment Acknowledgement Slip is strictly a submission record and does NOT constitute an Aadhaar card or proof of identity or Indian citizenship (Section 9 of Aadhaar Act).',
+      'Always scrutinize the operator’s preview monitor before leaving the counter to catch spelling errors immediately.',
+      'UIDAI strictly caps official fees at ₹0 for enrolment, ₹50 for demographic updates, and ₹100 for biometrics. If any centre overcharges, demand a computer receipt and escalate to 1947 or helpdesk@uidai.gov.in.',
+      'Never laminate or purchase unauthorized plastic smart cards from local cyber cafes. Order the official ₹50 PVC card exclusively on myAadhaar.'
+    ],
+    lastVerified: '2026-11-12'
   },
   {
     id: 'driving-license',
