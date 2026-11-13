@@ -44,7 +44,7 @@ Public on purpose (anyone, including signed-out visitors): reading the service c
 
 ## What this does not do
 
-This app has **no server**: all records are in each browser's `localStorage`. The checks above stop mistakes, stale tabs and UI-only gating, and they make the intended rules explicit and testable. They cannot stop someone who opens the browser's developer tools, because that person can edit `localStorage` directly or call the functions after faking the signed-in user. Two things are still needed before shared data exists:
+Most workflow records remain in each browser's `localStorage`. The checks above stop mistakes, stale tabs and UI-only gating, and they make the intended rules explicit and testable. They cannot stop someone who opens the browser's developer tools from editing local records. The Privacy Centre export is a separate server-enforced operation (`api/privacy-exports.js`): its account identity comes from a verified Clerk session, and its temporary download records are inaccessible to browser clients by Firestore rules. Shared workflow data still needs backend or Firebase enforcement before it is treated as server-owned:
 
 - **A backend or Firebase rules** that check the role on the server for every write (see `docs/security/threat-model.md`, T2, and the Firebase rules audit in #220). The inventory above is the list of actions those rules must cover.
 - **No demo admin in production builds.** Without a Clerk key the login page lets anyone pick the admin role. That is a separate item in the threat model (F1) and is not changed here.

@@ -1,6 +1,6 @@
 # Firebase security rules
 
-The app does **not use Firebase yet** (see [INTEGRATIONS.md](INTEGRATIONS.md) and the threat model, T2). This folder holds the rules for the planned Firestore and Cloud Storage backend, written and tested **before** any data goes there, so the first deploy is already deny-by-default. Client-side checks (`ProtectedRoute`, `can()` in [ACCESS_CONTROL.md](ACCESS_CONTROL.md)) never secure a database; these rules do.
+Ordinary workflow records remain in browser storage. The Privacy Centre export route uses Firebase Admin for temporary server-only export records and metadata-only audit entries; this is described in [PRIVACY_EXPORTS.md](PRIVACY_EXPORTS.md). The remaining Firestore and Cloud Storage rules define the planned workflow backend. Client-side checks (`ProtectedRoute`, `can()` in [ACCESS_CONTROL.md](ACCESS_CONTROL.md)) never secure a database; these rules do.
 
 ```
 firebase/
@@ -28,6 +28,8 @@ firebase/
 | `users/{uid}` | owner | owner | owner | owner | only `displayName`, `language`, `theme`, `createdAt` (server time, immutable), `updatedAt`; text length limits |
 | `users/{uid}/{vaultDocs, saved, applications, officeTokens, reminders, settings, assessments, grievanceTickets, checklists, drafts, applicantProfiles, scorecards, assistantChats}/{id}` | owner | owner | owner | owner | one envelope: `data` (map, at most 60 keys, no `role`/`isAdmin`/`verified`/`permissions`/`uid`/`ownerId`), `schemaVersion` (1-100), `updatedAt` (server time), optional `createdAt` (immutable). Any other collection name is refused. **Admins have no access** |
 | `users/{uid}/privacyAudit/{id}` | owner | owner | never | never | `action`, `category`, `createdAt` (server time) |
+| `privacyExports/{id}` | never | never | never | never | Temporary account-bound exports; Admin SDK only, `expiresAt` TTL |
+| `privacyExportAudit/{id}` | never | never | never | never | Metadata-only export audit; Admin SDK only |
 | `services/{id}` | **public** | admin | admin | admin | `name` (1-200), `category`, optional `shortDescription`; at most 60 fields |
 | `notices/{id}` | public if `status == approved`, else admin | admin | admin | admin | `title`, `status` in `pending_review`, `approved`, `rejected`, `archived` |
 | `barrierInsights/{id}` | **public** | never | never | never | server only |

@@ -43,6 +43,7 @@ import SharedProfileView from './pages/SharedProfileView';
 import NotFound from './pages/NotFound';
 import VerifyEmail from './pages/VerifyEmail';
 import AadhaarGuidePage from './pages/AadhaarGuidePage';
+import CivicWorksBoard from './pages/CivicWorksBoard';
 
 const Services = lazy(() => import('./pages/Services'));
 
@@ -64,11 +65,11 @@ function AppRoot() {
               <NetworkProvider>
                 <ConfirmationDialogProvider>
                   <>
-                    <div className="app-layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                    <div className="app-layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '100vw', overflowX: 'clip' }}>
                     <OfflineBanner />
                     <SkipToContent />
                     <Navbar />
-                  <main id="main-content" style={{ flex: 1 }} tabIndex="-1">
+                  <main id="main-content" style={{ flex: 1, minWidth: 0, width: '100%' }} tabIndex="-1">
                     <RouteErrorBoundary>
                     <Routes>
                       <Route path="/" element={<Home />} />
@@ -89,6 +90,7 @@ function AppRoot() {
                       <Route path="/nearby" element={<NearbyOffices />} />
                       <Route path="/nearby-offices" element={<NearbyOffices />} />
                       <Route path="/track" element={<Track />} />
+                      <Route path="/civic-works" element={<CivicWorksBoard />} />
                       <Route path="/shared-checklist/:token" element={<SharedChecklistView />} />
                       <Route path="/shared-directory/:token" element={<SharedDirectoryView />} />
                       <Route path="/app-status/:token" element={<PublicApplicationStatusView />} />

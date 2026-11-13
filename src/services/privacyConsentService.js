@@ -1,7 +1,7 @@
 /**
  * Privacy and Consent Management Service (#80)
  * Implements granular consent category management, authorization guards,
- * auditable security event logging (strictly without PII), complete data export,
+ * auditable security event logging (strictly without PII), secure export routing,
  * and cascading account deletion according to the India DPDP Act 2023 & GDPR standards.
  */
 import { logDiagnostic } from '../utils/diagnostics';
@@ -41,10 +41,9 @@ const redactVaultDocuments = (docs) => {
 
 /**
  * Every localStorage key where the app keeps the user's own data, with the file that writes it.
- * purgeAllUserData deletes all of them and exportUserData builds its sections from the same list,
- * so a service that starts writing a new key only has to be added here.
- * exportAs is the section name in the export (null: deleted on purge but not exported, e.g.
- * caches that only copy data exported elsewhere). `empty` is used when the key is missing or corrupt.
+ * purgeAllUserData deletes all of them, so a service that starts writing a new key only has to be
+ * added here. `exportAs` and `empty` are legacy registry annotations; secure exports use the
+ * account-owned allowlist in privacyExportService.js instead of exporting this global registry.
  * Keys that purge leaves alone on purpose are in RETAINED_STORAGE_KEYS.
  */
 export const USER_DATA_STORES = [
@@ -87,6 +86,7 @@ export const USER_DATA_STORES = [
   { key: 'civicbridge_newsletter_subscriptions', category: 'tracking', exportAs: 'newsletterSubscriptions', empty: [] }, // newsletterSubscriptionService.js
   { key: 'civicbridge_sent_digests', category: 'tracking', exportAs: 'sentNewsletterDigests', empty: [] }, // newsletterSubscriptionService.js
   { key: 'civicbridge_newsletter_delivery_failures', category: 'tracking', exportAs: 'newsletterDeliveryFailures', empty: [] }, // newsletterSubscriptionService.js
+  { key: 'civicbridge_civic_works_reports_v1', category: 'activity', exportAs: 'civicWorksReports', empty: [] }, // civicWorksBoardService.js
 ];
 
 /**
@@ -183,6 +183,8 @@ export const RETAINED_STORAGE_KEYS = [
   'civicbridge_conflict_audit_logs',
   'civicbridge_catalogue_enrichment_queue_v1',
   'civicbridge_duplicate_review_states',
+  'civicbridge_civic_works_clusters_v1',
+  'civicbridge_civic_works_rate_limit_v1',
   // Handled by purge itself: consents are reset, the audit log keeps the deletion receipt
   CONSENT_STORAGE_KEY,
   AUDIT_STORAGE_KEY,
@@ -304,19 +306,6 @@ function getPrefixedUserDataKeys(storage) {
     }
   }
   return keys;
-}
-
-// Parses a stored JSON value. Missing, corrupt or wrong-shaped values give `empty` instead of throwing.
-function readStoredJson(storage, key, empty) {
-  const raw = storage.getItem(key);
-  if (raw === null || raw === undefined || raw === '') return empty;
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(empty) && !Array.isArray(parsed)) return empty;
-    return parsed;
-  } catch {
-    return empty;
-  }
 }
 
 /**
@@ -525,7 +514,7 @@ export function enforceAuthorization(actorUserId, resourceOwnerId) {
  * @param {Object} metadata - Non-sensitive metadata
  * @param {string} actorId - Acting user identifier
  */
-export function recordPrivacyAuditLog(action, metadata = {}, actorId = 'citizen_user') {
+export function recordPrivacyAuditLog(action, metadata = {}, actorId = 'anonymous') {
   const storage = getStorage();
 
   // Strip potential PII keys

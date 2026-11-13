@@ -8,6 +8,7 @@ import {
   rotateEncryptedEnvelope,
   validateVaultPassphrase,
 } from './vaultCryptoService';
+import { getCurrentActor } from './accessControl';
 
 const STORAGE_KEY = 'civicbridge_vault_docs';
 
@@ -206,13 +207,20 @@ export const getDocuments = () => {
 
 const buildUpdatedDocumentsOnSave = (doc) => {
   const current = getDocuments();
-  if (doc.id && current.some((d) => d.id === doc.id)) {
+  const ownerUserId = getCurrentActor()?.id;
+  const existing = doc.id ? current.find((item) => item.id === doc.id) : null;
+  const existingOwner = existing?.ownerUserId || existing?.userId || null;
+  if (existingOwner && existingOwner !== ownerUserId) {
+    throw new Error('This vault record is not owned by the active account.');
+  }
+  if (existing) {
     return current.map((d) =>
       d.id === doc.id ? { ...d, ...doc, number: minimizeDocumentNumber(doc.number ?? d.number) } : d
     );
   }
   const newDoc = {
     ...doc,
+    ...(ownerUserId ? { ownerUserId } : {}),
     number: minimizeDocumentNumber(doc.number),
     id: doc.id || `doc-${Date.now()}`,
     createdAt: new Date().toISOString(),
@@ -244,6 +252,12 @@ export const saveDocumentEncrypted = async (doc) => {
 export const deleteDocument = (id) => {
   assertUnlockedIfEncrypted();
   const current = getDocuments();
+  const actorId = getCurrentActor()?.id || null;
+  const target = current.find((document) => document.id === id);
+  const ownerId = target?.ownerUserId || target?.userId || null;
+  if (ownerId && ownerId !== actorId) {
+    throw new Error('This vault record is not owned by the active account.');
+  }
   const updated = current.filter((d) => d.id !== id);
   persist(updated);
   return updated;
@@ -252,6 +266,12 @@ export const deleteDocument = (id) => {
 export const deleteDocumentEncrypted = async (id) => {
   assertUnlockedIfEncrypted();
   const current = getDocuments();
+  const actorId = getCurrentActor()?.id || null;
+  const target = current.find((document) => document.id === id);
+  const ownerId = target?.ownerUserId || target?.userId || null;
+  if (ownerId && ownerId !== actorId) {
+    throw new Error('This vault record is not owned by the active account.');
+  }
   const updated = current.filter((d) => d.id !== id);
   return persistAsync(updated);
 };

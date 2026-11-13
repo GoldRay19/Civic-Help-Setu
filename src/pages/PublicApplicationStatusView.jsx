@@ -1,37 +1,121 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ShieldCheck,
+  ShieldAlert,
   AlertTriangle,
   Lock,
   Clock,
   CheckCircle2,
-  Calendar,
   Layers,
   ArrowLeft,
   Building,
-  HelpCircle,
+  KeyRound,
+  Eye,
 } from 'lucide-react';
 import { resolvePublicStatusByToken } from '../services/applicationStatusQrService';
 
-export default function PublicApplicationStatusView({ initialToken }) {
-  const params = useParams();
-  const token = initialToken || params?.token;
+function PublicApplicationStatusViewBody({ token }) {
   const [data, setData] = useState(() => (token ? resolvePublicStatusByToken(token) : null));
-  const [loading, setLoading] = useState(() => !token || !data);
+  const [pinInput, setPinInput] = useState('');
 
-  useEffect(() => {
-    if (token) {
-      const res = resolvePublicStatusByToken(token);
-      setData(res);
-      setLoading(false);
-    }
-  }, [token]);
-
-  if (loading) {
+  if (!token) {
     return (
       <div className="section container" style={{ textAlign: 'center', padding: '5rem 1rem' }}>
         <p style={{ color: 'var(--text-secondary)' }}>Loading verified application milestone status...</p>
+      </div>
+    );
+  }
+
+  const handleUnlockSubmit = (e) => {
+    e.preventDefault();
+    const res = resolvePublicStatusByToken(token, 'web_client', { pin: pinInput });
+    setData(res);
+    if (res?.status !== 'ACTIVE') {
+      setPinInput('');
+    }
+  };
+
+  if (data && (data.status === 'PIN_REQUIRED' || data.status === 'INVALID_PIN')) {
+    const isInvalidAttempt = data.status === 'INVALID_PIN';
+    return (
+      <div className="section container" style={{ maxWidth: '520px', margin: '4rem auto', padding: '0 1rem' }}>
+        <div
+          style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '0.75rem',
+            padding: '2.25rem 2rem',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <div
+            style={{
+              width: '3.75rem',
+              height: '3.75rem',
+              borderRadius: '50%',
+              background: isInvalidAttempt ? 'rgba(239, 68, 68, 0.1)' : 'rgba(79, 70, 229, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem',
+              color: isInvalidAttempt ? '#ef4444' : '#4f46e5',
+            }}
+          >
+            <KeyRound className="w-7 h-7" />
+          </div>
+
+          <h2 style={{ fontSize: '1.35rem', fontWeight: '700', color: 'var(--text-primary)', textAlign: 'center', marginBottom: '0.5rem' }}>
+            Passcode Required to View Application Status
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, textAlign: 'center', marginBottom: '1.5rem' }}>
+            {isInvalidAttempt
+              ? data.error
+              : 'The applicant protected this status QR pass with a viewer passcode.'}
+          </p>
+
+          <form onSubmit={handleUnlockSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            <input
+              type="password"
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value)}
+              aria-label="Enter status pass passcode"
+              placeholder="Enter viewer passcode"
+              autoComplete="off"
+              style={{
+                width: '100%',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '0.45rem',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-secondary, transparent)',
+                color: 'var(--text-primary)',
+                fontSize: '0.95rem',
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                padding: '0.7rem 1.25rem',
+                borderRadius: '0.45rem',
+                border: 'none',
+                background: 'var(--accent-main)',
+                color: '#ffffff',
+                fontWeight: '600',
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+              }}
+            >
+              Unlock Status Pass
+            </button>
+          </form>
+
+          {typeof data.remainingAttempts === 'number' && (
+            <p style={{ marginTop: '0.9rem', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+              Attempts remaining before lockout: {data.remainingAttempts}
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -40,6 +124,31 @@ export default function PublicApplicationStatusView({ initialToken }) {
     const isRevoked = data?.status === 'REVOKED';
     const isRateLimited = data?.status === 'RATE_LIMITED';
     const isExpired = data?.status === 'EXPIRED';
+    const isLocked = data?.status === 'LOCKED';
+    const isViewLimit = data?.status === 'VIEW_LIMIT_REACHED';
+    const isTampered = data?.status === 'TAMPERED';
+    const isDanger = isRevoked || isRateLimited || isLocked || isTampered;
+
+    let heading = 'Application Not Found';
+    let description = data?.error || 'This status lookup QR link is no longer valid. The applicant may have refreshed or rotated their pass.';
+    if (isRateLimited) {
+      heading = 'Lookup Rate Limit Exceeded';
+    } else if (isRevoked) {
+      heading = 'QR Status Pass Deactivated';
+      description = 'This lookup QR code has been rotated or deactivated by the applicant for security.';
+    } else if (isLocked) {
+      heading = 'QR Status Pass Temporarily Locked';
+      description = data?.error || 'Too many failed passcode attempts triggered a temporary protective lockout.';
+    } else if (isTampered) {
+      heading = 'Snapshot Integrity Verification Failed';
+      description = data?.error || 'Cryptographic SHA-256 verification failed for this application status record.';
+    } else if (isViewLimit) {
+      heading = 'Maximum View Limit Reached';
+      description = data?.error || 'This status lookup QR pass has reached its maximum allowed view limit and is now closed.';
+    } else if (isExpired) {
+      heading = 'QR Status Pass Expired';
+      description = 'This lookup QR code has expired. Please check your account dashboard for an updated QR pass.';
+    }
 
     return (
       <div className="section container" style={{ maxWidth: '600px', margin: '4rem auto', padding: '0 1rem' }}>
@@ -58,30 +167,31 @@ export default function PublicApplicationStatusView({ initialToken }) {
               width: '4rem',
               height: '4rem',
               borderRadius: '50%',
-              background: isRevoked || isRateLimited ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+              background: isDanger ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 1.5rem',
-              color: isRevoked || isRateLimited ? '#ef4444' : '#f59e0b',
+              color: isDanger ? '#ef4444' : '#f59e0b',
             }}
           >
-            {isRevoked ? <Lock className="w-8 h-8" /> : isRateLimited ? <AlertTriangle className="w-8 h-8" /> : <Clock className="w-8 h-8" />}
+            {isTampered ? (
+              <ShieldAlert className="w-8 h-8" />
+            ) : isRevoked || isLocked ? (
+              <Lock className="w-8 h-8" />
+            ) : isRateLimited || isViewLimit ? (
+              <AlertTriangle className="w-8 h-8" />
+            ) : (
+              <Clock className="w-8 h-8" />
+            )}
           </div>
 
           <h2 style={{ fontSize: '1.35rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-            {isRateLimited
-              ? 'Lookup Rate Limit Exceeded'
-              : isRevoked
-                ? 'QR Status Pass Deactivated'
-                : isExpired
-                  ? 'QR Status Pass Expired'
-                  : 'Application Not Found'}
+            {heading}
           </h2>
 
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '2rem' }}>
-            {data?.error ||
-              'This status lookup QR link is no longer valid. The applicant may have refreshed or rotated their pass.'}
+            {description}
           </p>
 
           <Link
@@ -107,7 +217,7 @@ export default function PublicApplicationStatusView({ initialToken }) {
     );
   }
 
-  const { application, expiresAt } = data;
+  const { application, expiresAt, viewsRemaining, consumedOnThisView, integrityDigest } = data;
 
   return (
     <div className="public-status-view section" style={{ padding: '2.5rem 1rem' }}>
@@ -146,20 +256,37 @@ export default function PublicApplicationStatusView({ initialToken }) {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <span
-                style={{
-                  display: 'inline-block',
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: '0.35rem',
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  color: '#2563eb',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                Official Civic Application
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '0.35rem',
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    color: '#2563eb',
+                  }}
+                >
+                  Official Civic Application
+                </span>
+                {integrityDigest && (
+                  <span
+                    title={integrityDigest}
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: '600',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '0.35rem',
+                      background: 'rgba(14, 165, 233, 0.1)',
+                      color: '#0284c7',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    SHA-256: {integrityDigest.slice(0, 10)}
+                  </span>
+                )}
+              </div>
               <h1 style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
                 {application.serviceName}
               </h1>
@@ -298,7 +425,7 @@ export default function PublicApplicationStatusView({ initialToken }) {
             })}
           </div>
 
-          {/* Privacy Note */}
+          {/* Privacy & View Quota Footer */}
           <div
             style={{
               marginTop: '1.5rem',
@@ -306,14 +433,31 @@ export default function PublicApplicationStatusView({ initialToken }) {
               borderTop: '1px solid var(--border-color)',
               fontSize: '0.75rem',
               color: 'var(--text-secondary)',
-              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
             }}
           >
-            Pass expiration: {expiresAt ? new Date(expiresAt).toLocaleDateString() : 'N/A'}.
-            For complete application documents, please sign in to your personal dashboard.
+            <span>
+              Pass expiration: {expiresAt ? new Date(expiresAt).toLocaleDateString() : 'N/A'}.
+            </span>
+            {typeof viewsRemaining === 'number' && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: consumedOnThisView ? '#ef4444' : '#0284c7' }}>
+                <Eye className="w-3.5 h-3.5" />
+                {consumedOnThisView ? 'Final view consumed — pass closed' : `${viewsRemaining} view(s) remaining`}
+              </span>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+export default function PublicApplicationStatusView({ initialToken }) {
+  const params = useParams();
+  const token = initialToken || params?.token || '';
+  return <PublicApplicationStatusViewBody key={token} token={token} />;
 }

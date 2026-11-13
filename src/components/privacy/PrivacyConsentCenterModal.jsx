@@ -7,8 +7,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  FileText,
-  RefreshCw,
   Info,
 } from 'lucide-react';
 import {
@@ -37,6 +35,8 @@ const PrivacyConsentCenterModalBody = ({
   onPrivacyDataChanged = () => {},
 }) => {
   const { toast } = useToast?.() || {};
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [preferences, setPreferences] = useState(() => getConsentPreferences());
   const [auditLogs, setAuditLogs] = useState(() => getPrivacyAuditLogs());
@@ -157,7 +157,7 @@ const PrivacyConsentCenterModalBody = ({
     }
 
     try {
-      purgeAllUserData('citizen_user', { preserveAuditTrail: true });
+      purgeAllUserData(user?.id || 'anonymous', { preserveAuditTrail: true });
       setIsDeleting(false);
       setConfirmPurgeText('');
       refreshModalState();
@@ -506,15 +506,18 @@ const PrivacyConsentCenterModalBody = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <Download size={18} color="var(--accent-main, #38bdf8)" />
                   <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
-                    Download Complete Personal Data Dossier
+                    Create a Secure Personal Data Export
                   </h3>
                 </div>
                 <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: 'var(--text-secondary, #cbd5e1)', lineHeight: '1.5' }}>
-                  Export all your locally tracked civic applications, saved roadmaps, document metadata, and consent records in machine-readable JSON format. Sensitive identification numbers are automatically redacted for security.
+                  Preview account-owned categories in the Privacy Centre. Recent authentication is required; the secure download link is account-bound, short-lived and single-use.
                 </p>
                 <button
                   type="button"
-                  onClick={handleExportData}
+                  onClick={() => {
+                    onClose();
+                    navigate('/privacy#privacy-centre');
+                  }}
                   className="btn btn-primary"
                   style={{
                     display: 'inline-flex',
