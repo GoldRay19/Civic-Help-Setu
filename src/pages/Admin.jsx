@@ -39,6 +39,7 @@ import ServiceModal from '../components/admin/ServiceModal';
 import ReportResolutionModal from '../components/admin/ReportResolutionModal';
 import RoleManagementModal from '../components/admin/RoleManagementModal';
 import ServiceSubmissionReviewModal from '../components/admin/ServiceSubmissionReviewModal';
+import CrematoriumCorrectionQueue from '../components/admin/CrematoriumCorrectionQueue';
 import AuditLogViewer from '../components/admin/AuditLogViewer';
 import ServiceImportPanel from '../components/admin/ServiceImportPanel';
 import ServiceRecordList from '../components/admin/ServiceRecordList';
@@ -1140,6 +1141,8 @@ const Admin = () => {
                     </div>
                   ))}
                 </div>
+
+                <CrematoriumCorrectionQueue />
               </div>
             )}
 

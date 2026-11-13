@@ -183,6 +183,17 @@ describe('createChecklistSession', () => {
     expect(readChecklist('SRV-1', storage)).toMatchObject({ checked: ['Aadhaar Card'], rev: 2 });
   });
 
+  it('can delete checklist data from storage completely', () => {
+    const storage = makeStorage();
+    writeChecklist('BEREAVEMENT-1', ['Hospital Death Slip'], 0, storage);
+    expect(readChecklist('BEREAVEMENT-1', storage).checked).toEqual(['Hospital Death Slip']);
+    
+    const { session } = makeSession(storage, { id: 'BEREAVEMENT-1' });
+    session.deleteChecklistData();
+    expect(session.getState().checked).toEqual([]);
+    expect(readChecklist('BEREAVEMENT-1', storage).checked).toEqual([]);
+  });
+
   it('picks up another tab quietly when nothing is unsaved', () => {
     const storage = makeStorage();
     const { session } = makeSession(storage);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Menu, X, LogOut, User, Sun, Moon, WifiOff, PhoneCall, Mic } from 'lucide-react';
+import { Shield, Menu, X, User, Sun, Moon, WifiOff, PhoneCall, Mic } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { can } from '../services/accessControl';
 import { useTheme } from '../context/ThemeContext';
@@ -267,6 +267,17 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
             >
               {t('nav.nearby', 'Nearby Centers')}
               {isNavActive('/nearby') && <span className="nav-drawer-indicator" aria-hidden="true" />}
+            </Link>
+
+            <Link
+              to="/crematorium-directory"
+              onClick={() => setIsOpen(false)}
+              className={`nav-drawer-link ${isNavActive('/crematorium-directory') ? 'is-active' : ''}`}
+              aria-current={isNavActive('/crematorium-directory') ? 'page' : undefined}
+              style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}
+            >
+              Crematorium Directory
+              {isNavActive('/crematorium-directory') && <span className="nav-drawer-indicator" aria-hidden="true" />}
             </Link>
 
             <Link
