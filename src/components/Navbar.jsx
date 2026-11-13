@@ -281,6 +281,17 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
             </Link>
 
             <Link
+              to="/civic-works"
+              onClick={() => setIsOpen(false)}
+              className={`nav-drawer-link ${isNavActive('/civic-works') ? 'is-active' : ''}`}
+              aria-current={isNavActive('/civic-works') ? 'page' : undefined}
+              style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}
+            >
+              {t('nav.civicWorks', 'Ward Public Works')}
+              {isNavActive('/civic-works') && <span className="nav-drawer-indicator" aria-hidden="true" />}
+            </Link>
+
+            <Link
               to="/assistant"
               onClick={() => setIsOpen(false)}
               className={`nav-drawer-link ${isNavActive('/assistant') ? 'is-active' : ''}`}

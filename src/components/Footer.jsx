@@ -34,6 +34,7 @@ const Footer = () => {
             <Link to="/admin" style={{ transition: 'color 0.2s' }}>{t('nav.admin', 'Admin Portal')}</Link>
           )}
           <Link to="/services" style={{ transition: 'color 0.2s' }}>{t('nav.services', 'Services')}</Link>
+          <Link to="/civic-works" style={{ transition: 'color 0.2s' }}>{t('nav.civicWorks', 'Ward Works Board')}</Link>
         </div>
       </div>
     </footer>

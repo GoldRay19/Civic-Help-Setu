@@ -43,6 +43,7 @@ import { addNotice, updateNotice, changeNoticeStatus, resetNoticesToDefault } fr
 import { moderateBarrierReport } from './barrierReportService';
 import { recordServiceReview } from './dataFreshnessTrustService';
 import { saveLinkCheck } from './linkHealthService';
+import { moderateCivicWorkReport } from './civicWorksBoardService';
 
 const memoryStorage = () => {
   const data = new Map();
@@ -105,6 +106,7 @@ const CALLS = {
   'catalogue.migrate': () => planMigration({ storage: moduleStorage }),
   'ownership.read': () => getOwnershipMap(moduleStorage),
   'ownership.manage': () => assignServiceOwnership('svc', { team: 'Docs' }, { storage: moduleStorage }),
+  'civicWorks.moderate': () => moderateCivicWorkReport({ reportId: 'cw-1', decision: 'approved' }, moduleStorage),
 };
 
 const outcome = (fn) => {
