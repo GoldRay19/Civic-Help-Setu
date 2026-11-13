@@ -1,3 +1,5 @@
+import { getCurrentActor } from './accessControl';
+
 // Persistence + save-state handling for checklists (used by Checklist.jsx).
 //
 // Everything lives under one localStorage key, keyed by checklist id (for the
@@ -55,12 +57,22 @@ export const writeChecklist = (
   if (!id || !storage) return { ok: false, reason: 'error' };
   try {
     const map = readMap(storage);
+    const actorId = getCurrentActor()?.id || null;
+    const existing = map[id];
+    const existingOwner = existing?.ownerUserId || existing?.userId || null;
+    if (existingOwner && existingOwner !== actorId) {
+      return { ok: false, reason: 'forbidden' };
+    }
     const current = readChecklist(id, storage);
     if (current.rev !== expectedRev) {
       return { ok: false, reason: 'conflict', state: current };
     }
     const state = { checked: cleanLabels(checked), rev: current.rev + 1 };
-    map[id] = { ...state, updatedAt: new Date().toISOString() };
+    map[id] = {
+      ...state,
+      ...(existingOwner ? { ownerUserId: existingOwner } : !existing && actorId ? { ownerUserId: actorId } : {}),
+      updatedAt: new Date().toISOString(),
+    };
     storage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(map));
     return { ok: true, state };
   } catch {

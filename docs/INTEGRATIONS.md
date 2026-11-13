@@ -25,7 +25,7 @@ if a `VITE_` variable is named or valued like a secret (`scripts/envGuard.js`).
 | api.qrserver.com (QR image) | code exists, modal not mounted | page URL (origin + path only now) | none |
 | AI / LLM provider | **no** | nothing | none |
 | Analytics / telemetry | **no** | nothing | none |
-| Firebase / Firestore | **no** (planned) | nothing yet | public web config |
+| Firebase / Firestore | server-side export route only | temporary JSON export payloads and metadata-only audit records | Admin service account, server-only |
 | Email sending (SMTP, SendGrid, ...) | **no** | nothing | none |
 | Map tiles / Leaflet / geocoder | **no** (map is an inline SVG) | nothing | none |
 
@@ -44,7 +44,7 @@ run in the production bundle today (`api.qrserver.com` does not appear in `dist/
   stored at Clerk. They are entered by the user on a form that says they are stored via
   Clerk.
 - Key: `VITE_CLERK_PUBLISHABLE_KEY` (`pk_test_` / `pk_live_`) is public. The Clerk
-  **secret key (`sk_...`) is not used anywhere** in this repo and must stay out of it.
+  **secret key (`sk_...`) is used only by server routes** and must stay out of the browser bundle.
 - `unsafeMetadata` is writable by the signed-in user. Never use it for roles or
   permissions. Roles come from `publicMetadata.role` (`src/services/roleService.js`),
   which only the dashboard or a backend can change. That check is client side, so any
@@ -112,11 +112,11 @@ Analytics: The consent center has an `analytics_telemetry` switch that is off by
 no code collects anything. If analytics is added, keep it behind that switch and never put
 names, phones, reference IDs, grievance text or coordinates in events.
 
-### Firebase / Firestore (planned, not in code)
+### Firebase / Firestore (server-side exports; no browser SDK)
 
-The security rules for it already exist and are tested on the Firebase emulators: see [FIREBASE_RULES.md](FIREBASE_RULES.md) (access policy per collection and storage path, how to run `npm run rules:test`, and the rule that rules are tested before every deploy).
+The Privacy Centre export route uses Firebase Admin for short-lived export payloads and metadata-only audit records. Firestore rules deny browser access to those collections. Other personal workflow data remains in browser storage; the client SDK is not used. See [FIREBASE_RULES.md](FIREBASE_RULES.md) and [PRIVACY_EXPORTS.md](PRIVACY_EXPORTS.md).
 
-The maintainer plans Firestore with security rules. Nothing is wired yet. When it is:
+If a client-side Firestore data store is added later:
 
 - The web config (`apiKey`, `authDomain`, `projectId`, ...) is public, not a secret.
   Its protection is Firestore Security Rules and App Check, not hiding the key.
@@ -137,9 +137,9 @@ The maintainer plans Firestore with security rules. Nothing is wired yet. When i
 | `VITE_CLERK_PUBLISHABLE_KEY` | public | only variable the app reads |
 | `VITE_OPENAI_API_KEY` | would be a secret | removed from `.env.example`, unused |
 | `VITE_API_BASE_URL` | public if ever used | removed from `.env.example`, unused |
-| `CLERK_SECRET_KEY`, any `sk_...` | secret | read only by `api/firebase-token.js` (Vercel function), never by the browser bundle |
+| `CLERK_SECRET_KEY`, any `sk_...` | secret | read only by server API routes, never by the browser bundle |
 | Firebase web config | public | restrict the key, enforce rules and App Check |
-| `FIREBASE_SERVICE_ACCOUNT` (Firebase Admin service account JSON) | secret | read only by `api/firebase-token.js` (Vercel function) |
+| `FIREBASE_SERVICE_ACCOUNT` (Firebase Admin service account JSON) | secret | read only by server API routes that call Firebase Admin |
 
 `import.meta.env` is read in `src/main.jsx` and `AuthContext.jsx` (for
 `VITE_CLERK_PUBLISHABLE_KEY`) and in `src/utils/providerError.js` (only the built-in `DEV` flag). `vite.config.js` has no `define`.

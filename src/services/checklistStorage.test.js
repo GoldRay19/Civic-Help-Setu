@@ -1,10 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import {
   CHECKLIST_STORAGE_KEY,
   createChecklistSession,
   readChecklist,
   writeChecklist,
 } from './checklistStorage';
+import { setCurrentActor } from './accessControl';
 
 const makeStorage = () => {
   const data = new Map();
@@ -15,6 +16,10 @@ const makeStorage = () => {
 };
 
 const ITEMS = ['Aadhaar Card', 'Salary slips', 'Affidavit'];
+
+beforeEach(() => {
+  setCurrentActor(null);
+});
 
 // Manual scheduler so tests decide when the pending write happens.
 const makeSession = (storage, extra = {}) => {
@@ -61,6 +66,21 @@ describe('readChecklist / writeChecklist', () => {
     });
     expect(writeChecklist('x', ['a'], 0, storage)).toEqual({ ok: false, reason: 'error' });
     expect(writeChecklist('x', ['a'], 0, null)).toEqual({ ok: false, reason: 'error' });
+  });
+
+  it('binds new checklist progress to the active account and rejects another account writing it', () => {
+    const storage = makeStorage();
+    setCurrentActor({ id: 'alice' });
+    expect(writeChecklist('private-list', ['Task'], 0, storage).ok).toBe(true);
+    const stored = JSON.parse(storage.getItem(CHECKLIST_STORAGE_KEY));
+    expect(stored['private-list'].ownerUserId).toBe('alice');
+
+    setCurrentActor({ id: 'bob' });
+    expect(writeChecklist('private-list', ['Other task'], 1, storage)).toEqual({
+      ok: false,
+      reason: 'forbidden',
+    });
+    expect(readChecklist('private-list', storage).checked).toEqual(['Task']);
   });
 });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { isEncryptedVaultEnvelope } from './vaultCryptoService';
 import { exportUserData } from './privacyConsentService';
+import { setCurrentActor } from './accessControl';
 
 const makeStorage = () => {
   const data = new Map();
@@ -19,6 +20,7 @@ describe('vaultStorage', () => {
   let storage;
   let mod;
   beforeEach(async () => {
+    setCurrentActor(null);
     storage = makeStorage();
     vi.stubGlobal('localStorage', storage);
     mod = await import('./vaultStorage');
@@ -29,6 +31,16 @@ describe('vaultStorage', () => {
     const docs = mod.saveDocument({ type: 'Voter ID', number: 'V1' });
     expect(docs[0].createdAt).toBeTruthy();
     expect(docs[0].verified).toBe(false);
+  });
+
+  it('tags new vault records by account and blocks another account from editing or deleting them', () => {
+    setCurrentActor({ id: 'alice' });
+    const docs = mod.saveDocument({ id: 'alice-doc', type: 'Voter ID', number: 'V1234' });
+    expect(docs.find((doc) => doc.id === 'alice-doc').ownerUserId).toBe('alice');
+
+    setCurrentActor({ id: 'bob' });
+    expect(() => mod.saveDocument({ id: 'alice-doc', type: 'Passport' })).toThrow(/not owned/);
+    expect(() => mod.deleteDocument('alice-doc')).toThrow(/not owned/);
   });
 
   it('saveDocument throws a friendly error when storage is full', () => {
@@ -116,10 +128,8 @@ describe('vaultStorage', () => {
     expect(isEncryptedVaultEnvelope(storedRaw)).toBe(true);
     expect(storedRaw).not.toContain('Driving License');
 
-    // Privacy export does not crash or leak ciphertext when vault is encrypted at rest
-    const exportedPrivacy = exportUserData('citizen-1');
-    expect(exportedPrivacy.documentVaultMetadata).toEqual([]);
-    expect(JSON.stringify(exportedPrivacy)).not.toContain('Driving License');
+    // Legacy direct exports are disabled; vault data can only enter the separately authorized flow.
+    expect(() => exportUserData()).toThrow(/authenticated Privacy Centre/);
 
     // Locking clears memory cache and prevents silent plaintext overwrites
     mod.lockAtRestVault();

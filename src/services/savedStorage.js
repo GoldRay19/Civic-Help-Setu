@@ -1,4 +1,5 @@
 import { logDiagnostic } from '../utils/diagnostics';
+import { getCurrentActor } from './accessControl';
 const STORAGE_KEY = 'civicbridge_saved_rich';
 const LEGACY_KEY = 'civicbridge_saved';
 
@@ -35,7 +36,10 @@ export const getSavedItems = () => {
 
 export const saveItem = (serviceId, folder = 'General', notes = '', priority = 'normal') => {
   const current = getSavedItems();
-  const existing = current.find((item) => item.serviceId === serviceId);
+  const ownerUserId = getCurrentActor()?.id;
+  const existing = current.find(
+    (item) => item.serviceId === serviceId && (!ownerUserId || item.ownerUserId === ownerUserId)
+  );
 
   let updated;
   if (existing) {
@@ -47,6 +51,7 @@ export const saveItem = (serviceId, folder = 'General', notes = '', priority = '
   } else {
     const newItem = {
       serviceId,
+      ...(ownerUserId ? { ownerUserId } : {}),
       folder,
       notes,
       priority,

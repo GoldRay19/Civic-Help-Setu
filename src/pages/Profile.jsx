@@ -9,7 +9,6 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { describeProviderError, logProviderError } from '../utils/providerError';
 import ClearMyDataPanel from '../components/privacy/ClearMyDataPanel';
-import DataPortabilityModal from '../components/profile/DataPortabilityModal';
 import CivicEntitlementReadinessCard from '../components/profile/CivicEntitlementReadinessCard';
 import VoluntaryProfileRecommendationPanel from '../components/profile/VoluntaryProfileRecommendationPanel';
 import NotificationPreferenceCenter from '../components/profile/NotificationPreferenceCenter';
@@ -202,7 +201,6 @@ const Profile = () => {
   const [saveOk, setSaveOk] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [, setDataVersion] = useState(0);
-  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const [form, setForm] = useState({
@@ -975,12 +973,12 @@ const Profile = () => {
                     Citizen Data Portability
                   </h3>
                   <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    Export a machine-readable JSON or CSV archive of your saved guides, checklists, reminders, and draft notes.
+                    Preview and export account-owned data using a short-lived, single-use secure download.
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setExportModalOpen(true)}
+                  onClick={() => navigate('/privacy#privacy-centre')}
                   className="btn btn-secondary"
                   style={{
                     padding: '0.55rem 1.15rem',
@@ -1008,12 +1006,6 @@ const Profile = () => {
         isOpen={prefModalOpen}
         onClose={() => setPrefModalOpen(false)}
         userEmail={user.email}
-      />
-
-      <DataPortabilityModal
-        isOpen={exportModalOpen}
-        onClose={() => setExportModalOpen(false)}
-        currentUser={user}
       />
 
       <ShareableProfileModal

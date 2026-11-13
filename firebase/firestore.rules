@@ -315,6 +315,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Secure export payloads and their metadata-only audit records are server-only.
+    match /privacyExports/{exportId} {
+      allow read, write: if false;
+    }
+    match /privacyExportAudit/{entryId} {
+      allow read, write: if false;
+    }
+
     match /sourceConflicts/{conflictId} {
       allow read, delete: if isAdmin();
       allow create, update: if isAdmin() && incoming().keys().size() <= 40;

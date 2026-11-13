@@ -51,7 +51,7 @@ describe('Privacy Page Navigation & Readability (#589)', () => {
   it('contains statutory compliance sections and enforceable settings panel', () => {
     expect(html).toContain('DPDP Act 2023 • Citizen-First Privacy');
     expect(html).toContain('Your Enforced Privacy Settings');
-    expect(html).toContain('Export My Data (JSON)');
+    expect(html).toContain('Preview &amp; export my data');
     expect(html).toContain('Principles of Data Minimization &amp; Client-Side Privacy');
     expect(html).toContain('Right to Data Portability &amp; Complete Erasure');
   });

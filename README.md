@@ -92,19 +92,23 @@ A dedicated interface for organizing important citizen documents and credentials
 
 Access profile-related features and a more personalized platform experience.
 
-### 🛡️ 9. Administrative Dashboard
+### 🔏 9. Privacy Centre & Secure Exports
+
+Preview and export profile, account-owned saved services, journey metadata, checklist progress, and consent history through short-lived, account-bound, single-use JSON downloads. Recent authentication is required; vault metadata needs separate consent and an encrypted-vault passphrase. See [the export schema and field index](docs/PRIVACY_EXPORTS.md).
+
+### 🛡️ 10. Administrative Dashboard
 
 Provide authorized administrators with tools for reviewing and managing service resources.
 
-### 📥 10. Bulk Service Import
+### 📥 11. Bulk Service Import
 
 Support importing service records from CSV or JSON files, with validation and duplicate checks.
 
-### 🌗 11. Responsive Interface and Theme Support
+### 🌗 12. Responsive Interface and Theme Support
 
 A responsive design with theme support, built to provide a consistent experience across supported screen sizes.
 
-### ♿ 12. Accessibility-Focused Design
+### ♿ 13. Accessibility-Focused Design
 
 Clear navigation, readable content, consistent interaction patterns, and a user-centered approach to public-service information.
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { setCurrentActor } from './accessControl';
 
 const makeStorage = () => {
   const data = new Map();
@@ -12,6 +13,7 @@ const makeStorage = () => {
 describe('savedStorage', () => {
   let mod;
   beforeEach(async () => {
+    setCurrentActor(null);
     vi.stubGlobal('localStorage', makeStorage());
     mod = await import('./savedStorage');
   });
@@ -30,6 +32,16 @@ describe('savedStorage', () => {
     expect(mod.getSavedItems()).toHaveLength(1);
     mod.removeItem('pan-card');
     expect(mod.getSavedItems()).toEqual([]);
+  });
+
+  it('tags new signed-in saves with the active owner and never adopts an unowned legacy bookmark', () => {
+    localStorage.setItem('civicbridge_saved_rich', JSON.stringify([
+      { serviceId: 'legacy', notes: 'unattributed' },
+    ]));
+    setCurrentActor({ id: 'alice' });
+    const saved = mod.saveItem('new-service');
+    expect(saved.find((item) => item.serviceId === 'new-service').ownerUserId).toBe('alice');
+    expect(saved.find((item) => item.serviceId === 'legacy').ownerUserId).toBeUndefined();
   });
 
   it('falls back to an empty list on corrupt data', () => {

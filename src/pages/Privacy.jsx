@@ -11,15 +11,14 @@ import {
 import {
   CONSENT_CATEGORIES,
   getConsentPreferences,
-  exportUserData,
   getPrivacyAuditLogs,
   getRetentionPolicyStatus,
   enforceRetentionPolicies,
   verifyPrivacyAuditLogIntegrity,
 } from '../services/privacyConsentService.js';
 import PrivacyConsentCenterModal from '../components/privacy/PrivacyConsentCenterModal';
+import PrivacyExportCentre from '../components/privacy/PrivacyExportCentre';
 import ClearMyDataPanel from '../components/privacy/ClearMyDataPanel';
-import { useToast } from '../context/ToastContext';
 
 const POLICY_SECTIONS = [
   { id: 'data-minimization', title: '1. Principles of Data Minimization' },
@@ -30,7 +29,6 @@ const POLICY_SECTIONS = [
 ];
 
 const Privacy = () => {
-  const { toast } = useToast?.() || {};
   const [isCenterOpen, setIsCenterOpen] = useState(false);
   const [preferences, setPreferences] = useState(() => getConsentPreferences());
   const [auditLogs, setAuditLogs] = useState(() => getPrivacyAuditLogs());
@@ -186,7 +184,7 @@ const Privacy = () => {
 
             <button
               type="button"
-              onClick={handleQuickExport}
+              onClick={() => document.getElementById('privacy-centre')?.scrollIntoView({ behavior: 'smooth' })}
               className="btn btn-secondary"
               style={{
                 display: 'inline-flex',
@@ -199,7 +197,7 @@ const Privacy = () => {
               }}
             >
               <Download size={16} />
-              <span>Export My Data (JSON)</span>
+              <span>Preview &amp; export my data</span>
             </button>
           </div>
         </div>
@@ -302,6 +300,8 @@ const Privacy = () => {
           </button>
         </div>
       </section>
+
+      <PrivacyExportCentre />
 
       {/* Main Two-Column Layout: Table of Contents & Policy Content */}
       <div
