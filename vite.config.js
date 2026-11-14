@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     test: {
       // The Firebase rules tests need the emulators and Java: they run with `npm run rules:test`.
-      exclude: [...configDefaults.exclude, 'firebase/emulator/**'],
+      exclude: [...configDefaults.exclude, 'firebase/emulator/**', 'Civic-Help-Setu/**'],
     },
   }
 })

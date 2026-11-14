@@ -281,6 +281,17 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
             </Link>
 
             <Link
+              to="/pds-shops"
+              onClick={() => setIsOpen(false)}
+              className={`nav-drawer-link ${isNavActive('/pds-shops') ? 'is-active' : ''}`}
+              aria-current={isNavActive('/pds-shops') ? 'page' : undefined}
+              style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}
+            >
+              Fair Price Shops (PDS)
+              {isNavActive('/pds-shops') && <span className="nav-drawer-indicator" aria-hidden="true" />}
+            </Link>
+
+            <Link
               to="/track"
               onClick={() => setIsOpen(false)}
               className={`nav-drawer-link ${isNavActive('/track') ? 'is-active' : ''}`}
