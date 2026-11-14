@@ -21,7 +21,8 @@ import {
   Bot,
   Bookmark,
   UserCircle,
-  Settings
+  Settings,
+  KeyRound
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +30,7 @@ import { can } from '../services/accessControl';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNetwork } from '../context/NetworkContext';
+import { logDiagnostic } from '../utils/diagnostics';
 
 import LanguageSwitcher from './LanguageSwitcher';
 import PlainLanguageToggle from './common/PlainLanguageToggle';
@@ -98,6 +100,14 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
         );
       }
 
+      if (normalizedTarget === '/rental-checklist') {
+        return (
+          normalizedPath === '/rental-checklist' ||
+          normalizedPath === '/rental-transition' ||
+          normalizedPath === '/rental-records'
+        );
+      }
+
       if (normalizedTarget === '/admin') {
         return (
           normalizedPath === '/admin' ||
@@ -119,6 +129,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
 
   // Close drawer whenever the route changes.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(false);
   }, [pathname]);
 
@@ -183,7 +194,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
       setIsOpen(false);
       navigate('/login', { replace: true });
     } catch (error) {
-      console.error('Logout failed:', error);
+      logDiagnostic('Logout failed', error);
     } finally {
       setIsLoggingOut(false);
     }
@@ -761,6 +772,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/tenders',
                 label: t('nav.tenders', 'Tender Readiness'),
                 icon: FileText
+              })}
+
+              {renderNavLink({
+                to: '/rental-checklist',
+                label: t('nav.rentalChecklist', 'Rental Checklist'),
+                icon: KeyRound
               })}
 
               {renderNavLink({
