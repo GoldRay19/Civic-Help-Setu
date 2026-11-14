@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -22,7 +21,9 @@ import {
   Bookmark,
   UserCircle,
   Settings,
-  Navigation
+  Navigation,
+  KeyRound,
+  Store,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -30,6 +31,7 @@ import { can } from '../services/accessControl';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNetwork } from '../context/NetworkContext';
+import { logDiagnostic } from '../utils/diagnostics';
 
 import LanguageSwitcher from './LanguageSwitcher';
 import PlainLanguageToggle from './common/PlainLanguageToggle';
@@ -38,7 +40,6 @@ import OfflineCacheStatusModal from './common/OfflineCacheStatusModal';
 import EmergencyHelplineModal from './emergency/EmergencyHelplineModal';
 import VoiceSearchInput from './common/VoiceSearchInput';
 import MultilingualVoiceNavigationModal from './navigation/MultilingualVoiceNavigationModal';
-import { logDiagnostic } from '../utils/diagnostics';
 
 const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
   const [isOpen, setIsOpen] = useState(
@@ -97,6 +98,14 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
         return (
           normalizedPath === '/tenders' ||
           normalizedPath === '/tender-readiness'
+        );
+      }
+
+      if (normalizedTarget === '/rental-checklist') {
+        return (
+          normalizedPath === '/rental-checklist' ||
+          normalizedPath === '/rental-transition' ||
+          normalizedPath === '/rental-records'
         );
       }
 
@@ -193,7 +202,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
       setIsOpen(false);
       navigate('/login', { replace: true });
     } catch (error) {
-      logDiagnostic('Logout failed:', error);
+      logDiagnostic('Logout failed', error);
     } finally {
       setIsLoggingOut(false);
     }
@@ -762,6 +771,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
               })}
 
               {renderNavLink({
+                to: '/pds-shops',
+                label: 'Fair Price Shops (PDS)',
+                icon: Store
+              })}
+
+              {renderNavLink({
                 to: '/community-facilities',
                 label: 'Community Facilities',
                 icon: Home
@@ -771,6 +786,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/tenders',
                 label: t('nav.tenders', 'Tender Readiness'),
                 icon: FileText
+              })}
+
+              {renderNavLink({
+                to: '/rental-checklist',
+                label: t('nav.rentalChecklist', 'Rental Checklist'),
+                icon: KeyRound
               })}
 
               {renderNavLink({
