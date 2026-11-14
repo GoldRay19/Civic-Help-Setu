@@ -830,6 +830,170 @@ html[data-high-contrast="true"] .nav-drawer-indicator {
   .focus-mode-toggle,
   .service-details--focus .service-details__panel { transition: none; }
 }
+/* --- SECTION NAV – in-page ToC for ServiceDetails (#569) --- */
+.section-nav--desktop {
+  display: none;
+}
+@media (min-width: 768px) {
+  .section-nav--desktop {
+    display: block;
+    position: sticky;
+    top: 5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    padding: 1rem 0;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--glass-bg, rgba(255,255,255,0.04));
+  }
+}
+.section-nav__heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  padding: 0 1rem;
+  margin: 0 0 0.5rem;
+}
+.section-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.section-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: color 0.2s, border-color 0.2s, background 0.15s;
+}
+.section-nav__link:hover {
+  color: var(--text-primary);
+  background: rgba(56, 189, 248, 0.06);
+}
+.section-nav__link:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+.section-nav__link--active {
+  color: var(--accent-main);
+  border-left-color: var(--accent-main);
+  font-weight: 600;
+}
+.section-nav__chevron {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.section-nav__link--active .section-nav__chevron { opacity: 1; }
+
+/* Floating button (mobile only) */
+.section-nav__fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  bottom: 1.5rem;
+  left: calc(100% - 3.5rem);
+  z-index: 40;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-main);
+  background: var(--bg-card, var(--bg-main));
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+}
+@media (min-width: 768px) {
+  .section-nav__fab { display: none; }
+}
+
+/* Overlay drawer (mobile) */
+.section-nav__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.section-nav--mobile {
+  width: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 1rem 0 2rem;
+  border-radius: 1rem 1rem 0 0;
+  background: var(--bg-card, var(--bg-main));
+  border: 1px solid var(--border-light);
+  border-bottom: none;
+}
+.section-nav__mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem 0.5rem;
+}
+.section-nav__close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+}
+.section-nav__close:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+/* --- CONTENT-TYPE BADGES (#569) --- */
+.content-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+.content-badge--official {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.content-badge--guidance {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+.content-badge--ai {
+  background: rgba(168, 85, 247, 0.1);
+  color: #7c3aed;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+/* Anchor-focus scroll-margin for guide sections */
+[id^="guide-"] {
+  scroll-margin-top: 5rem;
+}
+[id^="guide-"]:focus {
+  outline: none;
+}
+
 /* --- SERVICE COMPARISON (issue 163) --- */
 .service-card-wrap { display: flex; flex-direction: column; gap: 0.5rem; height: 100%; }
 .service-card-wrap > .card { flex: 1; }
