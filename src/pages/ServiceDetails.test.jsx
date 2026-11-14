@@ -42,4 +42,12 @@ describe('ServiceDetails', () => {
     expect(html).toContain('Open Interactive Aadhaar Guide');
     expect(html).toContain('/services/aadhaar-guide');
   });
+
+  it('renders the dedicated Small-Business Licence Renewal & Closure Centre entry card (#721)', () => {
+    const html = render('/services/business-licence-checklist');
+    expect(html).toContain('Small-Business Licence Renewal &amp; Closure Checklist Centre');
+    expect(html).toContain('Interactive Small-Business Licence Renewal &amp; Closure Checklist Centre');
+    expect(html).toContain('Open Interactive Centre');
+    expect(html).toContain('/services/business-licence-checklist');
+  });
 });
