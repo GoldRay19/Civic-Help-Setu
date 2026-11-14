@@ -1,0 +1,297 @@
+/**
+ * Scoped styles for Fire NOC & Fire-Safety Compliance Preparation Guide (#719)
+ * Compatible with dark and light themes using Civic-Help-Setu CSS variables.
+ */
+
+.fire-noc-guide {
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: var(--text-primary, #ffffff);
+  font-family: inherit;
+}
+
+.fire-card {
+  background: var(--bg-card, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-main, rgba(255, 255, 255, 0.12));
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm, 0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+[data-theme="light"] .fire-card {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.fire-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.fire-badge-red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.fire-badge-emerald {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.fire-badge-amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.fire-badge-neutral {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, #a1a1aa);
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
+}
+
+.fire-alert-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin-top: 0.85rem;
+}
+
+.fire-alert-amber {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fef3c7;
+}
+
+[data-theme="light"] .fire-alert-amber {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.fire-alert-yellow {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  color: #fef08a;
+}
+
+[data-theme="light"] .fire-alert-yellow {
+  background: #fefce8;
+  border-color: #fef08a;
+  color: #854d0e;
+}
+
+.fire-alert-blue {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #e0f2fe;
+}
+
+[data-theme="light"] .fire-alert-blue {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.fire-alert-orange {
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  color: #ffedd5;
+}
+
+[data-theme="light"] .fire-alert-orange {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
+.fire-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.fire-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.fire-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.fire-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fire-field-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary, #a1a1aa);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.fire-input,
+.fire-select,
+.fire-textarea {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-main, rgba(255, 255, 255, 0.15));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary, #ffffff);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme="light"] .fire-input,
+[data-theme="light"] .fire-select,
+[data-theme="light"] .fire-textarea {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.fire-input:focus,
+.fire-select:focus,
+.fire-textarea:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.fire-select option {
+  background: #18181b;
+  color: #ffffff;
+}
+
+[data-theme="light"] .fire-select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.fire-nav-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
+  padding-bottom: 0.35rem;
+  overflow-x: auto;
+}
+
+.fire-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #a1a1aa);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.fire-tab-btn:hover {
+  color: var(--text-primary, #ffffff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fire-tab-btn.active {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  border-bottom: 2px solid #ef4444;
+}
+
+.fire-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+  margin-bottom: 0.65rem;
+}
+
+[data-theme="light"] .fire-check-item {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.fire-check-item.checked {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="light"] .fire-check-item.checked {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.fire-checkbox {
+  margin-top: 0.2rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  cursor: pointer;
+  accent-color: #ef4444;
+}
+
+.fire-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.fire-modal-card {
+  background: var(--bg-secondary, #121212);
+  border: 1px solid var(--border-main, rgba(255, 255, 255, 0.15));
+  border-radius: 1rem;
+  padding: 1.5rem;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  color: var(--text-primary, #ffffff);
+}
+
+[data-theme="light"] .fire-modal-card {
+  background: #ffffff;
+  color: #0f172a;
+}
+

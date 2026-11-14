@@ -42,6 +42,7 @@ import ApplicationReadinessCheckerModal from '../components/services/Application
 import FeeWaiverEligibilityCard from '../components/services/FeeWaiverEligibilityCard';
 import ServiceSlaReliabilityCard from '../components/services/ServiceSlaReliabilityCard';
 import AadhaarGuide from '../components/services/AadhaarGuide';
+import FireSafetyComplianceGuide from '../components/services/FireSafetyComplianceGuide';
 import TreePermissionGuide from '../components/services/TreePermissionGuide';
 
 const getSavedServices = () => {
@@ -106,6 +107,7 @@ const ServiceDetails = ({ previewService = null }) => {
   const [showReadinessCheckerModal, setShowReadinessCheckerModal] = useState(false);
   const [showShareByEmailModal, setShowShareByEmailModal] = useState(false);
   const [showDedicatedAadhaarGuide, setShowDedicatedAadhaarGuide] = useState(false);
+  const [showDedicatedFireGuide, setShowDedicatedFireGuide] = useState(false);
   const [showDedicatedTreeGuide, setShowDedicatedTreeGuide] = useState(false);
   const service = previewService ?? getServiceById(id);
   const [, setSavedTick] = useState(0);
@@ -831,6 +833,49 @@ const ServiceDetails = ({ previewService = null }) => {
             </div>
           )}
 
+          {service.id === 'fire-noc' && (
+            <div
+              className="card"
+              style={{
+                marginBottom: '1.5rem',
+                border: '1.5px solid var(--accent-main, #ef4444)',
+                background: 'var(--bg-card)',
+                borderRadius: '1rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ maxWidth: '650px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <ShieldCheck size={18} color="var(--accent-main, #ef4444)" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
+                      Dedicated Fire NOC &amp; Fire-Safety Compliance Preparation Guide
+                    </h3>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Jurisdiction-aware preparation guide grounded in NBC 2016 Part 4. Covers provisional, final, and renewal stages, required building plans, and active fire-suppression equipment proofs.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setShowDedicatedFireGuide((v) => !v)}
+                    style={{ fontSize: '0.85rem' }}
+                  >
+                    {showDedicatedFireGuide ? 'Switch to Standard Guide' : 'Open Interactive Fire Guide'}
+                  </button>
+                  <Link
+                    to="/services/fire-noc-guide"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.85rem', textDecoration: 'none' }}
+                  >
+                    Dedicated Page
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           {service.id === 'tree-pruning-permission' && (
             <div
               style={{
@@ -878,6 +923,11 @@ const ServiceDetails = ({ previewService = null }) => {
             <AadhaarGuide
               initialState={service.jurisdiction?.states?.[0] || 'Delhi'}
               onBack={() => setShowDedicatedAadhaarGuide(false)}
+            />
+          ) : service.id === 'fire-noc' && showDedicatedFireGuide ? (
+            <FireSafetyComplianceGuide
+              initialJurisdictionId="delhi"
+              onBack={() => setShowDedicatedFireGuide(false)}
             />
           ) : service.id === 'tree-pruning-permission' && showDedicatedTreeGuide ? (
             <TreePermissionGuide
