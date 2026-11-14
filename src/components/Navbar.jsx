@@ -41,6 +41,10 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
       return normalizedPath === '/nearby' || normalizedPath === '/nearby-offices';
     }
 
+    if (target === '/tenders') {
+      return normalizedPath === '/tenders' || normalizedPath === '/tender-readiness';
+    }
+
     if (target === '/admin') {
       return normalizedPath === '/admin' || normalizedPath.startsWith('/admin/');
     }
@@ -281,6 +285,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
             </Link>
 
             <Link
+<Link
               to="/community-facilities"
               onClick={() => setIsOpen(false)}
               className={`nav-drawer-link ${isNavActive('/community-facilities') ? 'is-active' : ''}`}
@@ -289,6 +294,18 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
             >
               Community Facilities
               {isNavActive('/community-facilities') && <span className="nav-drawer-indicator" aria-hidden="true" />}
+            </Link>
+
+            <Link
+              to="/tenders"
+              onClick={() => setIsOpen(false)}
+              className={`nav-drawer-link ${isNavActive('/tenders') ? 'is-active' : ''}`}
+              aria-current={isNavActive('/tenders') ? 'page' : undefined}
+              style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}
+            >
+              {t('nav.tenders', 'Tender Readiness')}
+              {isNavActive('/tenders') && <span className="nav-drawer-indicator" aria-hidden="true" />}
+            </Link>
             </Link>
 
             <Link
