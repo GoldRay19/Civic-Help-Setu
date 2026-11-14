@@ -281,6 +281,17 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
             </Link>
 
             <Link
+              to="/community-facilities"
+              onClick={() => setIsOpen(false)}
+              className={`nav-drawer-link ${isNavActive('/community-facilities') ? 'is-active' : ''}`}
+              aria-current={isNavActive('/community-facilities') ? 'page' : undefined}
+              style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}
+            >
+              Community Facilities
+              {isNavActive('/community-facilities') && <span className="nav-drawer-indicator" aria-hidden="true" />}
+            </Link>
+
+            <Link
               to="/track"
               onClick={() => setIsOpen(false)}
               className={`nav-drawer-link ${isNavActive('/track') ? 'is-active' : ''}`}
