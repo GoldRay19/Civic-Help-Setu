@@ -45,6 +45,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import AadhaarGuidePage from './pages/AadhaarGuidePage';
 import CivicWorksBoard from './pages/CivicWorksBoard';
 import CrematoriumDirectory from './pages/CrematoriumDirectory';
+import TenderReadinessWorkspace from './pages/TenderReadinessWorkspace';
 
 const Services = lazy(() => import('./pages/Services'));
 
@@ -92,6 +93,8 @@ function AppRoot() {
                       <Route path="/nearby-offices" element={<NearbyOffices />} />
                       <Route path="/crematorium-directory" element={<CrematoriumDirectory />} />
                       <Route path="/crematoriums" element={<CrematoriumDirectory />} />
+                      <Route path="/tenders" element={<TenderReadinessWorkspace />} />
+                      <Route path="/tender-readiness" element={<TenderReadinessWorkspace />} />
                       <Route path="/track" element={<Track />} />
                       <Route path="/civic-works" element={<CivicWorksBoard />} />
                       <Route path="/shared-checklist/:token" element={<SharedChecklistView />} />
