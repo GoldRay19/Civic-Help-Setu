@@ -19,6 +19,7 @@ import {
   X,
   FolderOpen
 } from 'lucide-react';
+import './FireSafetyComplianceGuide.css';
 
 import {
   STATUTORY_SCOPE_DISCLAIMER,
@@ -267,24 +268,26 @@ export default function FireSafetyComplianceGuide({
   };
 
   return (
-    <div className="fire-noc-guide max-w-5xl mx-auto p-4 sm:p-6 space-y-6" aria-busy={isLoading}>
+    <div className="fire-noc-guide" aria-busy={isLoading}>
       {isLoading && (
-        <div role="status" aria-live="polite" className="p-2 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-          <Clock className="w-3.5 h-3.5 animate-spin text-red-600" />
+        <div role="status" aria-live="polite" className="fire-alert-box fire-alert-blue" style={{ justifyContent: 'center' }}>
+          <Clock className="w-4 h-4 animate-spin text-red-500" />
           <span>Updating jurisdiction fire rules...</span>
         </div>
       )}
+
       {/* Header Banner */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="fire-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 mb-2">
-              <Flame className="w-3.5 h-3.5" /> NBC 2016 Part 4 &amp; State Fire Safety Compliance
+            <div className="fire-badge-pill fire-badge-red" style={{ marginBottom: '0.5rem' }}>
+              <Flame size={14} />
+              <span>NBC 2016 Part 4 &amp; State Fire Safety Compliance</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+            <h1 style={{ margin: '0 0 0.4rem 0', fontSize: '1.75rem', fontWeight: 800 }}>
               Fire NOC &amp; Fire-Safety Compliance Preparation Guide
             </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-3xl">
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '750px', lineHeight: 1.5 }}>
               Procedural compliance, required drawings, active &amp; passive fire systems inspection checklists, and shortfall remediation for building owners and commercial occupiers.
             </p>
           </div>
@@ -292,7 +295,8 @@ export default function FireSafetyComplianceGuide({
             <button
               type="button"
               onClick={onBack}
-              className="btn btn-secondary self-start sm:self-center text-sm"
+              className="btn btn-secondary"
+              style={{ fontSize: '0.85rem' }}
               aria-label="Return to services list"
             >
               Back to Services
@@ -301,32 +305,32 @@ export default function FireSafetyComplianceGuide({
         </div>
 
         {/* Statutory Scope Disclaimer Card */}
-        <div className="mt-4 p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 rounded-lg text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
-          <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="fire-alert-box fire-alert-amber">
+          <ShieldAlert size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
           <div>
-            <span className="font-semibold">Non-Engineering Advisory Notice: </span>
+            <strong>Non-Engineering Advisory Notice: </strong>
             {STATUTORY_SCOPE_DISCLAIMER}
           </div>
         </div>
       </div>
 
       {/* Jurisdiction & Building Use Selector Matrix */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-          <Building className="w-5 h-5 text-red-600" />
-          Jurisdiction &amp; Building Classification
+      <div className="fire-card">
+        <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Building size={20} color="#ef4444" />
+          <span>Jurisdiction &amp; Building Classification</span>
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label htmlFor={jurisdictionSelectId} className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+        <div className="fire-grid-4">
+          <div className="fire-field-group">
+            <label htmlFor={jurisdictionSelectId} className="fire-field-label">
               State &amp; Municipal Territory
             </label>
             <select
               id={jurisdictionSelectId}
               value={selectedJurisdictionId}
               onChange={handleJurisdictionChange}
-              className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+              className="fire-select"
             >
               {FIRE_JURISDICTIONS.map((j) => (
                 <option key={j.id} value={j.id}>
@@ -336,15 +340,15 @@ export default function FireSafetyComplianceGuide({
             </select>
           </div>
 
-          <div>
-            <label htmlFor={buildingGroupSelectId} className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+          <div className="fire-field-group">
+            <label htmlFor={buildingGroupSelectId} className="fire-field-label">
               Building Occupancy Group
             </label>
             <select
               id={buildingGroupSelectId}
               value={selectedGroupCode}
               onChange={(e) => setSelectedGroupCode(e.target.value)}
-              className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+              className="fire-select"
             >
               {BUILDING_OCCUPANCY_GROUPS.map((g) => (
                 <option key={g.code} value={g.code}>
@@ -354,8 +358,8 @@ export default function FireSafetyComplianceGuide({
             </select>
           </div>
 
-          <div>
-            <label htmlFor={heightInputId} className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+          <div className="fire-field-group">
+            <label htmlFor={heightInputId} className="fire-field-label">
               Total Height (meters)
             </label>
             <input
@@ -365,12 +369,12 @@ export default function FireSafetyComplianceGuide({
               max="200"
               value={buildingHeight}
               onChange={(e) => setBuildingHeight(Math.max(0, Number(e.target.value)))}
-              className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+              className="fire-input"
             />
           </div>
 
-          <div>
-            <label htmlFor={areaInputId} className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+          <div className="fire-field-group">
+            <label htmlFor={areaInputId} className="fire-field-label">
               Covered Floor Area (sq.m)
             </label>
             <input
@@ -380,43 +384,45 @@ export default function FireSafetyComplianceGuide({
               max="50000"
               value={coveredArea}
               onChange={(e) => setCoveredArea(Math.max(0, Number(e.target.value)))}
-              className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+              className="fire-input"
             />
           </div>
         </div>
 
         {/* Applicability Assessment Card */}
-        <div className="mt-5 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div style={{ marginTop: '1.25rem', padding: '1rem', borderRadius: '0.75rem', background: 'var(--bg-secondary, rgba(255,255,255,0.02))', border: '1px solid var(--border-light, rgba(255,255,255,0.08))', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
                 Statutory NOC Mandate:
               </span>
               <span
-                className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                className={`fire-badge-pill ${
                   applicability.isMandatory
-                    ? 'bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300'
+                    ? 'fire-badge-red'
                     : applicability.isExempt
-                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
-                    : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                    ? 'fire-badge-emerald'
+                    : 'fire-badge-amber'
                 }`}
               >
                 {applicability.status}
               </span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">{applicability.reason}</p>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              {applicability.reason}
+            </p>
           </div>
 
-          <div className="text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-3 py-2 rounded border border-slate-200 dark:border-slate-700 shrink-0">
+          <div style={{ fontSize: '0.8rem', padding: '0.5rem 0.85rem', borderRadius: '0.5rem', background: 'var(--bg-card, rgba(0,0,0,0.2))', border: '1px solid var(--border-light, rgba(255,255,255,0.08))' }}>
             <strong>Key Audit Focus:</strong> {applicability.inspectionFocus || 'Evacuation routes and fire suppression hardware'}
           </div>
         </div>
 
         {/* Stale Data Warning Banner */}
         {isStale && authority.verified && (
-          <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-900/50 rounded-lg text-xs text-yellow-800 dark:text-yellow-200 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-yellow-600 shrink-0" />
+          <div className="fire-alert-box fire-alert-yellow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Clock size={16} style={{ flexShrink: 0 }} />
               <span>
                 <strong>Stale Rulebook Advisory:</strong> Verification record for this jurisdiction is older than 180 days ({authority.verificationTimestamp?.slice(0, 10)}). Official rules may have revised notifications.
               </span>
@@ -424,7 +430,7 @@ export default function FireSafetyComplianceGuide({
             <button
               type="button"
               onClick={() => setIsCorrectionModalOpen(true)}
-              className="text-xs font-semibold text-yellow-900 dark:text-yellow-100 underline hover:no-underline shrink-0"
+              style={{ background: 'none', border: 'none', color: 'inherit', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', flexShrink: 0 }}
             >
               Submit Update
             </button>
@@ -433,112 +439,107 @@ export default function FireSafetyComplianceGuide({
 
         {/* Unavailable Data Fallback State Banner */}
         {!authority.verified && (
-          <div className="mt-3 p-3.5 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/50 rounded-lg text-xs text-orange-900 dark:text-orange-200 flex items-start gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <div className="font-semibold">Uncatalogued / Unverified Fire Authority</div>
-              <p>{authority.message}</p>
-              <p className="font-medium text-orange-800 dark:text-orange-300">{authority.recommendedAction}</p>
+          <div className="fire-alert-box fire-alert-orange">
+            <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <div style={{ fontWeight: 700 }}>Uncatalogued / Unverified Fire Authority</div>
+              <div>{authority.message}</div>
+              <div style={{ fontWeight: 600 }}>{authority.recommendedAction}</div>
             </div>
           </div>
         )}
       </div>
 
       {/* Navigation Tabs */}
-      <div className="border-b border-slate-200 dark:border-slate-800">
-        <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto pb-1" aria-label="Fire Guide Navigation Tabs">
-          {[
-            { id: 'overview', label: '1. Authority & Rules', icon: ShieldCheck },
-            { id: 'checklist', label: '2. Preparation Checklist', icon: FileText },
-            { id: 'stages', label: '3. Lifecycle Stages', icon: Layers },
-            { id: 'tracking', label: '4. Inspection & Shortfalls', icon: Calendar }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isCurrent = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-                  isCurrent
-                    ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-b-2 border-red-600'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-                aria-current={isCurrent ? 'page' : undefined}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+      <div className="fire-nav-tabs" role="tablist">
+        {[
+          { id: 'overview', label: '1. Authority & Rules', icon: ShieldCheck },
+          { id: 'checklist', label: '2. Preparation Checklist', icon: FileText },
+          { id: 'stages', label: '3. Lifecycle Stages', icon: Layers },
+          { id: 'tracking', label: '4. Inspection & Shortfalls', icon: Calendar }
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isCurrent = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isCurrent}
+              onClick={() => setActiveTab(tab.id)}
+              className={`fire-tab-btn ${isCurrent ? 'active' : ''}`}
+            >
+              <Icon size={16} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* TAB 1: Authority & Official Rules Overview */}
       {activeTab === 'overview' && (
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center justify-between">
-              <span>Competent Fire Directorate Record</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="fire-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Competent Fire Directorate Record</h2>
               <button
                 type="button"
                 onClick={() => setIsCorrectionModalOpen(true)}
-                className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                style={{ background: 'none', border: 'none', color: 'var(--accent-main, #38bdf8)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
               >
                 Propose Correction
               </button>
-            </h2>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Competent Authority:</span>
-                <span className="font-bold text-slate-900 dark:text-white">{authority.authorityName}</span>
-                <p className="text-xs text-slate-600 dark:text-slate-300">Officer: {authority.competentOfficer || 'Chief Fire Officer'}</p>
+            <div className="fire-grid-2">
+              <div style={{ padding: '0.9rem 1rem', borderRadius: '0.65rem', background: 'var(--bg-secondary, rgba(255,255,255,0.02))', border: '1px solid var(--border-light)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Competent Authority:</span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 800 }}>{authority.authorityName}</span>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Officer: {authority.competentOfficer || 'Chief Fire Officer'}</p>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Statutory Act &amp; Bye-Laws:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{authority.statutoryAct}</span>
-                <p className="text-xs text-slate-600 dark:text-slate-400">Effective Date: {authority.effectiveDate || 'Not specified'}</p>
+              <div style={{ padding: '0.9rem 1rem', borderRadius: '0.65rem', background: 'var(--bg-secondary, rgba(255,255,255,0.02))', border: '1px solid var(--border-light)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Statutory Act &amp; Bye-Laws:</span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{authority.statutoryAct}</span>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Effective Date: {authority.effectiveDate || 'Not specified'}</p>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Official Application Portal:</span>
+              <div style={{ padding: '0.9rem 1rem', borderRadius: '0.65rem', background: 'var(--bg-secondary, rgba(255,255,255,0.02))', border: '1px solid var(--border-light)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Official Application Portal:</span>
                 {authority.portalUrl ? (
                   <a
                     href={authority.portalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-main, #38bdf8)', fontWeight: 600, fontSize: '0.88rem', textDecoration: 'none' }}
                   >
                     <span>{authority.portalName}</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink size={14} />
                   </a>
                 ) : (
-                  <span className="text-slate-500 italic">Not specified by the linked official source.</span>
+                  <span style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>Not specified by the linked official source.</span>
                 )}
                 {authority.scrutinyPortal && (
-                  <div className="text-xs text-slate-500 mt-1">
-                    Integrated Building Portal: <a href={authority.scrutinyPortal} target="_blank" rel="noopener noreferrer" className="underline">{authority.scrutinyPortal}</a>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
+                    Integrated Building Portal: <a href={authority.scrutinyPortal} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-main, #38bdf8)' }}>{authority.scrutinyPortal}</a>
                   </div>
                 )}
               </div>
 
-              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Statutory Service Timelines:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">
+              <div style={{ padding: '0.9rem 1rem', borderRadius: '0.65rem', background: 'var(--bg-secondary, rgba(255,255,255,0.02))', border: '1px solid var(--border-light)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Statutory Service Timelines:</span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 800 }}>
                   {authority.turnaroundDays ? `${authority.turnaroundDays} Working Days` : 'Not specified'}
                 </span>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   {authority.inspectionMandatory ? 'Mandatory spot inspection required before clearance.' : 'Self-certification permitted.'}
                 </p>
               </div>
             </div>
 
             {authority.guidanceNotes && (
-              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 rounded-lg text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2">
-                <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <div className="fire-alert-box fire-alert-blue">
+                <Info size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
                   <strong>Editorial Practice Note: </strong>
                   {authority.guidanceNotes}
@@ -551,19 +552,16 @@ export default function FireSafetyComplianceGuide({
 
       {/* TAB 2: Preparation Checklist Workspace */}
       {activeTab === 'checklist' && (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Stage Selector Sub-Bar */}
-          <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.4rem', borderRadius: '0.5rem', background: 'var(--bg-secondary, rgba(255,255,255,0.03))', border: '1px solid var(--border-light)' }}>
             {Object.values(FIRE_NOC_STAGES).map((stg) => (
               <button
                 key={stg.stage}
                 type="button"
                 onClick={() => setActiveStage(stg.stage)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                  activeStage === stg.stage
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
+                className={`fire-tab-btn ${activeStage === stg.stage ? 'active' : ''}`}
+                style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
               >
                 {stg.title.split(':')[0]}
               </button>
@@ -571,50 +569,53 @@ export default function FireSafetyComplianceGuide({
           </div>
 
           {/* Active Stage Header */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">{stageData.stageTitle}</h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{stageData.description}</p>
-            <div className="mt-2 text-xs font-semibold text-red-700 dark:text-red-400">
+          <div className="fire-card">
+            <h2 style={{ margin: '0 0 0.35rem 0', fontSize: '1.15rem', fontWeight: 700 }}>{stageData.stageTitle}</h2>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{stageData.description}</p>
+            <div style={{ marginTop: '0.65rem', fontSize: '0.8rem', fontWeight: 700, color: '#ef4444' }}>
               Deliverable: {stageData.deliverable}
             </div>
           </div>
 
           {/* Action Bar: Save / Reopen / Reset local checklist */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={handleSaveChecklist}
-                className="btn btn-primary text-xs flex items-center gap-1.5"
+                className="btn btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
                 title="Save current checklist progress to this device"
               >
-                <Save className="w-3.5 h-3.5" />
+                <Save size={15} />
                 <span>Save Checklist</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleReopenChecklist}
-                className="btn btn-secondary text-xs flex items-center gap-1.5"
+                className="btn btn-secondary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
                 title="Reopen previously saved checklist from this device"
               >
-                <FolderOpen className="w-3.5 h-3.5 text-blue-600" />
+                <FolderOpen size={15} color="var(--accent-main, #38bdf8)" />
                 <span>Reopen Saved</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleResetChecklist}
-                className="btn btn-secondary text-xs flex items-center gap-1.5 text-red-600 hover:text-red-700"
+                className="btn btn-secondary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#f87171' }}
                 title="Delete saved checklist and clear form"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 size={15} />
                 <span>Reset</span>
               </button>
             </div>
 
             {savedStatusNotice && (
-              <span className={`text-xs font-semibold ${savedStatusNotice.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: savedStatusNotice.type === 'error' ? '#ef4444' : '#10b981' }}>
                 {savedStatusNotice.text}
               </span>
             )}
@@ -622,9 +623,9 @@ export default function FireSafetyComplianceGuide({
 
           {/* Saved Dossier Availability Notification */}
           {hasSavedDossier && !savedStatusNotice && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 rounded-lg text-xs text-blue-900 dark:text-blue-200 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <FolderOpen className="w-4 h-4 text-blue-600 shrink-0" />
+            <div className="fire-alert-box fire-alert-blue" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FolderOpen size={16} color="var(--accent-main, #38bdf8)" style={{ flexShrink: 0 }} />
                 <span>
                   <strong>Saved Progress Available:</strong> You have a saved checklist from {savedDossierDate}.
                 </span>
@@ -632,7 +633,7 @@ export default function FireSafetyComplianceGuide({
               <button
                 type="button"
                 onClick={handleReopenChecklist}
-                className="font-semibold text-blue-700 dark:text-blue-300 underline hover:no-underline shrink-0"
+                style={{ background: 'none', border: 'none', color: 'var(--accent-main, #38bdf8)', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', flexShrink: 0 }}
               >
                 Reopen &amp; Restore
               </button>
@@ -640,71 +641,66 @@ export default function FireSafetyComplianceGuide({
           )}
 
           {/* Categorized Checklist Items */}
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {stageData.requiredCategories.map((catGroup) => (
-              <div key={catGroup.category} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs border-b border-slate-200 dark:border-slate-800 pb-2">
+              <div key={catGroup.category} className="fire-card">
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.5rem' }}>
                   {catGroup.title}
                 </h3>
 
-                <div className="space-y-3">
+                <div>
                   {catGroup.items.map((item) => {
                     const isChecked = Boolean(completedItems[item.id]);
                     return (
                       <div
                         key={item.id}
-                        className={`p-3.5 rounded-lg border transition-all ${
-                          isChecked
-                            ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40'
-                            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
-                        }`}
+                        className={`fire-check-item ${isChecked ? 'checked' : ''}`}
                       >
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            id={`check-${item.id}`}
-                            checked={isChecked}
-                            onChange={() => toggleItemCompletion(item.id)}
-                            className="mt-1 h-4 w-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
-                          />
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <label
-                                htmlFor={`check-${item.id}`}
-                                className={`text-sm font-semibold cursor-pointer ${
-                                  isChecked ? 'line-through text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'
-                                }`}
-                              >
-                                {item.label}
-                              </label>
-                              <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                                  item.mandatory
-                                    ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
-                                    : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                                }`}
-                              >
-                                {item.mandatory ? 'MANDATORY' : 'CONDITIONAL'}
-                              </span>
-                            </div>
+                        <input
+                          type="checkbox"
+                          id={`check-${item.id}`}
+                          checked={isChecked}
+                          onChange={() => toggleItemCompletion(item.id)}
+                          className="fire-checkbox"
+                        />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <label
+                              htmlFor={`check-${item.id}`}
+                              style={{
+                                fontSize: '0.88rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                textDecoration: isChecked ? 'line-through' : 'none',
+                                color: isChecked ? 'var(--text-secondary)' : 'var(--text-primary)'
+                              }}
+                            >
+                              {item.label}
+                            </label>
+                            <span
+                              className={`fire-badge-pill ${item.mandatory ? 'fire-badge-red' : 'fire-badge-neutral'}`}
+                            >
+                              {item.mandatory ? 'MANDATORY' : 'CONDITIONAL'}
+                            </span>
+                          </div>
 
-                            {/* Official Rule & Legal Basis */}
-                            <div className="text-xs text-slate-600 dark:text-slate-400 flex flex-wrap gap-x-3 gap-y-0.5">
-                              <span><strong>Rule:</strong> {item.officialRule}</span>
-                              <span><strong>Purpose:</strong> {item.officialBasis}</span>
-                            </div>
+                          {/* Official Rule & Legal Basis */}
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                            <span><strong>Rule:</strong> {item.officialRule}</span>
+                            <span><strong>Purpose:</strong> {item.officialBasis}</span>
+                          </div>
 
-                            {/* Reference / File Token Input */}
-                            <div className="pt-1.5 flex items-center gap-2">
-                              <span className="text-[11px] text-slate-500 dark:text-slate-400">File Ref:</span>
-                              <input
-                                type="text"
-                                placeholder="e.g. DWG-FIRE-01 or Lab Report #102"
-                                value={itemDocRefs[item.id] || ''}
-                                onChange={(e) => handleDocRefChange(item.id, e.target.value)}
-                                className="text-xs px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white max-w-xs"
-                              />
-                            </div>
+                          {/* Reference / File Token Input */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>File Ref:</span>
+                            <input
+                              type="text"
+                              placeholder="e.g. DWG-FIRE-01 or Lab Report #102"
+                              value={itemDocRefs[item.id] || ''}
+                              onChange={(e) => handleDocRefChange(item.id, e.target.value)}
+                              className="fire-input"
+                              style={{ maxWidth: '280px', padding: '0.35rem 0.6rem', fontSize: '0.78rem' }}
+                            />
                           </div>
                         </div>
                       </div>
@@ -719,36 +715,34 @@ export default function FireSafetyComplianceGuide({
 
       {/* TAB 3: Three-Stage Lifecycle Comparison */}
       {activeTab === 'stages' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.values(FIRE_NOC_STAGES).map((stg, idx) => (
-              <div key={stg.stage} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
-                <div className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 flex items-center justify-center font-bold text-xs">
-                  {idx + 1}
-                </div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm">{stg.title}</h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400">{stg.description}</p>
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 space-y-1">
-                  <div><strong>Milestone:</strong> {stg.milestone}</div>
-                  <div><strong>Outcome:</strong> {stg.deliverable}</div>
-                </div>
+        <div className="fire-grid-3">
+          {Object.values(FIRE_NOC_STAGES).map((stg, idx) => (
+            <div key={stg.stage} className="fire-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem' }}>
+                {idx + 1}
               </div>
-            ))}
-          </div>
+              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>{stg.title}</h3>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.45, flex: 1 }}>{stg.description}</p>
+              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '0.65rem', fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div><strong>Milestone:</strong> {stg.milestone}</div>
+                <div><strong>Outcome:</strong> {stg.deliverable}</div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {/* TAB 4: Submission Token, Inspection & Shortfall Memo Tracker */}
       {activeTab === 'tracking' && (
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="fire-card">
+            <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.15rem', fontWeight: 700 }}>
               Application &amp; Spot Inspection Milestone Tracker
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <div className="fire-grid-2">
+              <div className="fire-field-group">
+                <label className="fire-field-label">
                   Official Submission Reference / Application Token
                 </label>
                 <input
@@ -756,98 +750,96 @@ export default function FireSafetyComplianceGuide({
                   placeholder="e.g. DFS/2026/FSC/8821"
                   value={submissionToken}
                   onChange={(e) => setSubmissionToken(e.target.value)}
-                  className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+                  className="fire-input"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <div className="fire-field-group">
+                <label className="fire-field-label">
                   Scheduled Inspection Date
                 </label>
                 <input
                   type="date"
                   value={inspectionDate}
                   onChange={(e) => setInspectionDate(e.target.value)}
-                  className="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+                  className="fire-input"
                 />
               </div>
             </div>
           </div>
 
           {/* Deficiency Notices / Shortfall Memoranda Section */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center justify-between">
-              <span>Inspection Shortfalls &amp; Deficiency Memoranda</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+          <div className="fire-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Inspection Shortfalls &amp; Deficiency Memoranda</h2>
+              <span className="fire-badge-pill fire-badge-neutral">
                 {deficiencies.length} Recorded
               </span>
-            </h2>
+            </div>
 
-            <form onSubmit={handleAddDeficiency} className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <form onSubmit={handleAddDeficiency} style={{ padding: '1rem', borderRadius: '0.75rem', background: 'var(--bg-secondary, rgba(255,255,255,0.02))', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
                 <div>
                   <input
                     type="text"
                     placeholder="Shortfall Memo # (e.g. MEMO-01)"
                     value={newDeficiencyMemo}
                     onChange={(e) => setNewDeficiencyMemo(e.target.value)}
-                    className="w-full text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+                    className="fire-input"
+                    style={{ fontSize: '0.8rem' }}
                   />
                 </div>
-                <div className="sm:col-span-2">
+                <div style={{ gridColumn: 'span 2' }}>
                   <input
                     type="text"
                     placeholder="Inspector observation (e.g. Secondary escape door locked or pump pressure under 3.5 bar)"
                     value={newDeficiencyText}
                     onChange={(e) => setNewDeficiencyText(e.target.value)}
-                    className="w-full text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+                    className="fire-input"
+                    style={{ fontSize: '0.8rem' }}
                   />
                 </div>
               </div>
-              <button type="submit" className="btn btn-secondary text-xs flex items-center gap-1">
-                <Plus className="w-3.5 h-3.5" /> Log Inspection Shortfall
+              <button type="submit" className="btn btn-secondary" style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+                <Plus size={14} /> Log Inspection Shortfall
               </button>
             </form>
 
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {deficiencies.length === 0 ? (
-                <div className="text-center py-6 text-xs text-slate-500 italic">
+                <div style={{ textAlign: 'center', padding: '1.5rem', fontSize: '0.82rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
                   No inspection deficiencies recorded. If the scrutiny officer issues an observation memo, log it here to track response deadlines.
                 </div>
               ) : (
                 deficiencies.map((def) => (
                   <div
                     key={def.id}
-                    className={`p-3.5 rounded-lg border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                      def.status === 'RESOLVED'
-                        ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40'
-                        : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40'
-                    }`}
+                    className="fire-check-item"
+                    style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">{def.memoNumber}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>{def.memoNumber}</span>
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                            def.status === 'RESOLVED'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                              : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                          className={`fire-badge-pill ${
+                            def.status === 'RESOLVED' ? 'fire-badge-emerald' : 'fire-badge-amber'
                           }`}
                         >
                           {def.status}
                         </span>
-                        <span className="text-[11px] text-slate-500">Recorded: {def.recordedAt}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Recorded: {def.recordedAt}</span>
                       </div>
-                      <p className="text-xs text-slate-700 dark:text-slate-300">{def.description}</p>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{def.description}</p>
                     </div>
 
                     {def.status !== 'RESOLVED' && (
                       <button
                         type="button"
                         onClick={() => handleResolveDeficiency(def.id)}
-                        className="btn btn-secondary text-xs shrink-0 flex items-center gap-1 text-emerald-600 hover:text-emerald-700"
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#34d399' }}
                       >
-                        <Check className="w-3.5 h-3.5" /> Mark Rectified
+                        <Check size={14} /> Mark Rectified
                       </button>
                     )}
                   </div>
@@ -864,30 +856,30 @@ export default function FireSafetyComplianceGuide({
           role="dialog"
           aria-modal="true"
           aria-labelledby="correction-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="fire-modal-backdrop"
         >
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 max-w-lg w-full space-y-4 shadow-xl">
-            <div className="flex items-center justify-between">
-              <h3 id="correction-modal-title" className="text-base font-bold text-slate-900 dark:text-white">
+          <div className="fire-modal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <h3 id="correction-modal-title" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
                 Submit Fire Rule / Portal Correction
               </h3>
               <button
                 type="button"
                 onClick={() => setIsCorrectionModalOpen(false)}
-                className="text-slate-500 hover:text-slate-700"
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
                 aria-label="Close correction modal"
               >
-                <X className="w-4 h-4" />
+                <X size={18} />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-400">
+            <p style={{ margin: '0 0 1rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
               Civic-Help-Setu requires all statutory claims to be linked to a dated official government gazette, portal URL, or department notification.
             </p>
 
-            <form onSubmit={handleSubmitCorrection} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <form onSubmit={handleSubmitCorrection} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div className="fire-field-group">
+                <label className="fire-field-label">
                   Official Gazette / Directorate URL (Required)
                 </label>
                 <input
@@ -896,12 +888,12 @@ export default function FireSafetyComplianceGuide({
                   placeholder="https://dfs.delhigovt.nic.in/gazette-rule.pdf"
                   value={correctionSourceUrl}
                   onChange={(e) => setCorrectionSourceUrl(e.target.value)}
-                  className="w-full text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+                  className="fire-input"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <div className="fire-field-group">
+                <label className="fire-field-label">
                   Correction Details &amp; Notes
                 </label>
                 <textarea
@@ -909,26 +901,27 @@ export default function FireSafetyComplianceGuide({
                   placeholder="Explain what rule, timeline, or portal URL has changed..."
                   value={correctionNotes}
                   onChange={(e) => setCorrectionNotes(e.target.value)}
-                  className="w-full text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-white"
+                  className="fire-textarea"
                 />
               </div>
 
               {correctionStatus && (
-                <div className={`text-xs p-2 rounded ${correctionStatus.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                <div style={{ fontSize: '0.8rem', padding: '0.5rem', borderRadius: '0.4rem', background: correctionStatus.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)', color: correctionStatus.type === 'error' ? '#f87171' : '#34d399' }}>
                   {correctionStatus.message}
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
                   onClick={() => setIsCorrectionModalOpen(false)}
-                  className="btn btn-secondary text-xs"
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.82rem' }}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary text-xs flex items-center gap-1">
-                  <Send className="w-3.5 h-3.5" /> Submit for Review
+                <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}>
+                  <Send size={14} /> Submit for Review
                 </button>
               </div>
             </form>

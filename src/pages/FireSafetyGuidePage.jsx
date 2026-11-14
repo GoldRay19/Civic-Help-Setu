@@ -26,7 +26,7 @@ export default function FireSafetyGuidePage() {
           </button>
         </div>
 
-        <FireSafetyComplianceGuide onBack={() => navigate('/services')} />
+        <FireSafetyComplianceGuide />
       </div>
     </section>
   );
