@@ -88,6 +88,16 @@ Retention for all of these: until deleted by the person (no automatic expiry).
 | `civicbridge_checklist` | `dataPortabilityService.js` | Saved checklist items exported/imported across devices | Drafts and in-progress work |
 | `civicbridge_track_applications` | `dataPortabilityService.js` | Application tracking records staged for import or export | Tracking records |
 | `civicbridge_form_drafts` | `dataPortabilityService.js` | Form drafts prepared by citizen | Drafts and in-progress work |
+| `civicbridge_citizen_drafts_v1` | `citizenDraftSyncEngine.js` | Citizen draft workflows (checklists, applications, saved notes) | Drafts and in-progress work |
+| `civicbridge_offline_operations_v1` | `citizenDraftSyncEngine.js` | Local queue of sync mutations staged offline | Drafts and in-progress work |
+| `civicbridge_sync_sessions_v1` | `citizenDraftSyncEngine.js` | Offline synchronization session telemetry and logs | Drafts and in-progress work |
+| `civicbridge_record_revisions_v1` | `citizenDraftSyncEngine.js` | Local revision snapshot cache for 3-way conflict diffing | Drafts and in-progress work |
+| `civicbridge_conflict_records_v1` | `citizenDraftSyncEngine.js` | Local conflict records waiting for user merge resolution | Drafts and in-progress work |
+| `civicbridge_device_cursors_v1` | `citizenDraftSyncEngine.js` | Device sync cursors and high-water revision marks | Drafts and in-progress work |
+| `civicbridge_tombstones_v1` | `citizenDraftSyncEngine.js` | Deletion tombstones to prevent resurrection of deleted drafts | Drafts and in-progress work |
+| `civicbridge_civic_works_reports_v1` | `civicWorksBoardService.js` | Ward civic works reports and moderation state | Reviews, votes and reports |
+| `civicbridge_civic_works_clusters_v1` | `civicWorksBoardService.js` | Clustered duplicate ward reports | Reviews, votes and reports |
+| `civicbridge_civic_works_rate_limit_v1` | `civicWorksBoardService.js` | Ward report submission rate limit tracking | Reviews, votes and reports |
 | `civicbridge_journey_handoffs_v1` | `journeyHandoffService.js` | Journey handoff bundles and shared checklist links | Drafts and in-progress work |
 | `civicbridge_readiness_scorecards` | `readinessScorecardService.js` | Citizen application readiness scores and missing document audits | Drafts and in-progress work |
 | `civicbridge_offline_cache` | `offlineCacheService.js` | Copies of saved guides and application stages for offline use | Offline copies and location |

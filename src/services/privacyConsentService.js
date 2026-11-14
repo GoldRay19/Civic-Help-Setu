@@ -87,6 +87,13 @@ export const USER_DATA_STORES = [
   { key: 'civicbridge_sent_digests', category: 'tracking', exportAs: 'sentNewsletterDigests', empty: [] }, // newsletterSubscriptionService.js
   { key: 'civicbridge_newsletter_delivery_failures', category: 'tracking', exportAs: 'newsletterDeliveryFailures', empty: [] }, // newsletterSubscriptionService.js
   { key: 'civicbridge_civic_works_reports_v1', category: 'activity', exportAs: 'civicWorksReports', empty: [] }, // civicWorksBoardService.js
+  { key: 'civicbridge_citizen_drafts_v1', category: 'drafts', exportAs: 'citizenDrafts', empty: {} }, // citizenDraftSyncEngine.js
+  { key: 'civicbridge_offline_operations_v1', category: 'drafts', exportAs: null, empty: {} }, // citizenDraftSyncEngine.js
+  { key: 'civicbridge_sync_sessions_v1', category: 'drafts', exportAs: null, empty: {} }, // citizenDraftSyncEngine.js
+  { key: 'civicbridge_record_revisions_v1', category: 'drafts', exportAs: null, empty: {} }, // citizenDraftSyncEngine.js
+  { key: 'civicbridge_conflict_records_v1', category: 'drafts', exportAs: null, empty: {} }, // citizenDraftSyncEngine.js
+  { key: 'civicbridge_device_cursors_v1', category: 'drafts', exportAs: null, empty: {} }, // citizenDraftSyncEngine.js
+  { key: 'civicbridge_tombstones_v1', category: 'drafts', exportAs: null, empty: {} }, // citizenDraftSyncEngine.js
 ];
 
 /**

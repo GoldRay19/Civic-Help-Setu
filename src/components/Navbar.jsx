@@ -764,6 +764,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
               })}
 
               {renderNavLink({
+                to: '/citizen-drafts',
+                label: 'Citizen Drafts & Sync',
+                icon: FileText
+              })}
+
+              {renderNavLink({
                 to: '/track',
                 label: t('nav.track', 'Track Status'),
                 icon: Settings
@@ -817,6 +823,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                   to: '/saved',
                   label: t('nav.saved', 'Saved Guides'),
                   icon: Bookmark
+                })}
+
+                {renderNavLink({
+                  to: '/citizen-drafts',
+                  label: 'Drafts & Offline Sync',
+                  icon: FileText
                 })}
 
                 {renderNavLink({
