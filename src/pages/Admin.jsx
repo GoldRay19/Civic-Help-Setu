@@ -40,6 +40,7 @@ import ReportResolutionModal from '../components/admin/ReportResolutionModal';
 import RoleManagementModal from '../components/admin/RoleManagementModal';
 import ServiceSubmissionReviewModal from '../components/admin/ServiceSubmissionReviewModal';
 import CrematoriumCorrectionQueue from '../components/admin/CrematoriumCorrectionQueue';
+import WaterTankerReviewQueue from '../components/admin/WaterTankerReviewQueue';
 import TenderCorrectionQueue from '../components/admin/TenderCorrectionQueue';
 import CommunityFacilityCorrectionQueue from '../components/admin/CommunityFacilityCorrectionQueue';
 import AuditLogViewer from '../components/admin/AuditLogViewer';
@@ -1149,6 +1150,9 @@ const Admin = () => {
                   <TenderCorrectionQueue />
                 </div>
                 <CommunityFacilityCorrectionQueue />
+                <div style={{ marginTop: '2rem' }}>
+                  <WaterTankerReviewQueue />
+                </div>
               </div>
             )}
 

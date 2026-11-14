@@ -21,8 +21,11 @@ import {
   Bot,
   Bookmark,
   UserCircle,
-  Settings
+  Settings,
+  Droplets,
 } from 'lucide-react';
+
+import { logDiagnostic } from '../utils/diagnostics';
 
 import { useAuth } from '../context/AuthContext';
 import { can } from '../services/accessControl';
@@ -183,7 +186,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
       setIsOpen(false);
       navigate('/login', { replace: true });
     } catch (error) {
-      console.error('Logout failed:', error);
+      logDiagnostic('auth:logout_failed', error);
     } finally {
       setIsLoggingOut(false);
     }
@@ -749,6 +752,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/crematorium-directory',
                 label: 'Crematorium Directory',
                 icon: Users
+              })}
+
+              {renderNavLink({
+                to: '/water-tanker',
+                label: 'Water Tanker Tracker',
+                icon: Droplets
               })}
 
               {renderNavLink({
