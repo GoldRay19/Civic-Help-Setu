@@ -682,6 +682,91 @@ export const MOCK_SERVICES = [
       { label: 'State Health Agency Contacts', url: 'https://pmjay.gov.in/state-health-agencies' }
     ],
     lastVerified: '2026-11-05'
+  },
+  {
+    id: 'fire-noc',
+    jurisdiction: {
+      level: 'state',
+      states: ['Delhi', 'Maharashtra', 'Karnataka', 'Tamil Nadu', 'Telangana'],
+      districts: [],
+      localBody: ''
+    },
+    name: 'Fire Safety Certificate / Fire NOC',
+    shortDescription: 'Procedural preparation and compliance guide for building owners and businesses to secure Provisional Fire NOC, Final Fire Safety Certificate, and periodic renewals pursuant to NBC 2016 Part 4.',
+    category: 'Business',
+    department: 'State Directorate of Fire & Emergency Services / Municipal Fire Prevention Wing',
+    type: 'Online / Offline',
+    difficulty: 'Medium',
+    feeType: 'paid',
+    speedDays: 30,
+    popularityScore: 88,
+    eligibility: [
+      'Applies to commercial, industrial, institutional (hospitals/schools), assembly halls, and high-rise buildings exceeding 15 meters in height.',
+      'Provisional NOC is required at building plan sanction stage prior to commencing construction.',
+      'Final Fire Safety Certificate is required prior to applying for Occupancy Certificate.',
+      'Annual/periodic renewal is mandatory for active commercial and assembly premises.'
+    ],
+    documents: [
+      'Site plan showing minimum 6-meter unobstructed peripheral fire tender access driveway',
+      'Floor layouts displaying fire exits, staircase widths, and travel distance to safety',
+      'Fire protection scheme drawings detailing risers, hydrants, pumps, and sprinkler grids',
+      'Underground and overhead fire water storage static tank capacity certificate',
+      'Commissioning test report of dual main electric and standby diesel fire pumps',
+      'CBRI / NABL accredited laboratory test certificate for 1 to 2 hour fire-resistant doors'
+    ],
+    documentRequirements: {
+      'Site plan showing minimum 6-meter unobstructed peripheral fire tender access driveway': {
+        type: 'mandatory'
+      },
+      'Floor layouts displaying fire exits, staircase widths, and travel distance to safety': {
+        type: 'mandatory'
+      },
+      'Fire protection scheme drawings detailing risers, hydrants, pumps, and sprinkler grids': {
+        type: 'mandatory'
+      },
+      'Underground and overhead fire water storage static tank capacity certificate': {
+        type: 'mandatory'
+      },
+      'Commissioning test report of dual main electric and standby diesel fire pumps': {
+        type: 'mandatory'
+      },
+      'CBRI / NABL accredited laboratory test certificate for 1 to 2 hour fire-resistant doors': {
+        type: 'conditional',
+        condition: 'Mandatory for high-rise buildings over 15 meters, institutional hospitals, and assembly halls.'
+      }
+    },
+    steps: [
+      {
+        title: 'Determine NBC 2016 Occupancy Group & Height Threshold',
+        description: 'Check whether your building use (Group A to J) and height (e.g. >= 15m) trigger mandatory Fire NOC under local fire force rules.'
+      },
+      {
+        title: 'Apply for Provisional Fire NOC',
+        description: 'Submit architectural drawings, fire exit schemes, and land title documents on the single-window building sanction portal.'
+      },
+      {
+        title: 'Install Active & Passive Fire Safety Equipment',
+        description: 'Execute works via a Directorate-licensed fire safety agency: pumps, wet risers, sprinklers, alarms, and fire-resistant doors.'
+      },
+      {
+        title: 'Undergo Physical Spot Inspection',
+        description: 'Chief Fire Officer / Station Officer conducts physical hydrostatic, flow, and alarm tests on site.'
+      },
+      {
+        title: 'Cure Shortfall Memoranda & Receive Final Fire Certificate',
+        description: 'Remediate any inspection deficiencies within 15 days to secure the final Fire Safety Certificate required for occupancy.'
+      }
+    ],
+    warnings: [
+      'Procedural guidance only. This guide does NOT replace certified fire safety auditors or fire-protection engineering calculations.',
+      'Operating commercial premises or assembly halls without a valid Fire Safety Certificate is punishable with closure notices and penal action under State Fire Acts.'
+    ],
+    contacts: [
+      { label: 'Delhi Fire Service', url: 'https://dfs.delhigovt.nic.in' },
+      { label: 'Maharashtra Fire Services', url: 'https://mahafireservice.gov.in' },
+      { label: 'Karnataka State Fire Services', url: 'https://ksfes.karnataka.gov.in' }
+    ],
+    lastVerified: '2026-03-01'
   }
 ];
 

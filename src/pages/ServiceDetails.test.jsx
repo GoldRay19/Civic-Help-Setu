@@ -42,4 +42,12 @@ describe('ServiceDetails', () => {
     expect(html).toContain('Open Interactive Aadhaar Guide');
     expect(html).toContain('/services/aadhaar-guide');
   });
+
+  it('renders the dedicated Fire NOC guide entry card when viewing the fire-noc service (#719)', () => {
+    const html = render('/services/fire-noc');
+    expect(html).toContain('Fire Safety Certificate / Fire NOC');
+    expect(html).toContain('Dedicated Fire NOC &amp; Fire-Safety Compliance Preparation Guide');
+    expect(html).toContain('Open Interactive Fire Guide');
+    expect(html).toContain('/services/fire-noc-guide');
+  });
 });
