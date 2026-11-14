@@ -684,6 +684,88 @@ export const MOCK_SERVICES = [
     lastVerified: '2026-11-05'
   },
   {
+    id: 'business-licence-checklist',
+    title: 'Small-Business Licence Renewal & Closure Checklist Centre',
+    description: 'Lifecycle compliance tracker for small enterprises across municipal trade licences, Shops & Establishments registrations, FSSAI, SPCB consents, and statutory surrender acknowledgement archiving (#721).',
+    department: 'Urban Local Bodies (Municipal Corporations) & Directorate of Commercial Licencing',
+    category: 'Business & Commercial',
+    popularityScore: 94,
+    eligibility: [
+      'Micro, Small and Medium Enterprises (MSMEs)',
+      'Retail shops, commercial establishments, eateries, and service firms',
+      'Proprietors, partners, or corporate entities holding active or expiring commercial registrations'
+    ],
+    documents: [
+      'Existing Trade Licence / Municipal Enlistment Certificate',
+      'Shops and Establishments Registration Certificate',
+      'Commercial Lease Agreement & Landlord NOC (for premises relocation)',
+      'Electricity / Utility Commercial Meter Zero Dues Bill',
+      'Municipal Property Tax Paid Receipts',
+      'Deed of Dissolution / Partnership Transfer Deed (for constitution amendment)',
+      'Stamped Surrender Acknowledgement Order (for formal closure & deregistration)'
+    ],
+    steps: [
+      { title: 'Select Establishment & Jurisdiction', description: 'Configure branch details, municipal corporation (e.g. MCD, BMC, BBMP), and business category.' },
+      { title: 'Track Dual-Track Licences', description: 'Monitor municipal trade licences and sector-specific registrations (FSSAI, SPCB, Labour) independently.' },
+      { title: 'Monitor Expiry Reminders', description: 'Set 60/30/15-day renewal alert windows and download standard calendar reminders (.ics).' },
+      { title: 'Execute Amendments with Evidence', description: 'Follow structured admissible evidence checklists for address shifts or partner constitution changes.' },
+      { title: 'Execute Closure & Archive Acknowledgements', description: 'Clear municipal and utility final dues, submit surrender applications, and permanently archive the dated surrender acknowledgement receipt.' }
+    ],
+    validityNote: 'Trade licences operate strictly on the financial year basis (expiring 31 March) across most Indian urban local bodies. FSSAI food business licences operate on 1 to 5 year validity. Shops & Establishments registrations may be perpetual or require periodic intimation depending on state rules.',
+    fees: 'Assessed dynamically by local municipal corporations based on covered carpet area, street category, and electric motor horsepower. Sector-specific fees vary by turnover and hazard class. Do not pay unofficial facilitation agents.',
+    processingTime: '7 to 30 working days depending on jurisdiction citizen charters. Instant provisional certificates available under Ease of Doing Business self-certification in select municipalities.',
+    officialSources: [
+      {
+        name: 'Municipal Corporation of Delhi (MCD) Online Portal',
+        url: 'https://mcdonline.nic.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'Brihanmumbai Municipal Corporation (BMC) Citizen Portal',
+        url: 'https://portal.mcgm.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'Bruhat Bengaluru Mahanagara Palike (BBMP) Portal',
+        url: 'https://bbmptax.karnataka.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'Greater Chennai Corporation (GCC) Portal',
+        url: 'https://chennaicorporation.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'Food Safety and Standards Authority of India (FoSCoS)',
+        url: 'https://foscos.fssai.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      },
+      {
+        name: 'GST Portal (CBIC)',
+        url: 'https://www.gst.gov.in',
+        verified: true,
+        lastVerified: '2026-11-05'
+      }
+    ],
+    warnings: [
+      'A Municipal Trade Licence DOES NOT confer title or ownership of property, nor does it regularize unauthorized construction.',
+      'Always secure a formal, stamped or digitally signed Surrender Acknowledgement Receipt when closing down a business to defend against trailing tax demands.',
+      'Shifting premises without filing an address amendment is treated as operating without an authorized licence.',
+      'Keep personal identifiers (GSTIN, PAN, Aadhaar) confidential. Never expose them in public links or shared dossiers.'
+    ],
+    contacts: [
+      { label: 'MCD Citizen Helpline', phone: '155305', url: 'https://mcdonline.nic.in' },
+      { label: 'BMC Central Control Room', phone: '1916', url: 'https://portal.mcgm.gov.in' },
+      { label: 'FSSAI National Toll-Free Helpline', phone: '1800112100', url: 'https://foscos.fssai.gov.in' }
+    ],
+    lastVerified: '2026-11-05'
+  },
+  {
     id: 'tree-pruning-permission',
     jurisdiction: { level: 'state', states: ['Delhi', 'Karnataka', 'Maharashtra', 'Tamil Nadu', 'Telangana'], districts: [], localBody: '' },
     name: 'Tree-Pruning Permission and Urban Tree Protection',

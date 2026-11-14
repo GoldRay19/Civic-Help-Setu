@@ -43,6 +43,7 @@ import SharedProfileView from './pages/SharedProfileView';
 import NotFound from './pages/NotFound';
 import VerifyEmail from './pages/VerifyEmail';
 import AadhaarGuidePage from './pages/AadhaarGuidePage';
+import SmallBusinessLicencePage from './pages/SmallBusinessLicencePage';
 import TreePermissionGuidePage from './pages/TreePermissionGuidePage';
 import CivicWorksBoard from './pages/CivicWorksBoard';
 import CrematoriumDirectory from './pages/CrematoriumDirectory';
@@ -90,6 +91,8 @@ function AppRoot() {
                       <Route path="/services" element={<Suspense fallback={<ServicesFallback />}><Services /></Suspense>} />
                       <Route path="/services/aadhaar-guide" element={<AadhaarGuidePage />} />
                       <Route path="/aadhaar-guide" element={<AadhaarGuidePage />} />
+                      <Route path="/services/business-licence-checklist" element={<SmallBusinessLicencePage />} />
+                      <Route path="/business-licence-checklist" element={<SmallBusinessLicencePage />} />
                       <Route path="/services/tree-permission-guide" element={<TreePermissionGuidePage />} />
                       <Route path="/tree-permission-guide" element={<TreePermissionGuidePage />} />
                       <Route path="/services/:id" element={<ServiceDetails />} />

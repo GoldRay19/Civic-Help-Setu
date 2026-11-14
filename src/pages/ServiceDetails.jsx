@@ -42,6 +42,7 @@ import ApplicationReadinessCheckerModal from '../components/services/Application
 import FeeWaiverEligibilityCard from '../components/services/FeeWaiverEligibilityCard';
 import ServiceSlaReliabilityCard from '../components/services/ServiceSlaReliabilityCard';
 import AadhaarGuide from '../components/services/AadhaarGuide';
+import SmallBusinessLicenceCentre from '../components/services/SmallBusinessLicenceCentre';
 import TreePermissionGuide from '../components/services/TreePermissionGuide';
 
 const getSavedServices = () => {
@@ -106,6 +107,7 @@ const ServiceDetails = ({ previewService = null }) => {
   const [showReadinessCheckerModal, setShowReadinessCheckerModal] = useState(false);
   const [showShareByEmailModal, setShowShareByEmailModal] = useState(false);
   const [showDedicatedAadhaarGuide, setShowDedicatedAadhaarGuide] = useState(false);
+  const [showDedicatedBusinessLicenceCentre, setShowDedicatedBusinessLicenceCentre] = useState(false);
   const [showDedicatedTreeGuide, setShowDedicatedTreeGuide] = useState(false);
   const service = previewService ?? getServiceById(id);
   const [, setSavedTick] = useState(0);
@@ -831,6 +833,49 @@ const ServiceDetails = ({ previewService = null }) => {
             </div>
           )}
 
+          {service.id === 'business-licence-checklist' && (
+            <div
+              style={{
+                padding: '1.25rem',
+                marginBottom: '1.25rem',
+                border: '1px solid var(--accent-main, #3b82f6)',
+                background: 'var(--bg-card)',
+                borderRadius: '1rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ maxWidth: '650px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <ShieldCheck size={18} color="var(--accent-main, #3b82f6)" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
+                      Interactive Small-Business Licence Renewal &amp; Closure Checklist Centre
+                    </h3>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Multi-establishment compliance tracker across municipal trade licences, Shops &amp; Establishments registrations, amendment evidence, and formal surrender acknowledgement archiving (#721).
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setShowDedicatedBusinessLicenceCentre((v) => !v)}
+                    style={{ fontSize: '0.85rem' }}
+                  >
+                    {showDedicatedBusinessLicenceCentre ? 'Switch to Standard Guide' : 'Open Interactive Centre'}
+                  </button>
+                  <Link
+                    to="/services/business-licence-checklist"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.85rem', textDecoration: 'none' }}
+                  >
+                    Dedicated Page
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           {service.id === 'tree-pruning-permission' && (
             <div
               style={{
@@ -874,7 +919,9 @@ const ServiceDetails = ({ previewService = null }) => {
             </div>
           )}
 
-          {service.id === 'aadhaar-card' && showDedicatedAadhaarGuide ? (
+          {service.id === 'business-licence-checklist' && showDedicatedBusinessLicenceCentre ? (
+            <SmallBusinessLicenceCentre />
+          ) : service.id === 'aadhaar-card' && showDedicatedAadhaarGuide ? (
             <AadhaarGuide
               initialState={service.jurisdiction?.states?.[0] || 'Delhi'}
               onBack={() => setShowDedicatedAadhaarGuide(false)}

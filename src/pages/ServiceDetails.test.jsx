@@ -43,6 +43,14 @@ describe('ServiceDetails', () => {
     expect(html).toContain('/services/aadhaar-guide');
   });
 
+  it('renders the dedicated Small-Business Licence Renewal & Closure Centre entry card (#721)', () => {
+    const html = render('/services/business-licence-checklist');
+    expect(html).toContain('Small-Business Licence Renewal &amp; Closure Checklist Centre');
+    expect(html).toContain('Interactive Small-Business Licence Renewal &amp; Closure Checklist Centre');
+    expect(html).toContain('Open Interactive Centre');
+    expect(html).toContain('/services/business-licence-checklist');
+  });
+
   it('renders the dedicated Tree guide entry card when viewing the tree-pruning-permission service (#717)', () => {
     const html = render('/services/tree-pruning-permission');
     expect(html).toContain('Tree-Pruning Permission and Urban Tree Protection');
