@@ -21,8 +21,9 @@ import {
   Bookmark,
   UserCircle,
   Settings,
+  Navigation,
   KeyRound,
-  Store
+  Store,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -105,6 +106,14 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
           normalizedPath === '/rental-checklist' ||
           normalizedPath === '/rental-transition' ||
           normalizedPath === '/rental-records'
+        );
+      }
+
+      if (normalizedTarget === '/address-change-planner') {
+        return (
+          normalizedPath === '/address-change-planner' ||
+          normalizedPath === '/address-change' ||
+          normalizedPath === '/move-planner'
         );
       }
 
@@ -783,6 +792,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/rental-checklist',
                 label: t('nav.rentalChecklist', 'Rental Checklist'),
                 icon: KeyRound
+              })}
+
+              {renderNavLink({
+                to: '/address-change-planner',
+                label: t('nav.addressChange', 'Address Change Planner'),
+                icon: Navigation
               })}
 
               {renderNavLink({

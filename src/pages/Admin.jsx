@@ -44,6 +44,7 @@ import PdsObservationQueue from '../components/admin/PdsObservationQueue';
 import TenderCorrectionQueue from '../components/admin/TenderCorrectionQueue';
 import CommunityFacilityCorrectionQueue from '../components/admin/CommunityFacilityCorrectionQueue';
 import RentalCorrectionQueue from '../components/admin/RentalCorrectionQueue';
+import AddressChangeCorrectionQueue from '../components/admin/AddressChangeCorrectionQueue';
 import AuditLogViewer from '../components/admin/AuditLogViewer';
 import ServiceImportPanel from '../components/admin/ServiceImportPanel';
 import ServiceRecordList from '../components/admin/ServiceRecordList';
@@ -1154,6 +1155,9 @@ const Admin = () => {
                 <CommunityFacilityCorrectionQueue />
                 <div style={{ marginTop: '2rem' }}>
                   <RentalCorrectionQueue />
+                </div>
+                <div style={{ marginTop: '2rem' }}>
+                  <AddressChangeCorrectionQueue />
                 </div>
               </div>
             )}
