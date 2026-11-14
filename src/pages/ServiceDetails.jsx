@@ -9,6 +9,8 @@ import { useToast } from '../context/ToastContext';
 import UntranslatedBadge from '../components/common/UntranslatedBadge';
 import { useFocusMode } from '../hooks/useFocusMode';
 import ServiceGuide from '../components/services/ServiceGuide';
+import { buildGuideSections } from '../components/services/ServiceGuide';
+import ServiceSectionNav from '../components/services/ServiceSectionNav';
 import Checklist from '../components/Checklist';
 import MakeChecklistModal from '../components/services/MakeChecklistModal';
 import { readServiceChecklist, clearServiceChecklist } from '../services/makeChecklistService';
@@ -834,6 +836,7 @@ const ServiceDetails = ({ previewService = null }) => {
             />
           ) : (
             <>
+              <ServiceSectionNav sections={buildGuideSections(service)} />
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
                 <button
                   type="button"
