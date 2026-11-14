@@ -259,10 +259,11 @@ export default function TreePermissionGuide({
       {/* Top Banner & Header */}
       <div
         style={{
-          border: '1px solid var(--border-color, #e2e8f0)',
+          border: '1px solid var(--border-main, #e2e8f0)',
           borderRadius: '10px',
           padding: '1.25rem',
-          backgroundColor: 'var(--card-bg, #ffffff)',
+          backgroundColor: 'var(--bg-secondary, #ffffff)',
+          color: 'var(--text-primary, #0f172a)',
           boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
         }}
       >
@@ -340,7 +341,7 @@ export default function TreePermissionGuide({
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: '1rem',
             paddingTop: '1rem',
-            borderTop: '1px solid var(--border-color, #e2e8f0)',
+            borderTop: '1px solid var(--border-main, #e2e8f0)',
           }}
         >
           {/* Jurisdiction Selector */}
@@ -359,14 +360,13 @@ export default function TreePermissionGuide({
                 setSavedDossier(null);
                 setItemOverrides({});
               }}
+              className="input-field"
               style={{
                 width: '100%',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                border: '1px solid var(--border-color, #cbd5e1)',
-                backgroundColor: 'var(--bg-primary, #ffffff)',
-                color: 'inherit',
-                fontSize: '0.88rem',
+                padding: '0.65rem 0.9rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.9rem',
+                fontWeight: 600,
               }}
             >
               {supportedJurisdictions.map((j) => (
@@ -374,8 +374,26 @@ export default function TreePermissionGuide({
                   {j.city} ({j.state}) — {j.authorityName}
                 </option>
               ))}
-              <option value="UNLISTED_REGIONAL">Other / Unlisted Regional Local Body</option>
+              <option value="UNLISTED_REGIONAL">
+                Other / Unlisted Regional Local Body
+              </option>
+              {!supportedJurisdictions.some((j) => j.jurisdictionKey === selectedJurisdiction) &&
+                selectedJurisdiction !== 'UNLISTED_REGIONAL' && (
+                  <option value={selectedJurisdiction}>
+                    {selectedJurisdiction} (Custom / Unlisted Body)
+                  </option>
+                )}
             </select>
+            <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Active Jurisdiction:{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>
+                {authorityInfo.isSupported
+                  ? `${authorityInfo.city} (${authorityInfo.state}) — ${authorityInfo.authorityName}`
+                  : selectedJurisdiction === 'UNLISTED_REGIONAL'
+                  ? 'Other / Unlisted Regional Local Body'
+                  : selectedJurisdiction}
+              </strong>
+            </div>
           </div>
 
           {/* Operation Selector */}
@@ -390,14 +408,13 @@ export default function TreePermissionGuide({
               id="operation-type-select"
               value={selectedOperation}
               onChange={(e) => setSelectedOperation(e.target.value)}
+              className="input-field"
               style={{
                 width: '100%',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                border: '1px solid var(--border-color, #cbd5e1)',
-                backgroundColor: 'var(--bg-primary, #ffffff)',
-                color: 'inherit',
-                fontSize: '0.88rem',
+                padding: '0.65rem 0.9rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.9rem',
+                fontWeight: 600,
               }}
             >
               {Object.values(OPERATION_METADATA).map((op) => (
@@ -406,11 +423,17 @@ export default function TreePermissionGuide({
                 </option>
               ))}
             </select>
+            <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Active Action:{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>
+                {requirementsData.operation.title} ({requirementsData.operation.badge})
+              </strong>
+            </div>
           </div>
         </div>
 
         {/* Custom Unlisted Jurisdiction Entry */}
-        {selectedJurisdiction === 'UNLISTED_REGIONAL' && (
+        {(selectedJurisdiction === 'UNLISTED_REGIONAL' || !authorityInfo.isSupported) && (
           <div
             style={{
               marginTop: '0.85rem',
@@ -438,6 +461,8 @@ export default function TreePermissionGuide({
                   padding: '0.45rem 0.65rem',
                   borderRadius: '4px',
                   border: '1px solid #d97706',
+                  backgroundColor: 'var(--bg-main, #ffffff)',
+                  color: 'var(--text-primary, #1e293b)',
                   fontSize: '0.85rem',
                 }}
               />
@@ -552,7 +577,7 @@ export default function TreePermissionGuide({
           display: 'flex',
           gap: '0.35rem',
           flexWrap: 'wrap',
-          borderBottom: '2px solid var(--border-color, #e2e8f0)',
+          borderBottom: '2px solid var(--border-main, #e2e8f0)',
           paddingBottom: '0.25rem',
         }}
       >
@@ -621,9 +646,9 @@ export default function TreePermissionGuide({
           <div
             style={{
               padding: '1.25rem',
-              backgroundColor: 'var(--card-bg, #ffffff)',
+              backgroundColor: 'var(--bg-secondary, #ffffff)',
               borderRadius: '8px',
-              border: '1px solid var(--border-color, #e2e8f0)',
+              border: '1px solid var(--border-main, #e2e8f0)',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
             }}
           >
@@ -691,7 +716,7 @@ export default function TreePermissionGuide({
                 padding: '0.85rem',
                 backgroundColor: 'var(--bg-secondary, #f8fafc)',
                 borderRadius: '6px',
-                border: '1px solid var(--border-color, #e2e8f0)',
+                border: '1px solid var(--border-main, #e2e8f0)',
               }}
             >
               <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -736,9 +761,9 @@ export default function TreePermissionGuide({
           <div
             style={{
               padding: '1rem 1.25rem',
-              backgroundColor: 'var(--card-bg, #ffffff)',
+              backgroundColor: 'var(--bg-secondary, #ffffff)',
               borderRadius: '8px',
-              border: '1px solid var(--border-color, #e2e8f0)',
+              border: '1px solid var(--border-main, #e2e8f0)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -820,9 +845,9 @@ export default function TreePermissionGuide({
           <div
             style={{
               padding: '1rem 1.25rem',
-              backgroundColor: 'var(--card-bg, #ffffff)',
+              backgroundColor: 'var(--bg-secondary, #ffffff)',
               borderRadius: '8px',
-              border: '1px solid var(--border-color, #e2e8f0)',
+              border: '1px solid var(--border-main, #e2e8f0)',
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
               gap: '0.85rem',
@@ -842,7 +867,9 @@ export default function TreePermissionGuide({
                   width: '100%',
                   padding: '0.45rem 0.65rem',
                   borderRadius: '4px',
-                  border: '1px solid var(--border-color, #cbd5e1)',
+                  border: '1px solid var(--border-main, #cbd5e1)',
+                  backgroundColor: 'var(--bg-tertiary, #f8fafc)',
+                  color: 'var(--text-primary)',
                   fontSize: '0.85rem',
                 }}
               />
@@ -862,7 +889,9 @@ export default function TreePermissionGuide({
                   width: '100%',
                   padding: '0.45rem 0.65rem',
                   borderRadius: '4px',
-                  border: '1px solid var(--border-color, #cbd5e1)',
+                  border: '1px solid var(--border-main, #cbd5e1)',
+                  backgroundColor: 'var(--bg-tertiary, #f8fafc)',
+                  color: 'var(--text-primary)',
                   fontSize: '0.85rem',
                 }}
               />
@@ -882,7 +911,9 @@ export default function TreePermissionGuide({
                   width: '100%',
                   padding: '0.45rem 0.65rem',
                   borderRadius: '4px',
-                  border: '1px solid var(--border-color, #cbd5e1)',
+                  border: '1px solid var(--border-main, #cbd5e1)',
+                  backgroundColor: 'var(--bg-tertiary, #f8fafc)',
+                  color: 'var(--text-primary)',
                   fontSize: '0.85rem',
                 }}
               />
@@ -894,9 +925,9 @@ export default function TreePermissionGuide({
             <div
               key={category.categoryId}
               style={{
-                backgroundColor: 'var(--card-bg, #ffffff)',
+                backgroundColor: 'var(--bg-secondary, #ffffff)',
                 borderRadius: '8px',
-                border: '1px solid var(--border-color, #e2e8f0)',
+                border: '1px solid var(--border-main, #e2e8f0)',
                 padding: '1.25rem',
               }}
             >
@@ -916,7 +947,7 @@ export default function TreePermissionGuide({
                         padding: '0.75rem',
                         borderRadius: '6px',
                         backgroundColor: isChecked ? '#f0fdf4' : 'var(--bg-secondary, #f8fafc)',
-                        border: isChecked ? '1px solid #86efac' : '1px solid var(--border-color, #e2e8f0)',
+                        border: isChecked ? '1px solid #86efac' : '1px solid var(--border-main, #e2e8f0)',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '0.4rem',
@@ -978,7 +1009,9 @@ export default function TreePermissionGuide({
                             padding: '0.3rem 0.5rem',
                             fontSize: '0.78rem',
                             borderRadius: '4px',
-                            border: '1px solid var(--border-color, #cbd5e1)',
+                            border: '1px solid var(--border-main, #cbd5e1)',
+                            backgroundColor: 'var(--bg-tertiary, #f8fafc)',
+                            color: 'var(--text-primary)',
                           }}
                         />
                       </div>
@@ -1093,9 +1126,9 @@ export default function TreePermissionGuide({
           <div
             style={{
               padding: '1.25rem',
-              backgroundColor: 'var(--card-bg, #ffffff)',
+              backgroundColor: 'var(--bg-secondary, #ffffff)',
               borderRadius: '8px',
-              border: '1px solid var(--border-color, #e2e8f0)',
+              border: '1px solid var(--border-main, #e2e8f0)',
             }}
           >
             <h4 style={{ margin: '0 0 1rem', fontSize: '0.98rem', fontWeight: 700 }}>
@@ -1181,9 +1214,9 @@ export default function TreePermissionGuide({
           <div
             style={{
               padding: '1.25rem',
-              backgroundColor: 'var(--card-bg, #ffffff)',
+              backgroundColor: 'var(--bg-secondary, #ffffff)',
               borderRadius: '8px',
-              border: '1px solid var(--border-color, #e2e8f0)',
+              border: '1px solid var(--border-main, #e2e8f0)',
             }}
           >
             <h4 style={{ margin: '0 0 1rem', fontSize: '0.98rem', fontWeight: 700 }}>
@@ -1244,9 +1277,9 @@ export default function TreePermissionGuide({
           <div
             style={{
               padding: '1rem 1.25rem',
-              backgroundColor: 'var(--card-bg, #ffffff)',
+              backgroundColor: 'var(--bg-secondary, #ffffff)',
               borderRadius: '8px',
-              border: '1px solid var(--border-color, #e2e8f0)',
+              border: '1px solid var(--border-main, #e2e8f0)',
             }}
           >
             <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.05rem', fontWeight: 700 }}>
@@ -1263,7 +1296,7 @@ export default function TreePermissionGuide({
                   style={{
                     padding: '0.85rem',
                     borderRadius: '6px',
-                    border: '1px solid var(--border-color, #e2e8f0)',
+                    border: '1px solid var(--border-main, #e2e8f0)',
                     backgroundColor: 'var(--bg-secondary, #f8fafc)',
                   }}
                 >
@@ -1308,9 +1341,9 @@ export default function TreePermissionGuide({
           <div
             style={{
               padding: '1.25rem',
-              backgroundColor: 'var(--card-bg, #ffffff)',
+              backgroundColor: 'var(--bg-secondary, #ffffff)',
               borderRadius: '8px',
-              border: '1px solid var(--border-color, #e2e8f0)',
+              border: '1px solid var(--border-main, #e2e8f0)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
@@ -1344,7 +1377,7 @@ export default function TreePermissionGuide({
                       padding: '0.85rem',
                       borderRadius: '6px',
                       backgroundColor: 'var(--bg-secondary, #f8fafc)',
-                      border: '1px solid var(--border-color, #e2e8f0)',
+                      border: '1px solid var(--border-main, #e2e8f0)',
                     }}
                   >
                     <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748b' }}>
@@ -1360,7 +1393,7 @@ export default function TreePermissionGuide({
                       padding: '0.85rem',
                       borderRadius: '6px',
                       backgroundColor: 'var(--bg-secondary, #f8fafc)',
-                      border: '1px solid var(--border-color, #e2e8f0)',
+                      border: '1px solid var(--border-main, #e2e8f0)',
                     }}
                   >
                     <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748b' }}>
@@ -1383,7 +1416,7 @@ export default function TreePermissionGuide({
               style={{
                 marginTop: '1.25rem',
                 paddingTop: '1rem',
-                borderTop: '1px solid var(--border-color, #e2e8f0)',
+                borderTop: '1px solid var(--border-main, #e2e8f0)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -1428,7 +1461,7 @@ export default function TreePermissionGuide({
         >
           <div
             style={{
-              backgroundColor: 'var(--card-bg, #ffffff)',
+              backgroundColor: 'var(--bg-secondary, #ffffff)',
               borderRadius: '8px',
               padding: '1.5rem',
               maxWidth: '500px',
@@ -1458,7 +1491,9 @@ export default function TreePermissionGuide({
                     width: '100%',
                     padding: '0.45rem 0.65rem',
                     borderRadius: '4px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-main, #cbd5e1)',
+                    backgroundColor: 'var(--bg-tertiary, #f8fafc)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.85rem',
                   }}
                 />
@@ -1477,7 +1512,9 @@ export default function TreePermissionGuide({
                     width: '100%',
                     padding: '0.45rem 0.65rem',
                     borderRadius: '4px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-main, #cbd5e1)',
+                    backgroundColor: 'var(--bg-tertiary, #f8fafc)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.85rem',
                   }}
                 />
@@ -1497,7 +1534,9 @@ export default function TreePermissionGuide({
                     width: '100%',
                     padding: '0.45rem 0.65rem',
                     borderRadius: '4px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-main, #cbd5e1)',
+                    backgroundColor: 'var(--bg-tertiary, #f8fafc)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.85rem',
                   }}
                 />
