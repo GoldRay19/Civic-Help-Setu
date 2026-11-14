@@ -66,17 +66,17 @@ export default function ActionStepCard({
 
   return (
     <div
+      className="card"
       style={{
-        backgroundColor: 'var(--bg-surface, #ffffff)',
+        backgroundColor: 'var(--bg-surface)',
         border: status === 'completed'
           ? '1px solid #10b981'
           : isBlocked
           ? '1px dashed #f59e0b'
-          : '1px solid var(--border-main, #e5e7eb)',
+          : '1px solid var(--border-main)',
         borderRadius: '0.75rem',
         padding: '1.25rem',
         marginBottom: '1rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
       }}
     >
       {/* Top Header: Step Number, Title & Status Selector */}
@@ -143,7 +143,7 @@ export default function ActionStepCard({
               padding: '0.4rem 0.75rem',
               borderRadius: '0.375rem',
               border: `1.5px solid ${getStatusColor(status)}`,
-              backgroundColor: 'var(--bg-surface, #ffffff)',
+              backgroundColor: 'var(--bg-main)',
               color: getStatusColor(status),
               fontWeight: 600,
               fontSize: '0.85rem',
@@ -164,15 +164,15 @@ export default function ActionStepCard({
         <div
           role="alert"
           style={{
-            backgroundColor: '#fffbeb',
-            border: '1px solid #fde68a',
+            backgroundColor: 'rgba(245, 158, 11, 0.12)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
             borderRadius: '0.375rem',
             padding: '0.65rem 0.85rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
             fontSize: '0.85rem',
-            color: '#92400e',
+            color: 'var(--warning, #f59e0b)',
             marginBottom: '0.75rem',
           }}
         >
@@ -269,14 +269,14 @@ export default function ActionStepCard({
           style={{
             marginTop: '1rem',
             padding: '1rem',
-            backgroundColor: 'var(--bg-page, #f9fafb)',
+            backgroundColor: 'var(--bg-main)',
             borderRadius: '0.5rem',
-            border: '1px solid var(--border-light, #e5e7eb)',
+            border: '1px solid var(--border-main)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
             <ShieldCheck size={16} color="#059669" />
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#059669' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#10b981' }}>
               Citizen Privacy Guardrail: Stored only locally on your device. Never transmitted or uploaded.
             </span>
           </div>
@@ -300,8 +300,8 @@ export default function ActionStepCard({
                   padding: '0.4rem 0.6rem',
                   fontSize: '0.85rem',
                   borderRadius: '0.375rem',
-                  border: '1px solid var(--border-main, #d1d5db)',
-                  backgroundColor: 'var(--bg-surface, #ffffff)',
+                  border: '1px solid var(--border-main)',
+                  backgroundColor: 'var(--bg-secondary)',
                   color: 'var(--text-primary)',
                 }}
               />
@@ -324,8 +324,8 @@ export default function ActionStepCard({
                   padding: '0.4rem 0.6rem',
                   fontSize: '0.85rem',
                   borderRadius: '0.375rem',
-                  border: '1px solid var(--border-main, #d1d5db)',
-                  backgroundColor: 'var(--bg-surface, #ffffff)',
+                  border: '1px solid var(--border-main)',
+                  backgroundColor: 'var(--bg-secondary)',
                   color: 'var(--text-primary)',
                 }}
               />
@@ -383,8 +383,8 @@ export default function ActionStepCard({
                 padding: '0.4rem 0.6rem',
                 fontSize: '0.85rem',
                 borderRadius: '0.375rem',
-                border: '1px solid var(--border-main, #d1d5db)',
-                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-main)',
+                backgroundColor: 'var(--bg-secondary)',
                 color: 'var(--text-primary)',
                 resize: 'vertical',
               }}

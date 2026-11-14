@@ -4,6 +4,7 @@
   --bg-main: #050505;
   --bg-secondary: #0a0a0a;
   --bg-tertiary: #121212;
+  --bg-surface: #0e0e11;
   
   --text-primary: #ffffff;
   --text-secondary: #a1a1aa;
@@ -61,6 +62,7 @@
   --bg-main: #ffffff;
   --bg-secondary: #f4f4f5;
   --bg-tertiary: #e4e4e7;
+  --bg-surface: #ffffff;
   
   --text-primary: #09090b;
   --text-secondary: #52525b;

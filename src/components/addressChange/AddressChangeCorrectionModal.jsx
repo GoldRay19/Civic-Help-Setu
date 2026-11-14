@@ -90,14 +90,15 @@ export default function AddressChangeCorrectionModal({ record, onClose }) {
       <div
         ref={modalRef}
         style={{
-          backgroundColor: 'var(--bg-surface, #ffffff)',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-main)',
           borderRadius: '0.75rem',
           maxWidth: '580px',
           width: '100%',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+          boxShadow: 'var(--shadow-lg)',
           overflow: 'hidden',
         }}
       >
@@ -105,7 +106,7 @@ export default function AddressChangeCorrectionModal({ record, onClose }) {
         <div
           style={{
             padding: '1.25rem',
-            borderBottom: '1px solid var(--border-light, #e5e7eb)',
+            borderBottom: '1px solid var(--border-main)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -139,7 +140,8 @@ export default function AddressChangeCorrectionModal({ record, onClose }) {
               <div
                 style={{
                   display: 'inline-block',
-                  backgroundColor: 'var(--bg-page, #f3f4f6)',
+                  backgroundColor: 'var(--bg-main)',
+                  border: '1px solid var(--border-main)',
                   padding: '0.5rem 1rem',
                   borderRadius: '0.375rem',
                   fontFamily: 'monospace',
@@ -220,8 +222,8 @@ export default function AddressChangeCorrectionModal({ record, onClose }) {
                     padding: '0.5rem',
                     fontSize: '0.85rem',
                     borderRadius: '0.375rem',
-                    border: '1px solid var(--border-main, #d1d5db)',
-                    backgroundColor: 'var(--bg-surface, #ffffff)',
+                    border: '1px solid var(--border-main)',
+                    backgroundColor: 'var(--bg-main)',
                     color: 'var(--text-primary)',
                   }}
                 />
@@ -246,8 +248,8 @@ export default function AddressChangeCorrectionModal({ record, onClose }) {
                     padding: '0.5rem',
                     fontSize: '0.85rem',
                     borderRadius: '0.375rem',
-                    border: '1px solid var(--border-main, #d1d5db)',
-                    backgroundColor: 'var(--bg-surface, #ffffff)',
+                    border: '1px solid var(--border-main)',
+                    backgroundColor: 'var(--bg-main)',
                     color: 'var(--text-primary)',
                   }}
                 />
@@ -272,8 +274,8 @@ export default function AddressChangeCorrectionModal({ record, onClose }) {
                       padding: '0.4rem 0.6rem',
                       fontSize: '0.85rem',
                       borderRadius: '0.375rem',
-                      border: '1px solid var(--border-main, #d1d5db)',
-                      backgroundColor: 'var(--bg-surface, #ffffff)',
+                      border: '1px solid var(--border-main)',
+                      backgroundColor: 'var(--bg-main)',
                       color: 'var(--text-primary)',
                     }}
                   />
@@ -295,8 +297,8 @@ export default function AddressChangeCorrectionModal({ record, onClose }) {
                       padding: '0.4rem 0.6rem',
                       fontSize: '0.85rem',
                       borderRadius: '0.375rem',
-                      border: '1px solid var(--border-main, #d1d5db)',
-                      backgroundColor: 'var(--bg-surface, #ffffff)',
+                      border: '1px solid var(--border-main)',
+                      backgroundColor: 'var(--bg-main)',
                       color: 'var(--text-primary)',
                     }}
                   >

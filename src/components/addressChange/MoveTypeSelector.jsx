@@ -25,9 +25,10 @@ export default function MoveTypeSelector({
 
   return (
     <div
+      className="card"
       style={{
-        backgroundColor: 'var(--bg-surface, #ffffff)',
-        border: '1px solid var(--border-main, #e5e7eb)',
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--border-main)',
         borderRadius: '0.75rem',
         padding: '1.25rem',
         marginBottom: '1.5rem',
@@ -68,11 +69,11 @@ export default function MoveTypeSelector({
                 padding: '1rem',
                 borderRadius: '0.5rem',
                 border: isSelected
-                  ? '2px solid var(--accent-main, #2563eb)'
-                  : '1px solid var(--border-light, #d1d5db)',
+                  ? '2px solid var(--accent-main)'
+                  : '1px solid var(--border-main)',
                 backgroundColor: isSelected
-                  ? 'var(--accent-light, #eff6ff)'
-                  : 'var(--bg-page, #ffffff)',
+                  ? 'var(--accent-light)'
+                  : 'var(--glass-bg)',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease-in-out',
               }}
@@ -95,7 +96,7 @@ export default function MoveTypeSelector({
       {(moveType === 'inter_state' || moveType === 'inter_district') && (
         <div
           style={{
-            borderTop: '1px solid var(--border-light, #e5e7eb)',
+            borderTop: '1px solid var(--border-light)',
             paddingTop: '1rem',
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -118,8 +119,8 @@ export default function MoveTypeSelector({
                 width: '100%',
                 padding: '0.5rem',
                 borderRadius: '0.375rem',
-                border: '1px solid var(--border-main, #d1d5db)',
-                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-main)',
+                backgroundColor: 'var(--bg-main)',
                 color: 'var(--text-primary)',
                 fontSize: '0.875rem',
               }}
@@ -149,8 +150,8 @@ export default function MoveTypeSelector({
                 width: '100%',
                 padding: '0.5rem',
                 borderRadius: '0.375rem',
-                border: '1px solid var(--border-main, #d1d5db)',
-                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-main)',
+                backgroundColor: 'var(--bg-main)',
                 color: 'var(--text-primary)',
                 fontSize: '0.875rem',
               }}

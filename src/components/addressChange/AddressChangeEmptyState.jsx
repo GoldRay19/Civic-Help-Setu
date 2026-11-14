@@ -7,8 +7,8 @@ export default function AddressChangeEmptyState({ onResetSearch }) {
       style={{
         textAlign: 'center',
         padding: '3rem 1.5rem',
-        backgroundColor: 'var(--bg-surface, #ffffff)',
-        border: '1px dashed var(--border-main, #d1d5db)',
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px dashed var(--border-main)',
         borderRadius: '0.75rem',
         margin: '1rem 0',
       }}

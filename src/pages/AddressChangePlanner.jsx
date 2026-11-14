@@ -138,8 +138,8 @@ export default function AddressChangePlanner() {
           role="note"
           aria-label="Important information regarding address change planner"
           style={{
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            border: '1px solid var(--border-main, #e5e7eb)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-main)',
             borderRadius: '0.75rem',
             padding: '1rem 1.25rem',
             marginBottom: '1.5rem',
@@ -276,12 +276,14 @@ export default function AddressChangePlanner() {
           >
             <div
               style={{
-                backgroundColor: 'var(--bg-surface, #ffffff)',
-                borderRadius: '0.5rem',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-main)',
+                color: 'var(--text-primary)',
+                borderRadius: '0.75rem',
                 padding: '1.5rem',
                 maxWidth: '450px',
                 width: '100%',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                boxShadow: 'var(--shadow-lg)',
               }}
             >
               <h3 id="confirm-delete-title" style={{ fontSize: '1.1rem', fontWeight: 700, color: '#dc2626', margin: '0 0 0.5rem 0' }}>

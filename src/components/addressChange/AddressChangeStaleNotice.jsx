@@ -19,16 +19,16 @@ export default function AddressChangeStaleNotice({ lastVerifiedDate, referenceDa
         flexWrap: 'wrap',
         gap: '0.5rem',
         padding: '0.65rem 0.85rem',
-        backgroundColor: isStale ? '#fffbeb' : 'var(--bg-surface, #ffffff)',
-        border: isStale ? '1px solid #fde68a' : '1px solid var(--border-light, #e5e7eb)',
+        backgroundColor: isStale ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-surface)',
+        border: isStale ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid var(--border-main)',
         borderRadius: '0.5rem',
         fontSize: '0.75rem',
-        color: isStale ? '#92400e' : 'var(--text-secondary)',
+        color: isStale ? 'var(--warning, #f59e0b)' : 'var(--text-secondary)',
         marginBottom: '1rem',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-        <ShieldCheck size={14} color={isStale ? '#d97706' : '#10b981'} />
+        <ShieldCheck size={14} color={isStale ? '#f59e0b' : '#10b981'} />
         <span>
           <strong>Data Provenance:</strong> Grounded in dated official gazette rules (UIDAI 2016, RPA 1950, MVA 1988, NFSA 2013).
         </span>
@@ -36,7 +36,7 @@ export default function AddressChangeStaleNotice({ lastVerifiedDate, referenceDa
 
       <div>
         Last Verified: <strong>{lastVerifiedDate || '2026-03-01'}</strong>
-        {isStale && <span style={{ marginLeft: '0.4rem', color: '#b45309' }}>• Periodic re-audit recommended</span>}
+        {isStale && <span style={{ marginLeft: '0.4rem', color: 'var(--warning, #f59e0b)' }}>• Periodic re-audit recommended</span>}
       </div>
     </div>
   );

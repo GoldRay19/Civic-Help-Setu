@@ -49,9 +49,10 @@ export default function ActionPlannerBoard({
     <div>
       {/* Progress & Readiness Banner */}
       <div
+        className="card"
         style={{
-          backgroundColor: 'var(--bg-surface, #ffffff)',
-          border: '1px solid var(--border-main, #e5e7eb)',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-main)',
           borderRadius: '0.75rem',
           padding: '1.25rem',
           marginBottom: '1.5rem',
@@ -149,8 +150,8 @@ export default function ActionPlannerBoard({
               key={idx}
               role="note"
               style={{
-                backgroundColor: rule.severity === 'important' ? '#fffbeb' : 'var(--bg-surface, #ffffff)',
-                border: rule.severity === 'important' ? '1px solid #fde68a' : '1px solid var(--border-main, #e5e7eb)',
+                backgroundColor: rule.severity === 'important' ? 'rgba(245, 158, 11, 0.12)' : 'var(--glass-bg)',
+                border: rule.severity === 'important' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid var(--border-main)',
                 borderRadius: '0.5rem',
                 padding: '0.85rem 1rem',
                 display: 'flex',
@@ -160,7 +161,7 @@ export default function ActionPlannerBoard({
             >
               <AlertCircle
                 size={18}
-                color={rule.severity === 'important' ? '#d97706' : 'var(--accent-main, #2563eb)'}
+                color={rule.severity === 'important' ? '#f59e0b' : 'var(--accent-main)'}
                 style={{ flexShrink: 0, marginTop: '2px' }}
               />
               <div>
@@ -180,7 +181,7 @@ export default function ActionPlannerBoard({
       <div style={{ marginBottom: '1rem', position: 'relative' }}>
         <Search
           size={16}
-          style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+          style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }}
         />
         <input
           type="text"
@@ -192,8 +193,8 @@ export default function ActionPlannerBoard({
             padding: '0.5rem 0.75rem 0.5rem 2.25rem',
             fontSize: '0.875rem',
             borderRadius: '0.375rem',
-            border: '1px solid var(--border-main, #d1d5db)',
-            backgroundColor: 'var(--bg-surface, #ffffff)',
+            border: '1px solid var(--border-main)',
+            backgroundColor: 'var(--bg-main)',
             color: 'var(--text-primary)',
           }}
         />

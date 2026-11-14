@@ -9,8 +9,8 @@ export default function AddressChangeSkeleton() {
         <div
           key={n}
           style={{
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            border: '1px solid var(--border-light, #e5e7eb)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-main)',
             borderRadius: '0.75rem',
             padding: '1.25rem',
           }}

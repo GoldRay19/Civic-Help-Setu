@@ -6,9 +6,10 @@ export default function RecordSelector({ selectedRecordIds, onToggleRecord, onSe
 
   return (
     <div
+      className="card"
       style={{
-        backgroundColor: 'var(--bg-surface, #ffffff)',
-        border: '1px solid var(--border-main, #e5e7eb)',
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--border-main)',
         borderRadius: '0.75rem',
         padding: '1.25rem',
         marginBottom: '1.5rem',
@@ -75,16 +76,16 @@ export default function RecordSelector({ selectedRecordIds, onToggleRecord, onSe
                 padding: '0.75rem 1rem',
                 borderRadius: '0.5rem',
                 border: checked
-                  ? '1px solid var(--accent-main, #2563eb)'
-                  : '1px solid var(--border-light, #e5e7eb)',
+                  ? '1px solid var(--accent-main)'
+                  : '1px solid var(--border-main)',
                 backgroundColor: checked
-                  ? 'var(--accent-light, #f0f7ff)'
-                  : 'var(--bg-page, #ffffff)',
+                  ? 'var(--accent-light)'
+                  : 'var(--glass-bg)',
                 cursor: 'pointer',
                 transition: 'background-color 0.15s ease',
               }}
             >
-              <div style={{ marginTop: '2px', color: checked ? 'var(--accent-main, #2563eb)' : 'var(--text-muted)' }}>
+              <div style={{ marginTop: '2px', color: checked ? 'var(--accent-main)' : 'var(--text-tertiary)' }}>
                 {checked ? <CheckSquare size={18} /> : <Square size={18} />}
               </div>
               <div style={{ flex: 1 }}>
