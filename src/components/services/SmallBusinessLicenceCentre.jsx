@@ -283,7 +283,6 @@ export default function SmallBusinessLicenceCentre({
               <span className="sblc-badge-pill">
                 <ShieldCheck size={14} color="#2563eb" /> Statutory Compliance Centre
               </span>
-              <span className="sblc-badge-pill">Issue #721</span>
             </div>
             <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>
               Small-Business Licence Renewal &amp; Closure Checklist Centre
@@ -576,7 +575,7 @@ export default function SmallBusinessLicenceCentre({
 
                     {/* Official Statutory Instruction */}
                     <div className="sblc-official-box">
-                      <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                      <span className="sblc-box-label-official">
                         Official Statutory Instruction
                       </span>
                       <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.45 }}>{licence.officialInstruction}</p>
@@ -584,7 +583,7 @@ export default function SmallBusinessLicenceCentre({
 
                     {/* Editorial Explanation */}
                     <div className="sblc-editorial-box">
-                      <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#b45309', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                      <span className="sblc-box-label-editorial">
                         Citizen Advice &amp; Operational Tip
                       </span>
                       <p style={{ margin: 0, fontSize: '0.84rem', lineHeight: 1.45, color: 'var(--text-secondary)' }}>
@@ -649,14 +648,14 @@ export default function SmallBusinessLicenceCentre({
               <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', fontWeight: 800 }}>{amendmentData.title}</h2>
 
               <div className="sblc-official-box">
-                <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                <span className="sblc-box-label-official">
                   Statutory Rule &amp; Limitation
                 </span>
                 <p style={{ margin: 0, fontSize: '0.85rem' }}>{amendmentData.officialRule}</p>
               </div>
 
               <div className="sblc-editorial-box">
-                <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#b45309', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                <span className="sblc-box-label-editorial">
                   Advisory Tip
                 </span>
                 <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>{amendmentData.editorialTip}</p>
@@ -709,14 +708,14 @@ export default function SmallBusinessLicenceCentre({
             <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', fontWeight: 800 }}>{suspensionData.title}</h2>
 
             <div className="sblc-official-box">
-              <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+              <span className="sblc-box-label-official">
                 Official Suspension Protocol
               </span>
               <p style={{ margin: 0, fontSize: '0.85rem' }}>{suspensionData.officialRule}</p>
             </div>
 
             <div className="sblc-editorial-box">
-              <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#b45309', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+              <span className="sblc-box-label-editorial">
                 Operational Advisory
               </span>
               <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>{suspensionData.editorialTip}</p>
@@ -777,14 +776,14 @@ export default function SmallBusinessLicenceCentre({
                 <h2 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 700 }}>{phase.title}</h2>
 
                 <div className="sblc-official-box">
-                  <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase', marginBottom: '0.15rem' }}>
+                  <span className="sblc-box-label-official">
                     Statutory Rule
                   </span>
                   <p style={{ margin: 0, fontSize: '0.84rem' }}>{phase.officialRule}</p>
                 </div>
 
                 <div className="sblc-editorial-box">
-                  <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#b45309', textTransform: 'uppercase', marginBottom: '0.15rem' }}>
+                  <span className="sblc-box-label-editorial">
                     Tip
                   </span>
                   <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{phase.editorialTip}</p>
@@ -1025,7 +1024,7 @@ export default function SmallBusinessLicenceCentre({
                     </div>
 
                     {item.notes && (
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '0.5rem', borderRadius: '0.375rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary, rgba(255, 255, 255, 0.04))', padding: '0.5rem', borderRadius: '0.375rem' }}>
                         {item.notes}
                       </div>
                     )}
