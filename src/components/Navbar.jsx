@@ -129,6 +129,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
 
   // Close drawer whenever the route changes.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(false);
   }, [pathname]);
 
@@ -771,6 +772,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/community-facilities',
                 label: 'Community Facilities',
                 icon: Home
+              })}
+
+              {renderNavLink({
+                to: '/library-directory',
+                label: 'Public Libraries',
+                icon: BookOpen
               })}
 
               {renderNavLink({

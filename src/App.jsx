@@ -49,6 +49,7 @@ import CrematoriumDirectory from './pages/CrematoriumDirectory';
 import FairPriceShopBoard from './pages/FairPriceShopBoard';
 import TenderReadinessWorkspace from './pages/TenderReadinessWorkspace';
 import CommunityFacilityDirectory from './pages/CommunityFacilityDirectory';
+import LibraryDirectory from './pages/LibraryDirectory';
 import RentalTransitionWorkspace from './pages/RentalTransitionWorkspace';
 
 const Services = lazy(() => import('./pages/Services'));
@@ -108,6 +109,8 @@ function AppRoot() {
                       <Route path="/rental-checklist" element={<RentalTransitionWorkspace />} />
                       <Route path="/rental-transition" element={<RentalTransitionWorkspace />} />
                       <Route path="/rental-records" element={<RentalTransitionWorkspace />} />
+                      <Route path="/library-directory" element={<LibraryDirectory />} />
+                      <Route path="/libraries" element={<LibraryDirectory />} />
                       <Route path="/track" element={<Track />} />
                       <Route path="/civic-works" element={<CivicWorksBoard />} />
                       <Route path="/shared-checklist/:token" element={<SharedChecklistView />} />

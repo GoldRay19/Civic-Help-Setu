@@ -43,6 +43,7 @@ import CrematoriumCorrectionQueue from '../components/admin/CrematoriumCorrectio
 import PdsObservationQueue from '../components/admin/PdsObservationQueue';
 import TenderCorrectionQueue from '../components/admin/TenderCorrectionQueue';
 import CommunityFacilityCorrectionQueue from '../components/admin/CommunityFacilityCorrectionQueue';
+import LibraryCorrectionQueue from '../components/admin/LibraryCorrectionQueue';
 import RentalCorrectionQueue from '../components/admin/RentalCorrectionQueue';
 import AuditLogViewer from '../components/admin/AuditLogViewer';
 import ServiceImportPanel from '../components/admin/ServiceImportPanel';
@@ -1154,6 +1155,9 @@ const Admin = () => {
                 <CommunityFacilityCorrectionQueue />
                 <div style={{ marginTop: '2rem' }}>
                   <RentalCorrectionQueue />
+                </div>
+                <div style={{ marginTop: '2rem' }}>
+                  <LibraryCorrectionQueue />
                 </div>
               </div>
             )}
