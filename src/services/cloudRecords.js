@@ -48,6 +48,7 @@ export const CLOUD_STORES = [
   { key: 'civicbridge_applicant_profiles_v1', slug: 'applicant-profiles', collection: 'applicantProfiles', kind: 'list' },
   { key: 'civicbridge_readiness_scorecards', slug: 'scorecards', collection: 'scorecards', kind: 'list' },
   { key: 'civicbridge_chat_history', slug: 'chat-history', collection: 'assistantChats', kind: 'document' },
+  { key: 'civicbridge_citizen_drafts_v1', slug: 'citizen-drafts', collection: 'drafts', kind: 'document' },
 ];
 
 /** Stores that deliberately never leave the device, or are handled elsewhere, each with the reason. */
@@ -68,6 +69,12 @@ export const DEVICE_ONLY_STORES = [
   { key: 'civicbridge_sent_digests', reason: 'Newsletter delivery history is local bookkeeping and is never cloud-synced.' },
   { key: 'civicbridge_newsletter_delivery_failures', reason: 'Newsletter delivery failure details are local bookkeeping and are never cloud-synced.' },
   { key: 'civicbridge_civic_works_reports_v1', reason: 'Ward civic works reports include consent, media, and moderation metadata kept on device.' },
+  { key: 'civicbridge_offline_operations_v1', reason: 'Local offline operations queue stays on the device.' },
+  { key: 'civicbridge_sync_sessions_v1', reason: 'Sync session history is local device bookkeeping.' },
+  { key: 'civicbridge_record_revisions_v1', reason: 'Local cache of record revision snapshots stays on the device.' },
+  { key: 'civicbridge_conflict_records_v1', reason: 'Local conflict records stay on device until resolved.' },
+  { key: 'civicbridge_device_cursors_v1', reason: 'Device sync cursors stay on the device.' },
+  { key: 'civicbridge_tombstones_v1', reason: 'Deletion tombstones stay on the device.' },
 ];
 
 const byKey = new Map(CLOUD_STORES.map((store) => [store.key, store]));

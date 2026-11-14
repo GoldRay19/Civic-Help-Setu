@@ -22,6 +22,14 @@ Public service information changes frequently. If you notice outdated or incorre
 6. Update documentation if necessary.
 7. Issue that pull request!
 
+## Testing
+Run unit and integration tests locally with Vitest:
+```bash
+npm test                                                      # run all tests
+npm test -- --run src/services/citizenDraftSyncEngine.test.js # offline-first sync engine tests (#775)
+npm test -- --run src/pages/CitizenDraftSyncWorkspace.test.jsx # sync workspace UI tests (#775)
+```
+
 ## Security checks
 Every PR runs a secret scan, a dependency audit and a lint for unsafe HTML/JS patterns. Locally:
 ```bash
