@@ -73,7 +73,7 @@ export default function TenderReadinessWorkspace() {
           eyebrowIcon={<Briefcase size={15} style={{ color: 'var(--accent-main)' }} />}
           title="Tender Participation Readiness Workspace"
           subtitle="Helping small suppliers, MSMEs, and startups inspect mandatory eligibility, verify EMD exemptions under GFR Rule 170, track corrigenda, and prepare evidence before bidding."
-          badgeText="Verified Government Notices (#722)"
+          badgeText="Verified Government Notices"
           badgeType="accent"
         />
 

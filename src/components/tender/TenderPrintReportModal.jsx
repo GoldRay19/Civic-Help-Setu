@@ -83,7 +83,7 @@ export default function TenderPrintReportModal({
           }}
         >
           <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-            Vendor Readiness Printable Dossier (#722)
+            Vendor Readiness Printable Dossier
           </span>
 
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

@@ -77,7 +77,7 @@ export default function TenderCorrectionQueue() {
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <FileText size={22} color="var(--accent-main)" />
-            Government Tender Notices & Corrigenda Review Queue (#722)
+            Government Tender Notices & Corrigenda Review Queue
           </h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
             Review vendor-submitted corrigenda, date extensions, and official procurement notices against verified government portals.

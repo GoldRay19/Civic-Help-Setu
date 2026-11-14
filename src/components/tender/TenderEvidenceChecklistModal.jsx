@@ -180,7 +180,7 @@ export default function TenderEvidenceChecklistModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <FileCheck2 size={20} color="var(--accent-main)" />
               <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-main)', textTransform: 'uppercase' }}>
-                Vendor Readiness Evidence Checklist (#722)
+                Vendor Readiness Evidence Checklist
               </span>
             </div>
             <h2 id="checklist-modal-title" style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>

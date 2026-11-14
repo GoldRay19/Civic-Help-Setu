@@ -11,7 +11,7 @@ describe('TenderCorrectionQueue Component (#722)', () => {
       </ToastProvider>
     );
 
-    expect(html).toContain('Government Tender Notices &amp; Corrigenda Review Queue (#722)');
+    expect(html).toContain('Government Tender Notices &amp; Corrigenda Review Queue');
     expect(html).toContain('GEM/2026/B/581902');
     expect(html).toContain('TR-CORR-4A12-9F81');
     expect(html).toContain('Approve &amp; Verify');

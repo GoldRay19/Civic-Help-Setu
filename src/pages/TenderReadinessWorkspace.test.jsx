@@ -124,7 +124,7 @@ describe('TenderReadinessWorkspace & Components (#722)', () => {
       </ToastProvider>
     );
 
-    expect(html).toContain('Vendor Readiness Evidence Checklist (#722)');
+    expect(html).toContain('Vendor Readiness Evidence Checklist');
     expect(html).toContain('Participation Readiness Index');
     expect(html).toContain('Vendor Category &amp; Exemption Declarations');
     expect(html).toContain('Claiming MSME EMD / Tender Fee Exemption under GFR 170');
