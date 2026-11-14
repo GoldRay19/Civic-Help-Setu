@@ -21,7 +21,8 @@ import {
   Bot,
   Bookmark,
   UserCircle,
-  Settings
+  Settings,
+  Navigation
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -37,6 +38,7 @@ import OfflineCacheStatusModal from './common/OfflineCacheStatusModal';
 import EmergencyHelplineModal from './emergency/EmergencyHelplineModal';
 import VoiceSearchInput from './common/VoiceSearchInput';
 import MultilingualVoiceNavigationModal from './navigation/MultilingualVoiceNavigationModal';
+import { logDiagnostic } from '../utils/diagnostics';
 
 const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
   const [isOpen, setIsOpen] = useState(
@@ -95,6 +97,14 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
         return (
           normalizedPath === '/tenders' ||
           normalizedPath === '/tender-readiness'
+        );
+      }
+
+      if (normalizedTarget === '/address-change-planner') {
+        return (
+          normalizedPath === '/address-change-planner' ||
+          normalizedPath === '/address-change' ||
+          normalizedPath === '/move-planner'
         );
       }
 
@@ -183,7 +193,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
       setIsOpen(false);
       navigate('/login', { replace: true });
     } catch (error) {
-      console.error('Logout failed:', error);
+      logDiagnostic('Logout failed:', error);
     } finally {
       setIsLoggingOut(false);
     }
@@ -761,6 +771,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/tenders',
                 label: t('nav.tenders', 'Tender Readiness'),
                 icon: FileText
+              })}
+
+              {renderNavLink({
+                to: '/address-change-planner',
+                label: t('nav.addressChange', 'Address Change Planner'),
+                icon: Navigation
               })}
 
               {renderNavLink({

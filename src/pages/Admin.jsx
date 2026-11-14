@@ -42,6 +42,7 @@ import ServiceSubmissionReviewModal from '../components/admin/ServiceSubmissionR
 import CrematoriumCorrectionQueue from '../components/admin/CrematoriumCorrectionQueue';
 import TenderCorrectionQueue from '../components/admin/TenderCorrectionQueue';
 import CommunityFacilityCorrectionQueue from '../components/admin/CommunityFacilityCorrectionQueue';
+import AddressChangeCorrectionQueue from '../components/admin/AddressChangeCorrectionQueue';
 import AuditLogViewer from '../components/admin/AuditLogViewer';
 import ServiceImportPanel from '../components/admin/ServiceImportPanel';
 import ServiceRecordList from '../components/admin/ServiceRecordList';
@@ -1149,6 +1150,9 @@ const Admin = () => {
                   <TenderCorrectionQueue />
                 </div>
                 <CommunityFacilityCorrectionQueue />
+                <div style={{ marginTop: '2rem' }}>
+                  <AddressChangeCorrectionQueue />
+                </div>
               </div>
             )}
 
