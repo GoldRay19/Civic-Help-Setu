@@ -46,6 +46,7 @@ import AadhaarGuidePage from './pages/AadhaarGuidePage';
 import TreePermissionGuidePage from './pages/TreePermissionGuidePage';
 import CivicWorksBoard from './pages/CivicWorksBoard';
 import CrematoriumDirectory from './pages/CrematoriumDirectory';
+import FairPriceShopBoard from './pages/FairPriceShopBoard';
 import TenderReadinessWorkspace from './pages/TenderReadinessWorkspace';
 import CommunityFacilityDirectory from './pages/CommunityFacilityDirectory';
 import RentalTransitionWorkspace from './pages/RentalTransitionWorkspace';
@@ -98,6 +99,8 @@ function AppRoot() {
                       <Route path="/nearby-offices" element={<NearbyOffices />} />
                       <Route path="/crematorium-directory" element={<CrematoriumDirectory />} />
                       <Route path="/crematoriums" element={<CrematoriumDirectory />} />
+                      <Route path="/pds-shops" element={<FairPriceShopBoard />} />
+                      <Route path="/fair-price-shops" element={<FairPriceShopBoard />} />
                       <Route path="/tenders" element={<TenderReadinessWorkspace />} />
                       <Route path="/tender-readiness" element={<TenderReadinessWorkspace />} />
                       <Route path="/community-facilities" element={<CommunityFacilityDirectory />} />
