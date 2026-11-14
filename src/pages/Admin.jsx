@@ -41,6 +41,7 @@ import RoleManagementModal from '../components/admin/RoleManagementModal';
 import ServiceSubmissionReviewModal from '../components/admin/ServiceSubmissionReviewModal';
 import CrematoriumCorrectionQueue from '../components/admin/CrematoriumCorrectionQueue';
 import PdsObservationQueue from '../components/admin/PdsObservationQueue';
+import WaterTankerReviewQueue from '../components/admin/WaterTankerReviewQueue';
 import TenderCorrectionQueue from '../components/admin/TenderCorrectionQueue';
 import CommunityFacilityCorrectionQueue from '../components/admin/CommunityFacilityCorrectionQueue';
 import RentalCorrectionQueue from '../components/admin/RentalCorrectionQueue';
@@ -1152,6 +1153,9 @@ const Admin = () => {
                   <TenderCorrectionQueue />
                 </div>
                 <CommunityFacilityCorrectionQueue />
+                <div style={{ marginTop: '2rem' }}>
+                  <WaterTankerReviewQueue />
+                </div>
                 <div style={{ marginTop: '2rem' }}>
                   <RentalCorrectionQueue />
                 </div>

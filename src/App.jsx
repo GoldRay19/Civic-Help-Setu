@@ -49,6 +49,7 @@ import CrematoriumDirectory from './pages/CrematoriumDirectory';
 import FairPriceShopBoard from './pages/FairPriceShopBoard';
 import TenderReadinessWorkspace from './pages/TenderReadinessWorkspace';
 import CommunityFacilityDirectory from './pages/CommunityFacilityDirectory';
+import WaterTankerTracker from './pages/WaterTankerTracker';
 import RentalTransitionWorkspace from './pages/RentalTransitionWorkspace';
 
 const Services = lazy(() => import('./pages/Services'));
@@ -105,6 +106,8 @@ function AppRoot() {
                       <Route path="/tender-readiness" element={<TenderReadinessWorkspace />} />
                       <Route path="/community-facilities" element={<CommunityFacilityDirectory />} />
                       <Route path="/facility-directory" element={<CommunityFacilityDirectory />} />
+                      <Route path="/water-tanker" element={<WaterTankerTracker />} />
+                      <Route path="/water-tankers" element={<WaterTankerTracker />} />
                       <Route path="/rental-checklist" element={<RentalTransitionWorkspace />} />
                       <Route path="/rental-transition" element={<RentalTransitionWorkspace />} />
                       <Route path="/rental-records" element={<RentalTransitionWorkspace />} />

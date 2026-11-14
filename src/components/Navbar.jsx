@@ -21,6 +21,7 @@ import {
   Bookmark,
   UserCircle,
   Settings,
+  Droplets,
   KeyRound,
   Store
 } from 'lucide-react';
@@ -759,6 +760,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/crematorium-directory',
                 label: 'Crematorium Directory',
                 icon: Users
+              })}
+
+              {renderNavLink({
+                to: '/water-tanker',
+                label: 'Water Tanker Tracker',
+                icon: Droplets
               })}
 
               {renderNavLink({
