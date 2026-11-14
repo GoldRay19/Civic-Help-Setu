@@ -10,8 +10,26 @@ import FormFieldExplainer from '../glossary/FormFieldExplainer';
 import TermExplainer from '../TermExplainer';
 import RequirementNote from '../RequirementNote';
 import { getDocumentRequirements } from '../../services/requirementTypes';
+import ContentTypeBadge from './ContentTypeBadge';
 
 const hasItems = (list) => Array.isArray(list) && list.length > 0;
+
+/**
+ * Build the list of sections that actually appear for this service.
+ * The `id` values must stay in sync with the id attributes rendered below.
+ */
+export const buildGuideSections = (service) => {
+  const sections = [];
+  if (hasItems(service.warnings)) sections.push({ id: 'guide-warnings', label: 'Before you apply' });
+  if (hasItems(service.eligibility)) sections.push({ id: 'guide-eligibility', label: 'Who can apply' });
+  if (hasItems(service.documents)) sections.push({ id: 'guide-documents', label: 'Documents you need' });
+  if (hasItems(service.steps)) sections.push({ id: 'guide-steps', label: 'Application steps' });
+  if (service.fees || service.processingTime) sections.push({ id: 'guide-fees', label: 'Fees and time' });
+  if (hasItems(service.dateGuidance)) sections.push({ id: 'guide-dates', label: 'Important dates' });
+  if (service.validityNote) sections.push({ id: 'guide-validity', label: 'Validity and use' });
+  sections.push({ id: 'guide-sources', label: 'Official sources' });
+  return sections;
+};
 
 // Full application guide for a service. The same content renders in both
 // layouts; focus mode only swaps the presentation class.
@@ -32,8 +50,15 @@ const ServiceGuide = ({ service, focusMode = false, onToggleFocusMode, onMakeChe
       <CopyServiceInstructions service={service} />
 
       {hasItems(warnings) && (
-        <div className="service-guide__warnings" role="note" aria-label="Important notes">
+        <div
+          id="guide-warnings"
+          className="service-guide__warnings"
+          role="note"
+          aria-label="Important notes"
+          tabIndex="-1"
+        >
           <h3>Before you apply</h3>
+          <ContentTypeBadge type="official" />
           <ul>
             {warnings.map((w, i) => (
               <li key={i}>{w}</li>
@@ -43,8 +68,9 @@ const ServiceGuide = ({ service, focusMode = false, onToggleFocusMode, onMakeChe
       )}
 
       {hasItems(eligibility) && (
-        <div className="service-guide__block">
+        <div id="guide-eligibility" className="service-guide__block" tabIndex="-1">
           <h3>Who can apply</h3>
+          <ContentTypeBadge type="official" />
           <ul>
             {eligibility.map((item, i) => (
               <li key={i}>{item}</li>
@@ -54,7 +80,7 @@ const ServiceGuide = ({ service, focusMode = false, onToggleFocusMode, onMakeChe
       )}
 
       {hasItems(documents) && (
-        <div className="service-guide__block">
+        <div id="guide-documents" className="service-guide__block" tabIndex="-1">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.4rem' }}>
             <h3 style={{ margin: 0 }}>Documents you need</h3>
             {onMakeChecklist && (
@@ -75,6 +101,7 @@ const ServiceGuide = ({ service, focusMode = false, onToggleFocusMode, onMakeChe
               </button>
             )}
           </div>
+          <ContentTypeBadge type="official" />
           <p className="req-intro">
             Each item is labelled as an official requirement, a conditional
             requirement, an optional suggestion, or not verified.
@@ -114,8 +141,9 @@ const ServiceGuide = ({ service, focusMode = false, onToggleFocusMode, onMakeChe
       )}
 
       {hasItems(steps) && (
-        <div className="service-guide__block">
+        <div id="guide-steps" className="service-guide__block" tabIndex="-1">
           <h3>Steps</h3>
+          <ContentTypeBadge type="guidance" />
           <ol className="service-guide__steps">
             {steps.map((step, i) => (
               <li key={i}>
@@ -128,8 +156,9 @@ const ServiceGuide = ({ service, focusMode = false, onToggleFocusMode, onMakeChe
       )}
 
       {(fees || processingTime) && (
-        <div className="service-guide__block">
+        <div id="guide-fees" className="service-guide__block" tabIndex="-1">
           <h3>Fees and time</h3>
+          <ContentTypeBadge type="official" />
           <dl className="service-guide__facts">
             {fees && (
               <div>
@@ -148,8 +177,9 @@ const ServiceGuide = ({ service, focusMode = false, onToggleFocusMode, onMakeChe
       )}
 
       {hasItems(dateGuidance) && (
-        <div className="service-guide__block">
+        <div id="guide-dates" className="service-guide__block" tabIndex="-1">
           <h3>Important dates to keep track of</h3>
+          <ContentTypeBadge type="official" />
           <dl className="service-guide__facts">
             {dateGuidance.map((item, i) => (
               <div key={item.label || i}>
@@ -162,13 +192,16 @@ const ServiceGuide = ({ service, focusMode = false, onToggleFocusMode, onMakeChe
       )}
 
       {validityNote && (
-        <div className="service-guide__block" role="note" aria-label="Certificate validity">
+        <div id="guide-validity" className="service-guide__block" role="note" aria-label="Certificate validity" tabIndex="-1">
           <h3>Validity and use</h3>
+          <ContentTypeBadge type="guidance" />
           <p>{validityNote}</p>
         </div>
       )}
 
-      <OfficialSourcesList service={service} />
+      <div id="guide-sources" tabIndex="-1">
+        <OfficialSourcesList service={service} />
+      </div>
 
       <ContactDirectory service={service} />
 

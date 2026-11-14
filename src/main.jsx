@@ -12,6 +12,7 @@ const rawKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const isClerkKeyValid = Boolean(
   rawKey &&
   typeof rawKey === 'string' &&
+  !rawKey.includes('your_clerk_publishable_key') &&
   (rawKey.startsWith('pk_test_') || rawKey.startsWith('pk_live_'))
 );
 

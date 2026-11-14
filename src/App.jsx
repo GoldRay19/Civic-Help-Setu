@@ -43,9 +43,13 @@ import SharedProfileView from './pages/SharedProfileView';
 import NotFound from './pages/NotFound';
 import VerifyEmail from './pages/VerifyEmail';
 import AadhaarGuidePage from './pages/AadhaarGuidePage';
+import TreePermissionGuidePage from './pages/TreePermissionGuidePage';
 import CivicWorksBoard from './pages/CivicWorksBoard';
 import CrematoriumDirectory from './pages/CrematoriumDirectory';
 import FairPriceShopBoard from './pages/FairPriceShopBoard';
+import TenderReadinessWorkspace from './pages/TenderReadinessWorkspace';
+import CommunityFacilityDirectory from './pages/CommunityFacilityDirectory';
+import RentalTransitionWorkspace from './pages/RentalTransitionWorkspace';
 
 const Services = lazy(() => import('./pages/Services'));
 
@@ -86,6 +90,8 @@ function AppRoot() {
                       <Route path="/services" element={<Suspense fallback={<ServicesFallback />}><Services /></Suspense>} />
                       <Route path="/services/aadhaar-guide" element={<AadhaarGuidePage />} />
                       <Route path="/aadhaar-guide" element={<AadhaarGuidePage />} />
+                      <Route path="/services/tree-permission-guide" element={<TreePermissionGuidePage />} />
+                      <Route path="/tree-permission-guide" element={<TreePermissionGuidePage />} />
                       <Route path="/services/:id" element={<ServiceDetails />} />
                       <Route path="/acronyms" element={<Acronyms />} />
                       <Route path="/eligibility" element={<Eligibility />} />
@@ -95,6 +101,13 @@ function AppRoot() {
                       <Route path="/crematoriums" element={<CrematoriumDirectory />} />
                       <Route path="/pds-shops" element={<FairPriceShopBoard />} />
                       <Route path="/fair-price-shops" element={<FairPriceShopBoard />} />
+                      <Route path="/tenders" element={<TenderReadinessWorkspace />} />
+                      <Route path="/tender-readiness" element={<TenderReadinessWorkspace />} />
+                      <Route path="/community-facilities" element={<CommunityFacilityDirectory />} />
+                      <Route path="/facility-directory" element={<CommunityFacilityDirectory />} />
+                      <Route path="/rental-checklist" element={<RentalTransitionWorkspace />} />
+                      <Route path="/rental-transition" element={<RentalTransitionWorkspace />} />
+                      <Route path="/rental-records" element={<RentalTransitionWorkspace />} />
                       <Route path="/track" element={<Track />} />
                       <Route path="/civic-works" element={<CivicWorksBoard />} />
                       <Route path="/shared-checklist/:token" element={<SharedChecklistView />} />
