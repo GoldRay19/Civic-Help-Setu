@@ -37,6 +37,7 @@ import OfflineCacheStatusModal from './common/OfflineCacheStatusModal';
 import EmergencyHelplineModal from './emergency/EmergencyHelplineModal';
 import VoiceSearchInput from './common/VoiceSearchInput';
 import MultilingualVoiceNavigationModal from './navigation/MultilingualVoiceNavigationModal';
+import { logDiagnostic } from '../utils/diagnostics';
 
 const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
   const [isOpen, setIsOpen] = useState(
@@ -119,6 +120,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
 
   // Close drawer whenever the route changes.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(false);
   }, [pathname]);
 
@@ -183,7 +185,7 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
       setIsOpen(false);
       navigate('/login', { replace: true });
     } catch (error) {
-      console.error('Logout failed:', error);
+      logDiagnostic('Logout failed', error);
     } finally {
       setIsLoggingOut(false);
     }
@@ -755,6 +757,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/community-facilities',
                 label: 'Community Facilities',
                 icon: Home
+              })}
+
+              {renderNavLink({
+                to: '/library-directory',
+                label: 'Public Libraries',
+                icon: BookOpen
               })}
 
               {renderNavLink({

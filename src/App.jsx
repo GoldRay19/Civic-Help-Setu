@@ -48,6 +48,7 @@ import CivicWorksBoard from './pages/CivicWorksBoard';
 import CrematoriumDirectory from './pages/CrematoriumDirectory';
 import TenderReadinessWorkspace from './pages/TenderReadinessWorkspace';
 import CommunityFacilityDirectory from './pages/CommunityFacilityDirectory';
+import LibraryDirectory from './pages/LibraryDirectory';
 
 const Services = lazy(() => import('./pages/Services'));
 
@@ -101,6 +102,8 @@ function AppRoot() {
                       <Route path="/tender-readiness" element={<TenderReadinessWorkspace />} />
                       <Route path="/community-facilities" element={<CommunityFacilityDirectory />} />
                       <Route path="/facility-directory" element={<CommunityFacilityDirectory />} />
+                      <Route path="/library-directory" element={<LibraryDirectory />} />
+                      <Route path="/libraries" element={<LibraryDirectory />} />
                       <Route path="/track" element={<Track />} />
                       <Route path="/civic-works" element={<CivicWorksBoard />} />
                       <Route path="/shared-checklist/:token" element={<SharedChecklistView />} />
