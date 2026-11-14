@@ -50,4 +50,12 @@ describe('ServiceDetails', () => {
     expect(html).toContain('Open Interactive Fire Guide');
     expect(html).toContain('/services/fire-noc-guide');
   });
+
+  it('renders the dedicated Tree guide entry card when viewing the tree-pruning-permission service (#717)', () => {
+    const html = render('/services/tree-pruning-permission');
+    expect(html).toContain('Tree-Pruning Permission and Urban Tree Protection');
+    expect(html).toContain('Dedicated Tree-Pruning Permission &amp; Urban Tree Protection Guide');
+    expect(html).toContain('Open Interactive Tree Guide');
+    expect(html).toContain('/services/tree-permission-guide');
+  });
 });

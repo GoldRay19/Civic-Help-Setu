@@ -80,6 +80,29 @@ export const writeChecklist = (
   }
 };
 
+/**
+ * Deletes a stored checklist entry completely from local storage (#728).
+ */
+export const deleteChecklist = (id, storage = getDefaultStorage()) => {
+  if (!id || !storage) return false;
+  try {
+    const map = readMap(storage);
+    const actorId = getCurrentActor()?.id || null;
+    const existing = map[id];
+    const existingOwner = existing?.ownerUserId || existing?.userId || null;
+    if (existingOwner && existingOwner !== actorId) {
+      return false;
+    }
+    if (map[id]) {
+      delete map[id];
+      storage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(map));
+    }
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const sameLabels = (a, b) =>
   a.length === b.length && a.every((label) => b.includes(label));
 
@@ -175,6 +198,14 @@ export const createChecklistSession = ({
       rev = latest.rev;
       latest = null;
       requestSave();
+    },
+    deleteChecklistData: () => {
+      desired = [];
+      latest = null;
+      if (persisted) {
+        deleteChecklist(id, storage);
+      }
+      publish('idle');
     },
     // Called when another tab changed storage. Only adopts the newer copy
     // when there is nothing unsaved here; otherwise the next save reports it.

@@ -767,6 +767,108 @@ export const MOCK_SERVICES = [
       { label: 'Karnataka State Fire Services', url: 'https://ksfes.karnataka.gov.in' }
     ],
     lastVerified: '2026-03-01'
+  },
+  {
+    id: 'tree-pruning-permission',
+    jurisdiction: { level: 'state', states: ['Delhi', 'Karnataka', 'Maharashtra', 'Tamil Nadu', 'Telangana'], districts: [], localBody: '' },
+    name: 'Tree-Pruning Permission and Urban Tree Protection',
+    shortDescription: 'Official statutory permissions to prune, transplant, or remove trees under state preservation of trees acts, plus 24/7 emergency response for hazardous fallen trees and confidential illegal felling reporting.',
+    category: 'Complaints',
+    department: 'State Forest Departments & Municipal Tree Authorities',
+    type: 'Online (e-Forest / Single Window) / In-person Inspection',
+    difficulty: 'Medium',
+    feeType: 'variable',
+    speedDays: 21,
+    popularityScore: 88,
+    eligibility: [
+      'Lawful property owners, registered housing societies (RWAs), or institutional property managers with trees situated within their recorded premises.',
+      'Citizens reporting immediate public safety hazards (storm-damaged, leaning, or hollow trees threatening life, buildings, or electric powerlines).',
+      'Whistleblowers reporting suspected unauthorized tree cutting or girdling to Forest Vigilance.'
+    ],
+    documents: [
+      'Proof of Land Ownership / Custody (Registered Sale Deed, Property Tax Extract, or Khata / Mutation Certificate)',
+      'No-Objection Certificate (NOC) from RWA or Society Managing Committee (for common residential premises)',
+      'Contextual Wide-Angle & Close-Up Photographs of the Tree (showing defect, trunk girth, and proximity to buildings/wires)',
+      'Dimensioned Site Sketch showing plot boundaries, structure distance, and exact tree location',
+      'Signed Legal Undertaking for Compensatory Afforestation (minimum 1:10 native saplings ratio or security deposit)',
+      'Optional: Certified Arborist Health Report or Structural Engineer Danger Certification'
+    ],
+    documentRequirements: {
+      'Proof of Land Ownership / Custody (Registered Sale Deed, Property Tax Extract, or Khata / Mutation Certificate)': {
+        type: 'official'
+      },
+      'No-Objection Certificate (NOC) from RWA or Society Managing Committee (for common residential premises)': {
+        type: 'conditional',
+        condition: 'Mandatory if the tree is located within a cooperative housing society, apartment complex, or shared boundary.'
+      },
+      'Contextual Wide-Angle & Close-Up Photographs of the Tree (showing defect, trunk girth, and proximity to buildings/wires)': {
+        type: 'official'
+      },
+      'Dimensioned Site Sketch showing plot boundaries, structure distance, and exact tree location': {
+        type: 'official'
+      },
+      'Signed Legal Undertaking for Compensatory Afforestation (minimum 1:10 native saplings ratio or security deposit)': {
+        type: 'official'
+      },
+      'Optional: Certified Arborist Health Report or Structural Engineer Danger Certification': {
+        type: 'optional'
+      }
+    },
+    steps: [
+      {
+        title: 'Determine Operation Classification & Girth Threshold',
+        description: 'Verify whether your tree work is minor branch trimming (< 10-15 cm girth, often exempt or requiring intimation) vs lopping, heavy branch removal, transplantation, or felling.'
+      },
+      {
+        title: 'Assemble Geo-Tagged Evidence & Ownership Proof',
+        description: 'Take high-resolution photos of trunk defects, rot cavities, or powerline clearances, and prepare your property title extract and compensatory planting undertaking.'
+      },
+      {
+        title: 'Submit Application to Designated Tree Officer',
+        description: 'File application through the municipal or state forest single-window portal (e.g. Delhi e-Forest, BBMP Forest Cell, BMC Tree Authority, TS-bPASS).'
+      },
+      {
+        title: 'Site Inspection & Mandatory Public Objection Notice Window',
+        description: 'Accommodate site visit by the Tree Officer / Range Forest Officer. Non-emergency felling undergoes statutory 15 to 30 day public objection disclosures.'
+      },
+      {
+        title: 'Receipt of Tree Officer Sanction & Compensatory Compliance',
+        description: 'Execute approved work strictly conforming to permit conditions and plant/nurture required replacement saplings.'
+      }
+    ],
+    officialSources: [
+      {
+        name: 'Delhi e-Forest Online Citizen Services Portal',
+        url: 'https://forest.delhigovt.nic.in/tree-felling-permission',
+        verified: true,
+        lastVerified: '2026-10-15'
+      },
+      {
+        name: 'BBMP Forest Cell Citizen Single Window',
+        url: 'https://bbmp.gov.in/forest.html',
+        verified: true,
+        lastVerified: '2026-10-18'
+      },
+      {
+        name: 'BMC Garden & Tree Authority Services',
+        url: 'https://www.mcgm.gov.in/irj/portal/anonymous/qlgarden',
+        verified: true,
+        lastVerified: '2026-10-20'
+      }
+    ],
+    warnings: [
+      'Pruning branches beyond prescribed girth thresholds without prior written Tree Officer sanction is a cognizable criminal offense punishable by imprisonment up to 1 year and heavy fines under State Preservation of Trees Acts.',
+      'Emergency dangerous or storm-damaged trees should be reported immediately to the 24/7 Municipal Disaster Control Room (112 / city helpline); do NOT attempt self-felling without municipal assistance.',
+      'Heritage trees (>50 years of age in Maharashtra and other states) receive elevated statutory protection and require state-level Tree Authority clearances.',
+      'Special protected and royal timber species (Sandalwood, Teak, Red Sanders, Rosewood, Banyan) have heightened felling restrictions regardless of whether they grow on private patta land.'
+    ],
+    contacts: [
+      { label: 'Delhi Forest Dept Control Room', phone: '1800-11-8600', url: 'https://forest.delhigovt.nic.in' },
+      { label: 'BBMP 24x7 Control Room (Bengaluru)', phone: '080-22660000', url: 'https://bbmp.gov.in' },
+      { label: 'BMC Disaster Management Helpline (Mumbai)', phone: '1916', url: 'https://www.mcgm.gov.in' },
+      { label: 'National Forest Vigilance Helpline', phone: '1926', url: 'https://forests.telangana.gov.in' }
+    ],
+    lastVerified: '2026-10-25'
   }
 ];
 
