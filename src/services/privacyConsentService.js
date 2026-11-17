@@ -961,15 +961,6 @@ export function enforceRetentionPolicies({
 
 export { verifyPrivacyAuditLogIntegrity, verifyExportedDataIntegrity };
 
-const readStoredJson = (storage, key, fallback = null) => {
-  try {
-    const raw = storage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
 /**
  * Exports all user-owned data into a documented, machine-readable JSON dossier
  * sealed with a canonical SHA-256 integrityDigest.
