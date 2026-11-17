@@ -142,6 +142,56 @@ const Footer = () => {
                   {t('nav.civicWorks', 'Ward Works Board')}
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/senior-citizen-tribunal"
+                  style={linkBaseStyle}
+                  onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
+                  onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
+                >
+                  Senior Citizen Tribunal
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/rera-dispute-workspace"
+                  style={linkBaseStyle}
+                  onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
+                  onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
+                >
+                  RERA Homebuyer Rights
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/stray-animal-workspace"
+                  to="/noise-pollution-workspace"
+                  style={linkBaseStyle}
+                  onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
+                  onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
+                >
+                  Stray Animals &amp; Rabies PEP
+                  Noise Pollution &amp; Curfew
+                </Link>
+                <Link
+                  to="/solid-waste-workspace"
+                  style={linkBaseStyle}
+                  onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
+                  onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
+                >
+                  Solid Waste &amp; NGT
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/clinical-establishment-workspace"
+                  style={linkBaseStyle}
+                  onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
+                  onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
+                >
+                  Clinical Establishment &amp; Patient Rights
+                </Link>
+              </li>
               {can('users.read', user) && (
                 <li>
                   <Link

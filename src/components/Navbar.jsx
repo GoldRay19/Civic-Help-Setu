@@ -21,10 +21,23 @@ import {
   Bookmark,
   UserCircle,
   Settings,
+  AlertTriangle,
+  Navigation,
   Droplets,
   KeyRound,
   Store,
-  Database
+  Database,
+  Building2,
+  Trees,
+  Lightbulb,
+  ShieldAlert,
+  GitFork,
+  Scale,
+  BarChart2,
+  HeartHandshake,
+  Volume2,
+  Recycle,
+  HeartPulse,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -107,6 +120,79 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
           normalizedPath === '/rental-checklist' ||
           normalizedPath === '/rental-transition' ||
           normalizedPath === '/rental-records'
+        );
+      }
+
+      if (normalizedTarget === '/address-change-planner') {
+        return (
+          normalizedPath === '/address-change-planner' ||
+          normalizedPath === '/address-change' ||
+          normalizedPath === '/move-planner'
+        );
+      }
+
+if (normalizedTarget === '/continuity-planner') {
+        return (
+          normalizedPath === '/continuity-planner' ||
+          normalizedPath.startsWith('/continuity-planner/') ||
+          normalizedPath === '/incident-drills'
+        );
+      }
+
+      if (normalizedTarget === '/counter-demand') {
+        return (
+          normalizedPath === '/counter-demand' ||
+          normalizedPath === '/counter-demand-forecasting' ||
+          normalizedPath === '/queue-staffing'
+        );
+      }
+
+      if (normalizedTarget === '/ward-budget') {
+        return (
+          normalizedPath === '/ward-budget' ||
+          normalizedPath === '/services/ward-budget-proposal' ||
+          normalizedPath.startsWith('/ward-budget/')
+        );
+      }
+
+if (normalizedTarget === '/water-quality') {
+        return (
+          normalizedPath === '/water-quality' ||
+          normalizedPath === '/water-quality-register' ||
+          normalizedPath === '/services/water-quality-register' ||
+          normalizedPath.startsWith('/water-quality/')
+        );
+      }
+
+      if (normalizedTarget === '/open-contracting') {
+        return (
+          normalizedPath === '/open-contracting' ||
+          normalizedPath === '/procurement-analytics' ||
+          normalizedPath.startsWith('/open-contracting/')
+        );
+      }
+
+      if (normalizedTarget === '/road-safety') {
+        return (
+          normalizedPath === '/road-safety' ||
+          normalizedPath === '/blackspots' ||
+          normalizedPath.startsWith('/road-safety/')
+        );
+      }
+
+      if (normalizedTarget === '/pedestrian-barrier-map') {
+        return (
+          normalizedPath === '/pedestrian-barrier-map' ||
+          normalizedPath === '/accessible-routes' ||
+          normalizedPath.startsWith('/pedestrian-barrier-map/')
+        );
+      }
+
+      if (normalizedTarget === '/provenance') {
+        return (
+          normalizedPath === '/provenance' ||
+          normalizedPath.startsWith('/provenance/') ||
+          normalizedPath === '/lineage-explorer'
         );
       }
 
@@ -779,6 +865,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
               })}
 
               {renderNavLink({
+                to: '/water-quality',
+                label: 'Water Quality Register',
+                icon: Droplets
+              })}
+
+              {renderNavLink({
                 to: '/pds-shops',
                 label: 'Fair Price Shops (PDS)',
                 icon: Store
@@ -788,6 +880,18 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/community-facilities',
                 label: 'Community Facilities',
                 icon: Home
+              })}
+
+              {renderNavLink({
+                to: '/public-toilets',
+                label: 'Public Toilets',
+                icon: MapPin
+              })}
+
+              {renderNavLink({
+                to: '/library-directory',
+                label: 'Public Libraries',
+                icon: BookOpen
               })}
 
               {renderNavLink({
@@ -803,9 +907,81 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
               })}
 
               {renderNavLink({
+                to: '/address-change-planner',
+                label: t('nav.addressChange', 'Address Change Planner'),
+                icon: Navigation
+              })}
+
+              {renderNavLink({
                 to: '/citizen-drafts',
                 label: 'Citizen Drafts & Sync',
                 icon: FileText
+              })}
+
+             {renderNavLink({
+                to: '/provenance',
+                label: 'Data Lineage',
+                icon: GitFork
+              })}
+
+              {renderNavLink({
+                to: '/counter-demand',
+                label: t('nav.counterDemand', 'Counter Demand & Staffing'),
+                icon: BarChart2
+              })}
+
+              {renderNavLink({
+                to: '/surveys',
+                label: 'Civic Surveys',
+                icon: FileText
+              })}
+
+              {renderNavLink({
+                to: '/continuity-planner',
+                activeTarget: '/continuity-planner',
+                label: t('nav.continuityPlanner', 'Continuity & Drills'),
+                icon: ShieldAlert
+              })}
+
+              {renderNavLink({
+                to: '/senior-citizen-tribunal',
+                label: 'Senior Citizen Tribunal',
+                icon: Scale
+              })}
+
+              {renderNavLink({
+                to: '/rera-dispute-workspace',
+                label: 'RERA Homebuyer Rights',
+                icon: Building2
+              })}
+
+              {renderNavLink({
+                to: '/stray-animal-workspace',
+                label: 'Stray Animal & Rabies PEP',
+                icon: HeartHandshake
+              })}
+
+              {renderNavLink({
+                to: '/noise-pollution-workspace',
+                label: 'Noise Pollution & Curfew',
+                icon: Volume2
+              })}
+
+              {renderNavLink({
+                to: '/solid-waste-workspace',
+                label: 'Solid Waste & NGT',
+                icon: Recycle
+              })}
+
+              {renderNavLink({
+                to: '/clinical-establishment-workspace',
+                label: 'Clinical Establishment & Patient Rights',
+                icon: HeartPulse
+              })}
+              {renderNavLink({
+                to: '/tenants',
+                label: 'Authority Workspaces',
+                icon: Building2
               })}
 
               {renderNavLink({
@@ -824,6 +1000,51 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 to: '/civic-works',
                 label: t('nav.civicWorks', 'Ward Public Works'),
                 icon: Users
+              })}
+
+              {renderNavLink({
+                to: '/public-projects',
+                activeTarget: '/public-projects',
+                label: 'Public Project Timeline',
+                icon: Building2
+              })}
+
+              {renderNavLink({
+                to: '/ward-budget',
+                label: t('nav.wardBudget', 'Ward Budget & Deliberation'),
+                icon: Users
+              })}
+
+              {renderNavLink({
+                to: '/open-contracting',
+                label: t('nav.openContracting', 'Procurement Red Flags'),
+                icon: ShieldAlert
+              })}
+
+              {renderNavLink({
+                to: '/road-safety',
+                label: t('nav.roadSafety', 'Road Safety Blackspots'),
+                icon: AlertTriangle
+              })}
+
+              {renderNavLink({
+                to: '/pedestrian-barrier-map',
+                label: t('nav.pedestrianBarriers', 'Pedestrian Barrier Map'),
+                icon: Navigation
+              })}
+
+              {renderNavLink({
+                to: '/tree-health',
+                activeTarget: '/tree-health',
+                label: t('nav.treeHealth', 'Tree Health Inventory'),
+                icon: Trees
+              })}
+
+              {renderNavLink({
+                to: '/streetlights',
+                activeTarget: '/streetlights',
+                label: t('nav.streetlights', 'Streetlight Outages'),
+                icon: Lightbulb
               })}
 
               {renderNavLink({
@@ -874,6 +1095,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                   to: '/citizen-drafts',
                   label: 'Drafts & Offline Sync',
                   icon: FileText
+                })}
+
+                {renderNavLink({
+                  to: '/tenants',
+                  label: 'Authority Workspaces',
+                  icon: Building2
                 })}
 
                 {renderNavLink({

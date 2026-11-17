@@ -1,18 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  CheckSquare,
   AlertTriangle,
-  MessageSquare,
-  Users,
   LogOut,
   Plus,
-  Edit3,
-  Trash2,
   CheckCircle2,
   ShieldCheck,
-  Shield,
   FileCheck,
-  History,
   Upload,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -44,7 +37,16 @@ import PdsObservationQueue from '../components/admin/PdsObservationQueue';
 import WaterTankerReviewQueue from '../components/admin/WaterTankerReviewQueue';
 import TenderCorrectionQueue from '../components/admin/TenderCorrectionQueue';
 import CommunityFacilityCorrectionQueue from '../components/admin/CommunityFacilityCorrectionQueue';
+import LibraryCorrectionQueue from '../components/admin/LibraryCorrectionQueue';
 import RentalCorrectionQueue from '../components/admin/RentalCorrectionQueue';
+import RoadHazardReviewQueue from '../components/admin/RoadHazardReviewQueue';
+import PedestrianBarrierReviewQueue from '../components/admin/PedestrianBarrierReviewQueue';
+import AddressChangeCorrectionQueue from '../components/admin/AddressChangeCorrectionQueue';
+import ProvenanceReviewQueue from '../components/admin/ProvenanceReviewQueue';
+import CounterDemandReviewQueue from '../components/admin/CounterDemandReviewQueue';
+import SurveyAuditQueue from '../components/admin/SurveyAuditQueue';
+import PublicToiletReviewQueue from '../components/admin/PublicToiletReviewQueue';
+import OpenContractingAuditQueue from '../components/admin/OpenContractingAuditQueue';
 import AuditLogViewer from '../components/admin/AuditLogViewer';
 import ServiceImportPanel from '../components/admin/ServiceImportPanel';
 import ServiceRecordList from '../components/admin/ServiceRecordList';
@@ -157,6 +159,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setServices(getAdminServices());
     setReports(getReports());
     setUsers(getUserList());
@@ -737,6 +740,10 @@ const Admin = () => {
               { id: 'duplicates', label: 'Duplicate Detection', badge: null },
               { id: 'conflicts', label: 'Requirement Conflicts', badge: null },
               { id: 'civic-works', label: 'Ward Public Works', badge: null },
+              { id: 'pedestrian-barriers', label: 'Pedestrian Route Barriers', badge: null },
+              { id: 'public-projects', label: 'Public Project Timeline', badge: null },
+              { id: 'provenance-reviews', label: 'Knowledge Provenance', badge: null },
+              { id: 'counter-demand', label: 'Counter Demand & Staffing', badge: null },
               { id: 'audit', label: 'Audit Trail Logs', badge: null },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
@@ -1158,6 +1165,24 @@ const Admin = () => {
                 </div>
                 <div style={{ marginTop: '2rem' }}>
                   <RentalCorrectionQueue />
+                </div>
+                <div style={{ marginTop: '2rem' }}>
+                  <LibraryCorrectionQueue />
+                </div>
+                <div style={{ marginTop: '2rem' }}>
+                  <AddressChangeCorrectionQueue />
+                </div>
+                <div style={{ marginTop: '2rem' }}>
+                  <CounterDemandReviewQueue />
+                </div>
+                <div style={{ marginTop: '2rem' }}>
+                  <SurveyAuditQueue />
+                  <RoadHazardReviewQueue />
+                  <PublicToiletReviewQueue />
+                  <div style={{ marginTop: '2rem' }}>
+                    <PedestrianBarrierReviewQueue />
+                  </div>
+                  <OpenContractingAuditQueue />
                 </div>
               </div>
             )}
@@ -1760,6 +1785,66 @@ const Admin = () => {
             {activeTab === 'civic-works' && (
               <div>
                 <CivicWorksModeratorPanel />
+              </div>
+            )}
+
+            {/* Pedestrian Route Barrier Moderation Tab */}
+            {activeTab === 'pedestrian-barriers' && (
+              <div>
+                <PedestrianBarrierReviewQueue />
+              </div>
+            )}
+
+            {/* Public Infrastructure Projects Verification Tab */}
+            {activeTab === 'public-projects' && (
+              <div
+                style={{
+                  background: 'var(--bg-card)',
+                  padding: '1.5rem',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-light)',
+                }}
+              >
+                <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
+                  Geospatial Public Project Verification &amp; Evidence Timeline
+                </h3>
+                <p
+                  style={{
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.9rem',
+                    marginBottom: '1.25rem',
+                  }}
+                >
+                  Manage public civil infrastructure projects across roads, stormwater
+                  drains, schools, and civic buildings. Review photographic evidence
+                  submissions and commit authorized verification decisions.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => navigate('/public-projects')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  Open Public Projects Workspace &amp; Review Queue
+                </button>
+              </div>
+            )}
+
+            {/* Knowledge Provenance Review Queue Tab (#777) */}
+            {activeTab === 'provenance-reviews' && (
+              <div>
+                <ProvenanceReviewQueue />
+              </div>
+            )}
+
+            {/* Counter Demand & Queue Staffing Moderation Tab (#764) */}
+            {activeTab === 'counter-demand' && (
+              <div>
+                <CounterDemandReviewQueue />
               </div>
             )}
 

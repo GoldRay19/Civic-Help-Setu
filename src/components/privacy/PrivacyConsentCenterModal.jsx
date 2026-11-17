@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   Shield,
   Download,
@@ -8,6 +10,7 @@ import {
   AlertTriangle,
   X,
   Info,
+  RefreshCw,
 } from 'lucide-react';
 import {
   CONSENT_CATEGORIES,
@@ -35,8 +38,19 @@ const PrivacyConsentCenterModalBody = ({
   onPrivacyDataChanged = () => {},
 }) => {
   const { toast } = useToast?.() || {};
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  let navigate = () => {};
+  try {
+    navigate = useNavigate();
+  } catch {
+    // Non-router / test fallback
+  }
+  let user = null;
+  try {
+    const auth = useAuth?.();
+    user = auth?.user;
+  } catch {
+    // Non-auth-provider fallback
+  }
 
   const [preferences, setPreferences] = useState(() => getConsentPreferences());
   const [auditLogs, setAuditLogs] = useState(() => getPrivacyAuditLogs());

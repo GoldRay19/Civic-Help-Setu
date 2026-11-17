@@ -112,7 +112,15 @@ A responsive design with theme support, built to provide a consistent experience
 
 Clear navigation, readable content, consistent interaction patterns, and a user-centered approach to public-service information.
 
-### 🧪 14. Privacy-Safe Synthetic Civic Dataset Generator
+### 🚨 14. Civic Incident Response Drill & Public Service Continuity Planner
+
+A dedicated preparedness workspace for municipal authorities and disaster response teams. Model critical service dependencies, detect single points of failure (SPOF) and dependency cycles with graph analysis, run tabletop exercises with timed inject simulations, record tactical decisions, calculate recovery time objective (RTO) gaps, generate printable offline continuity runbooks, and track corrective action items to closure. See [architecture and operational documentation](docs/civic-incident-response-drill-planner.md).
+
+### 🏛️ 15. Multi-Authority Tenant Workspaces
+
+Isolated administration workspaces for distinct municipal and district civic authorities, supporting sovereign staff memberships, anti-IDOR scoped datasets, tamper-evident SHA-256 audit logs, bounded local AI guidance, and controlled cross-tenant public catalogue sharing.
+
+### 🧪 16. Privacy-Safe Synthetic Civic Dataset Generator
 
 Generate reproducible, schema-aware service guides, citizen applications, and grievance records with zero production PII, complete referential integrity, and one-click local development database loading (#778).
 
@@ -155,6 +163,7 @@ The platform includes the following major application areas:
 | Open Source     | Explore community contributions           |
 | Privacy Policy  | Review privacy-related information        |
 | Admin           | Access authorized administrative features |
+| Authority Workspaces | Multi-authority sovereign administration, isolated staff, datasets, and audit logs |
 | Synthetic Datasets | Generate privacy-safe civic datasets (`/synthetic-datasets`) |
 
 The availability of individual features depends on the application's current implementation and configuration.

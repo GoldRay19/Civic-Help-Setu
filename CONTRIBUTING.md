@@ -26,11 +26,70 @@ Public service information changes frequently. If you notice outdated or incorre
 Run unit and integration tests locally with Vitest:
 ```bash
 npm test                                                      # run all tests
+npm test -- --run src/services/roadSafetyBlackspotService.test.js # road-safety blackspot engine tests (#769)
+npm test -- --run src/pages/RoadSafetyDashboard.test.jsx          # road-safety dashboard workspace UI tests (#769)
+npm test -- --run src/components/admin/RoadHazardReviewQueue.test.jsx # road-safety hazard review queue tests (#769)
+npm test -- --run tests/road-hazards.test.js                     # road-safety hazard API validation & abuse tests (#769)
+npm test -- --run src/data/openContractingContract.test.js    # open-contracting schema & contract tests (#751)
+npm test -- --run src/services/openContractingAnalyticsService.test.js # procurement red-flag analytics engine tests (#751)
+npm test -- --run src/services/openContractingService.test.js # open-contracting service & storage tests (#751)
+npm test -- --run tests/open-contracting-analytics.test.js    # open-contracting API validation & abuse tests (#751)
+npm test -- --run src/pages/OpenContractingWorkspace.test.jsx # procurement analytics workspace UI tests (#751)
+npm test -- --run src/services/provenanceService.test.js       # lineage DAG & cycle prevention tests (#777)
+npm test -- --run src/pages/LineageExplorerWorkspace.test.jsx  # provenance explorer UI tests (#777)
+npm test -- --run tests/knowledge-provenance.test.js          # provenance serverless API tests (#777)
+npm test -- --run tests/knowledge-provenance-security.test.js # provenance security & PII tests (#777)
 npm test -- --run src/services/citizenDraftSyncEngine.test.js # offline-first sync engine tests (#775)
 npm test -- --run src/pages/CitizenDraftSyncWorkspace.test.jsx # sync workspace UI tests (#775)
 npm test -- --run src/services/syntheticGeneratorEngine.test.js # synthetic dataset engine tests (#778)
 npm test -- --run src/pages/SyntheticDatasetWorkspace.test.jsx # synthetic dataset workspace tests (#778)
+npm test -- --run src/data/publicToiletContract.test.js              # public toilet contract & calculations (#758)
+npm test -- --run src/services/publicToiletService.test.js           # public toilet service orchestration (#758)
+npm test -- --run tests/public-toilets.test.js                      # public toilet API validation & receipt tests (#758)
+npm test -- --run src/pages/PublicToiletDirectory.test.jsx           # public toilet workspace UI tests (#758)
+npm test -- --run src/services/tenantIsolationService.test.js # tenant isolation service tests (#779)
+npm test -- --run src/pages/TenantAdministrationWorkspace.test.jsx # tenant administration workspace tests (#779)
+npm test -- --run tests/tenant-administration.test.js          # tenant administration API tests (#779)
+npm test -- --run src/services/continuityPlannerService.test.js # continuity planner service & state machine tests (#780)
+npm test -- --run src/services/dependencyGraphEngine.test.js  # graph analysis, cycle detection & SPOF tests (#780)
+npm test -- --run src/pages/ContinuityPlannerWorkspace.test.jsx # incident response drill workspace & runbook tests (#780)
+npm test -- --run src/services/counterDemandForecastingService.test.js # counter demand forecasting tests (#764)
+npm test -- --run src/pages/CounterDemandForecastingWorkspace.test.jsx # counter demand workspace UI tests (#764)
+npx vitest run src/services/treeInventoryService.test.js       # tree inventory domain/security tests (#749)
+npx vitest run src/services/treeInventoryMigrations.test.js    # tree schema migration/rollback tests (#749)
+npx vitest run src/pages/TreeHealthInventory.test.jsx          # tree page public-projection tests (#749)
+npx vitest run src/components/trees/TreeInventoryComponents.test.jsx # tree component/accessibility tests (#749)
+npx vitest run src/services/pedestrianBarrierService.test.js       # pedestrian barrier graph & service tests (#757)
+npx vitest run src/services/pedestrianBarrierMigrations.test.js    # pedestrian schema migration/rollback tests (#757)
+npx vitest run tests/pedestrian-barriers.test.js                   # pedestrian barrier API validation tests (#757)
+npx vitest run tests/pedestrian-barriers-security.test.js          # pedestrian security, injection & replay tests (#757)
+npx vitest run src/pages/AccessibleRouteBarrierWorkspace.test.jsx  # accessible barrier workspace UI tests (#757)
 ```
+
+Architecture, data model, state machine, graph routing rules, and verification integrity for the accessible pedestrian route barrier map are documented in [docs/ACCESSIBLE_PEDESTRIAN_ROUTE_BARRIERS.md](docs/ACCESSIBLE_PEDESTRIAN_ROUTE_BARRIERS.md).
+npx vitest run src/services/streetlightService.test.js        # streetlight clustering & repair service tests (#756)
+npx vitest run src/services/streetlightAccessControl.test.js  # streetlight RBAC & privacy scoping tests (#756)
+npx vitest run src/services/streetlightMigrations.test.js     # streetlight schema migration & rollback tests (#756)
+npx vitest run src/pages/StreetlightOutageWorkspace.test.jsx   # streetlight workspace & accessible UI tests (#756)
+```
+
+Architecture, data model, spatial clustering algorithms, explainability ruleset, and technician workflows for streetlight outages are documented in [docs/streetlight-outage-clustering.md](docs/streetlight-outage-clustering.md).
+npx vitest run src/services/waterQualityService.test.js        # water quality domain & supersession tests (#754)
+npx vitest run src/services/waterQualityRulesEngine.test.js    # deterministic IS 10500 compliance tests (#754)
+npx vitest run src/services/waterQualityValidation.test.js     # anti-PII & schema validation tests (#754)
+npx vitest run tests/water-quality-register.test.js            # serverless API abuse guard tests (#754)
+npx vitest run src/pages/WaterQualityRegister.test.jsx         # water register UI & accessibility tests (#754)
+npx vitest run src/services/publicProjectService.test.js       # public project domain & state transition tests (#752)
+npx vitest run src/services/evidenceVerificationService.test.js # evidence integrity & CV advisory tests (#752)
+npx vitest run tests/public-projects.test.js                 # public project serverless API & abuse tests (#752)
+npx vitest run src/pages/PublicProjectsWorkspace.test.jsx      # public project workspace UI & a11y tests (#752)
+```
+
+Architecture, data model, state machines, CV discrepancy policy, and rollback strategy for public projects are documented in [docs/geospatial-public-projects.md](docs/geospatial-public-projects.md).
+
+Architecture, data model, roles, triage boundaries, CSV format, migrations and operational limits for the tree inventory are documented in [docs/tree-health-inventory.md](docs/tree-health-inventory.md).
+Water quality standards (IS 10500:2012), data models, cryptographic seals, and audit runbooks are documented in [docs/water-quality-register.md](docs/water-quality-register.md).
+Architecture, data model, k-anonymity privacy safeguards, explainable recommendations, and test suites for the Anonymized Ward-Level Civic Issue Heatmap are documented in [docs/ANONYMIZED_WARD_ISSUE_HEATMAP.md](docs/ANONYMIZED_WARD_ISSUE_HEATMAP.md) (#763).
 
 ## Security checks
 Every PR runs a secret scan, a dependency audit and a lint for unsafe HTML/JS patterns. Locally:
