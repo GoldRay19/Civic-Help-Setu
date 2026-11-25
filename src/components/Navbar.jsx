@@ -49,6 +49,7 @@ import {
   GraduationCap,
   FolderLock,
   ClipboardList,
+  UtensilsCrossed,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -1320,6 +1321,13 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 activeTarget: '/ghg-inventory',
                 label: t('nav.ghgInventory', 'GHG Inventory'),
                 icon: Leaf
+              })}
+
+              {renderNavLink({
+                to: '/food-safety-workspace',
+                activeTarget: '/food-safety-workspace',
+                label: t('nav.foodSafetyWorkspace', 'Food Safety Redressal'),
+                icon: UtensilsCrossed
               })}
 
               {renderNavLink({

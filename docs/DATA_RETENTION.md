@@ -127,6 +127,8 @@ Retention for all of these: until deleted by the person (no automatic expiry).
 | `civicbridge_tree_reports_v1` | `treeInventoryMigrations.js` | Legacy citizen tree reports read once during migration | Reviews, votes and reports |
 | `civicbridge_tree_reporter_key` | `TreeHealthInventory.jsx` | Random local key used only to rate-limit and deduplicate citizen tree reports | Reviews, votes and reports |
 | `civicbridge_civic_works_reports_v1` | `civicWorksBoardService.js` | Ward civic works reports and moderation state | Reviews, votes and reports |
+| `civicbridge_food_safety_vault` | `foodSafetyStorage.js` | Food safety case records, Schedule 4 hygiene audit checklists, and SHA-256 integrity digests (#1339) | Drafts and in-progress work |
+| `civicbridge_food_safety_settings` | `foodSafetyStorage.js` | User preferences for food safety workspace (#1339) | Drafts and in-progress work |
 
 | `civicbridge_npsc_fee_history_v1` | `nationalPublicServiceCentreService.js` | Locally recorded fee versions, sources, verification dates, and audit trails for receipt comparisons | Saved items |
 | `civicbridge_npsc_fee_observations_v1` | `nationalPublicServiceCentreService.js` | Community fee observations and their moderation state | Reviews, votes and reports |
