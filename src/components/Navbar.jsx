@@ -49,7 +49,7 @@ import {
   GraduationCap,
   FolderLock,
   ClipboardList,
-
+  Landmark,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -1337,6 +1337,13 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 activeTarget: '/ghg-inventory',
                 label: t('nav.ghgInventory', 'GHG Inventory'),
                 icon: Leaf
+              })}
+
+              {renderNavLink({
+                to: '/rbi-banking-workspace',
+                activeTarget: '/rbi-banking-workspace',
+                label: t('nav.rbiBanking', 'RBI Banking Ombudsman'),
+                icon: Landmark
               })}
 
               {renderNavLink({

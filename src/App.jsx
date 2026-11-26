@@ -20,15 +20,6 @@ import RouteErrorFallback from './components/common/RouteErrorFallback';
 import RouteErrorBoundary from './components/common/RouteErrorBoundary';
 import { ServiceCardSkeletonGrid } from './components/ServiceCardSkeleton';
 
-import FederatedQueryExplorer from './pages/FederatedQueryExplorer';
-import WardAnalyticsDashboard from './pages/WardAnalyticsDashboard';
-
-
-import DataCleanRoomWorkspace from './pages/DataCleanRoomWorkspace';
-
-
-import ShelterStatusBoard from './pages/ShelterStatusBoard';
-
 const ResourceExchangePage = lazy(() => import('./components/resource-exchange/ResourceExchangePage'));
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -119,7 +110,6 @@ const LegalSourceReviewWorkspace = lazy(() => import('./pages/LegalSourceReviewW
 const RteAdmissionWorkspace = lazy(() => import('./pages/RteAdmissionWorkspace'));
 const EvidenceDossierWorkspace = lazy(() => import('./pages/EvidenceDossierWorkspace'));
 const ChangeFeedPage = lazy(() => import('./pages/ChangeFeedPage'));
-const FeeEvidenceAssistant = lazy(() => import('./pages/FeeEvidenceAssistant'));
 const JurisdictionHandoffWorkspace = lazy(() => import('./pages/JurisdictionHandoffWorkspace'));
 const AgentSandboxWorkspace = lazy(() => import('./pages/AgentSandboxWorkspace'));
 const KnowledgeGraphQueryWorkspace = lazy(() => import('./pages/KnowledgeGraphQueryWorkspace'));
@@ -135,6 +125,7 @@ const AbuseDashboardPage = lazy(() => import('./components/abuse-control-plane/A
 const CostCarbonGovernorWorkspacePage = lazy(() => import('./pages/CostCarbonGovernorWorkspace'));
 const PolicyEngineWorkspacePage = lazy(() => import('./pages/PolicyEngineWorkspace'));
 const FreshnessPredictionWorkspacePage = lazy(() => import('./pages/FreshnessPredictionWorkspace'));
+const RbiOmbudsmanWorkspace = lazy(() => import('./pages/RbiOmbudsmanWorkspace'));
 
 const ServicesFallback = () => (
   <div className="section">
@@ -387,6 +378,9 @@ function AppRoot() {
                             <Route path="/ghg-inventory" element={<GhgInventoryWorkspace />} />
                             <Route path="/emissions-inventory" element={<GhgInventoryWorkspace />} />
                             <Route path="/services/ghg-inventory" element={<GhgInventoryWorkspace />} />
+                            <Route path="/rbi-banking-workspace" element={<RbiOmbudsmanWorkspace />} />
+                            <Route path="/rbi-ombudsman" element={<RbiOmbudsmanWorkspace />} />
+                            <Route path="/banking-deficiency-dispute" element={<RbiOmbudsmanWorkspace />} />
                             <Route path="/shared-checklist/:token" element={<SharedChecklistView />} />
                             <Route path="/shared-directory/:token" element={<SharedDirectoryView />} />
                             <Route path="/app-status/:token" element={<PublicApplicationStatusView />} />

@@ -127,6 +127,8 @@ Retention for all of these: until deleted by the person (no automatic expiry).
 | `civicbridge_tree_reports_v1` | `treeInventoryMigrations.js` | Legacy citizen tree reports read once during migration | Reviews, votes and reports |
 | `civicbridge_tree_reporter_key` | `TreeHealthInventory.jsx` | Random local key used only to rate-limit and deduplicate citizen tree reports | Reviews, votes and reports |
 | `civicbridge_civic_works_reports_v1` | `civicWorksBoardService.js` | Ward civic works reports and moderation state | Reviews, votes and reports |
+| `civicbridge_rbi_banking_vault` | `rbiOmbudsmanStorage.js` | Banking deficiency dispute records, zero liability audits, TAT compensation calculations, and SHA-256 seals (#1341) | Drafts and in-progress work |
+| `civicbridge_rbi_banking_settings` | `rbiOmbudsmanStorage.js` | User preferences for RBI Banking Ombudsman workspace (#1341) | Drafts and in-progress work |
 
 | `civicbridge_npsc_fee_history_v1` | `nationalPublicServiceCentreService.js` | Locally recorded fee versions, sources, verification dates, and audit trails for receipt comparisons | Saved items |
 | `civicbridge_npsc_fee_observations_v1` | `nationalPublicServiceCentreService.js` | Community fee observations and their moderation state | Reviews, votes and reports |
