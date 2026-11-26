@@ -20,16 +20,6 @@ import RouteErrorFallback from './components/common/RouteErrorFallback';
 import RouteErrorBoundary from './components/common/RouteErrorBoundary';
 import { ServiceCardSkeletonGrid } from './components/ServiceCardSkeleton';
 
-import ZkAttributeVerifierView from './pages/ZkAttributeVerifierView';
-import FederatedQueryExplorer from './pages/FederatedQueryExplorer';
-import WardAnalyticsDashboard from './pages/WardAnalyticsDashboard';
-
-
-import DataCleanRoomWorkspace from './pages/DataCleanRoomWorkspace';
-
-
-import ShelterStatusBoard from './pages/ShelterStatusBoard';
-
 const ResourceExchangePage = lazy(() => import('./components/resource-exchange/ResourceExchangePage'));
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -120,7 +110,7 @@ const LegalSourceReviewWorkspace = lazy(() => import('./pages/LegalSourceReviewW
 const RteAdmissionWorkspace = lazy(() => import('./pages/RteAdmissionWorkspace'));
 const EvidenceDossierWorkspace = lazy(() => import('./pages/EvidenceDossierWorkspace'));
 const ChangeFeedPage = lazy(() => import('./pages/ChangeFeedPage'));
-const FeeEvidenceAssistant = lazy(() => import('./pages/FeeEvidenceAssistant'));
+const NfsaRationWorkspace = lazy(() => import('./pages/NfsaRationWorkspace'));
 const JurisdictionHandoffWorkspace = lazy(() => import('./pages/JurisdictionHandoffWorkspace'));
 const AgentSandboxWorkspace = lazy(() => import('./pages/AgentSandboxWorkspace'));
 const KnowledgeGraphQueryWorkspace = lazy(() => import('./pages/KnowledgeGraphQueryWorkspace'));
@@ -442,6 +432,10 @@ function AppRoot() {
                             <Route path="/tenants" element={<TenantAdministrationWorkspace />} />
                             <Route path="/tenants/:tenantId" element={<TenantAdministrationWorkspace />} />
                             <Route path="/tenant-workspace" element={<TenantAdministrationWorkspace />} />
+
+                            <Route path="/nfsa-ration-workspace" element={<NfsaRationWorkspace />} />
+                            <Route path="/ration-entitlement-dispute" element={<NfsaRationWorkspace />} />
+                            <Route path="/food-commission-grievance" element={<NfsaRationWorkspace />} />
 
                             <Route path="*" element={<NotFound />} />
                           </Routes>
