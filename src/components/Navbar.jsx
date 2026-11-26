@@ -49,6 +49,7 @@ import {
   GraduationCap,
   FolderLock,
   ClipboardList,
+  Car,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -1320,6 +1321,13 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 activeTarget: '/ghg-inventory',
                 label: t('nav.ghgInventory', 'GHG Inventory'),
                 icon: Leaf
+              })}
+
+              {renderNavLink({
+                to: '/traffic-echallan-workspace',
+                activeTarget: '/traffic-echallan-workspace',
+                label: t('nav.trafficChallan', 'E-Challan Dispute'),
+                icon: Car
               })}
 
               {renderNavLink({

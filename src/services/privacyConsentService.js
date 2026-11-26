@@ -150,6 +150,8 @@ export const USER_DATA_STORES = [
   { key: 'civicbridge_legal_draft_snapshots_v1', category: 'drafts', exportAs: 'legalDraftSnapshots', empty: [] }, // legalSourceStorage.js
   { key: 'civicbridge_legal_sources_audit_v1', category: 'drafts', exportAs: 'legalSourcesAuditLogs', empty: [] }, // legalSourceStorage.js
   { key: 'civicbridge_evidence_dossiers_v1', category: 'drafts', exportAs: 'evidenceDossiers', empty: [] }, // evidenceDossierStorage.js
+  { key: 'civicbridge_echallan_dispute_vault', category: 'drafts', exportAs: 'trafficChallanDisputes', empty: [] }, // trafficChallanStorage.js (#1340)
+  { key: 'civicbridge_echallan_settings', category: 'drafts', exportAs: null, empty: {} }, // trafficChallanStorage.js (#1340)
 
 ];
 

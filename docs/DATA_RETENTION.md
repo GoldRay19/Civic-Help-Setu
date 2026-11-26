@@ -127,6 +127,8 @@ Retention for all of these: until deleted by the person (no automatic expiry).
 | `civicbridge_tree_reports_v1` | `treeInventoryMigrations.js` | Legacy citizen tree reports read once during migration | Reviews, votes and reports |
 | `civicbridge_tree_reporter_key` | `TreeHealthInventory.jsx` | Random local key used only to rate-limit and deduplicate citizen tree reports | Reviews, votes and reports |
 | `civicbridge_civic_works_reports_v1` | `civicWorksBoardService.js` | Ward civic works reports and moderation state | Reviews, votes and reports |
+| `civicbridge_echallan_dispute_vault` | `trafficChallanStorage.js` | Traffic e-challan dispute records, Rule 167A evidentiary audits, alibis, and SHA-256 integrity digests (#1340) | Drafts and in-progress work |
+| `civicbridge_echallan_settings` | `trafficChallanStorage.js` | User settings for traffic challan workspace (#1340) | Drafts and in-progress work |
 
 | `civicbridge_npsc_fee_history_v1` | `nationalPublicServiceCentreService.js` | Locally recorded fee versions, sources, verification dates, and audit trails for receipt comparisons | Saved items |
 | `civicbridge_npsc_fee_observations_v1` | `nationalPublicServiceCentreService.js` | Community fee observations and their moderation state | Reviews, votes and reports |

@@ -237,14 +237,22 @@ const Footer = () => {
 </li>
 <li>
   <Link
-    to="/legal-sources"
     to="/evidence-dossier"
     style={linkBaseStyle}
     onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
     onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
   >
-    Legal Source Review
     Evidence Dossier &amp; Integrity
+  </Link>
+</li>
+<li>
+  <Link
+    to="/traffic-echallan-workspace"
+    style={linkBaseStyle}
+    onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
+    onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
+  >
+    Traffic E-Challan Dispute (Rule 167A)
   </Link>
 </li>
               {can('users.read', user) && (
