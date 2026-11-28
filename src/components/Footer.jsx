@@ -217,6 +217,16 @@ const Footer = () => {
 </li>
 <li>
   <Link
+    to="/nfsa-ration-workspace"
+    style={linkBaseStyle}
+    onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
+    onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
+  >
+    NFSA Ration Rights &amp; Food Commission
+  </Link>
+</li>
+<li>
+  <Link
     to="/electricity-consumer-workspace"
     style={linkBaseStyle}
     onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}

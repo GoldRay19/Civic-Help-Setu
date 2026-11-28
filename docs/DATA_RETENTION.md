@@ -275,3 +275,8 @@ The **Clear my data** screen says this next to the button:
 - **In-Memory Lifecycle**: Query responses exist strictly in React memory state and are discarded upon navigating away or closing the browser tab.
 - **Differential Privacy & Anonymity**: Cohorts with fewer than 10 events ($k < 10$) are automatically suppressed before being displayed to prevent inference or re-identification.
 
+
+## National Food Security (NFSA 2013) Ration Entitlement & Biometric Redressal Vault (#1342)
+
+- **`civicbridge_nfsa_ration_vault`**: Stores local ration entitlement audits, weighment deficit records, biometric refusal logs, and Food Security Allowance (FSA) calculations under Section 8 and Section 15 of NFSA 2013. Sealed with client-side SHA-256 integrity hash. Categorized as `'drafts'` in `privacyConsentService.js` and wiped on "Clear my data".
+- **`civicbridge_nfsa_ration_settings`**: Beneficiary card settings (card category, family members count, district, and Fair Price Shop dealer information). Masked in compliance with Digital Personal Data Protection (DPDP) Act. Categorized as `'drafts'` and wiped on "Clear my data".

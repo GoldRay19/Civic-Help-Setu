@@ -1239,6 +1239,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
               })}
 
               {renderNavLink({
+                to: '/nfsa-ration-workspace',
+                label: 'NFSA Ration Redressal',
+                icon: Scale
+              })}
+
+              {renderNavLink({
                 to: '/synthetic-datasets',
                 label: 'Synthetic Dataset Generator',
                 icon: Database
@@ -1434,6 +1440,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                   to: '/tenants',
                   label: 'Authority Workspaces',
                   icon: Building2
+                })}
+
+                {renderNavLink({
+                  to: '/nfsa-ration-workspace',
+                  label: 'NFSA Ration Redressal',
+                  icon: Scale
                 })}
 
                 {renderNavLink({

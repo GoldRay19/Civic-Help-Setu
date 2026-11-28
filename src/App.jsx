@@ -25,16 +25,6 @@ import VerifiableEvidenceBundleWorkspace from './pages/VerifiableEvidenceBundleW
 
 
 
-import ZkAttributeVerifierView from './pages/ZkAttributeVerifierView';
-import FederatedQueryExplorer from './pages/FederatedQueryExplorer';
-import WardAnalyticsDashboard from './pages/WardAnalyticsDashboard';
-
-
-import DataCleanRoomWorkspace from './pages/DataCleanRoomWorkspace';
-
-
-import ShelterStatusBoard from './pages/ShelterStatusBoard';
-
 const ResourceExchangePage = lazy(() => import('./components/resource-exchange/ResourceExchangePage'));
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -138,6 +128,7 @@ const CivicContributionPipelineWorkspace = lazy(() => import('./pages/CivicContr
 const RteAdmissionWorkspace = lazy(() => import('./pages/RteAdmissionWorkspace'));
 const EvidenceDossierWorkspace = lazy(() => import('./pages/EvidenceDossierWorkspace'));
 const ChangeFeedPage = lazy(() => import('./pages/ChangeFeedPage'));
+const NfsaRationWorkspace = lazy(() => import('./pages/NfsaRationWorkspace'));
 const PortalChangeMonitorWorkspace = lazy(() => import('./pages/PortalChangeMonitorWorkspace'));
 const FeeEvidenceAssistant = lazy(() => import('./pages/FeeEvidenceAssistant'));
 const JurisdictionHandoffWorkspace = lazy(() => import('./pages/JurisdictionHandoffWorkspace'));
@@ -560,6 +551,10 @@ function AppRoot() {
                             <Route path="/tenants" element={<TenantAdministrationWorkspace />} />
                             <Route path="/tenants/:tenantId" element={<TenantAdministrationWorkspace />} />
                             <Route path="/tenant-workspace" element={<TenantAdministrationWorkspace />} />
+
+                            <Route path="/nfsa-ration-workspace" element={<NfsaRationWorkspace />} />
+                            <Route path="/ration-entitlement-dispute" element={<NfsaRationWorkspace />} />
+                            <Route path="/food-commission-grievance" element={<NfsaRationWorkspace />} />
 
                             <Route path="*" element={<NotFound />} />
                           </Routes>
