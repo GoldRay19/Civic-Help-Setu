@@ -335,6 +335,27 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Durable event-sourced agent workflows: server-write-only via firebase-admin;
+    // owners and admins may read materialized state and event logs.
+    match /agentWorkflows/{workflowId} {
+      allow read: if isAdmin() || (isMember() && resource.data.ownerId == request.auth.uid);
+      allow write: if false;
+
+      match /events/{sequenceId} {
+        allow read: if isAdmin() || (isMember() && get(/databases/$(database)/documents/agentWorkflows/$(workflowId)).data.ownerId == request.auth.uid);
+        allow write: if false;
+      }
+
+      match /idempotency/{keyId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /agentWorkflowDeadLetters/{dlqId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /sourceConflicts/{conflictId} {
       allow read, delete: if isAdmin();
       allow create, update: if isAdmin() && incoming().keys().size() <= 40;
@@ -343,6 +364,24 @@ service cloud.firestore {
     match /reviewOverrides/{serviceId} {
       allow read, write: if isAdmin();
     }
+
+
+    // Human-in-the-Loop Agent Review Studio (#1150): admin-only, approved snapshots immutable.
+    match /agentReviewOutputs/{outputId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && noPrivilegedKeys(incoming())
+        && text('status', 40)
+        && text('contractVersion', 40)
+        && incoming().version is int
+        && incoming().version >= 1;
+      allow update: if isAdmin()
+        && noPrivilegedKeys(incoming())
+        && !(stored().status in ['approved', 'edited_approved'])
+        && incoming().version == stored().version + 1;
+      allow delete: if false;
+    }
+
 
     // ---------- shelter status board ----------
 
@@ -593,6 +632,15 @@ service cloud.firestore {
     match /publicToiletSubmissions/{submissionId} {
       allow read, write: if false;
     }
+
+    // Governed Agent Tool Registry (#1146): server-only audit & revocation records.
+    match /agent_tool_registry_revocations/{revocationId} {
+      allow read, write: if false;
+    }
+    match /agent_tool_registry_audit/{auditId} {
+      allow read, write: if false;
+    }
+
 
     // ---------- everything else ----------
     match /{document=**} {

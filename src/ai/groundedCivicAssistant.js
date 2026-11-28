@@ -11,6 +11,12 @@ import {
   evaluateGroundedAnswerEntailment,
   stripRedactionPlaceholders,
 } from './aiGuardrailPipeline.js';
+import {
+  scanRetrievedDocument,
+  evaluateAssistantProposal,
+  FIREWALL_DECISION,
+} from './promptInjectionFirewall.js';
+import { generateGuidanceWithProvenance } from '../services/civicGuidanceProvenanceService.js';
 
 export const MANDATORY_LEGAL_DISCLAIMER =
   'Notice: This guidance is retrieved from approved civic service guidelines and does not constitute an official government eligibility decision. Rules, deadlines, and fees may vary by municipality.';
@@ -61,6 +67,47 @@ export async function askGroundedCivicAssistant(query, options = {}) {
   const sanitizedQuery = preGuardrail.sanitizedQuery;
   const retrievalQuery = stripRedactionPlaceholders(sanitizedQuery);
 
+  // 0b. Scan optional untrusted external document / web content through Prompt-Injection Firewall
+  let firewallResult = null;
+  if (options.externalDocument) {
+    firewallResult = scanRetrievedDocument(options.externalDocument);
+    if (!firewallResult.valid || firewallResult.decision === FIREWALL_DECISION.BLOCK) {
+      return {
+        status: 'blocked',
+        grounded: false,
+        confidenceScore: 0,
+        firewall: {
+          ...firewallResult,
+          proposalCheck: evaluateAssistantProposal({ summary: '', citations: [] }),
+        },
+        guardrail: {
+          decision: preGuardrail.decision,
+          pii: preGuardrail.pii,
+          injection: preGuardrail.injection,
+        },
+        data: {
+          title: 'Untrusted External Content Blocked by Firewall',
+          summary:
+            'The retrieved external document or web content contained unsafe instructions or malicious links and was quarantined before synthesis.',
+          officialSources: [
+            {
+              name: 'National Government Services Portal (Direct Directory)',
+              url: 'https://services.india.gov.in',
+              verified: true,
+            },
+          ],
+          disclaimer: MANDATORY_LEGAL_DISCLAIMER,
+        },
+        serviceId: null,
+        suggestions: [
+          'How to apply for a Passport?',
+          'What documents are needed for Driving License?',
+          'How to register a Birth Certificate?',
+        ],
+      };
+    }
+  }
+
   // 1. Perform Source-Grounded Retrieval without biasing BM25 on redaction tag labels
   const retrieval = retrieveGroundedChunks(retrievalQuery, options);
 
@@ -70,6 +117,34 @@ export async function askGroundedCivicAssistant(query, options = {}) {
       status: 'unsupported',
       grounded: false,
       confidenceScore: retrieval.confidenceScore,
+      provenance: {
+        version: '1.0.0',
+        status: 'UNSUPPORTED',
+        claims: [],
+        unsupportedClaims: [
+          {
+            claimId: 'claim-unsupported-0',
+            text: sanitizedQuery,
+            status: 'UNKNOWN',
+            reason: 'No verified official government documentation found for this question.',
+          },
+        ],
+        overallGrounded: false,
+        jurisdiction: {
+          requestedCode: options.jurisdictionCode || null,
+          resolvedLevel: 'unknown',
+          isStateSpecific: false,
+        },
+      },
+      claims: [],
+      unsupportedClaims: [
+        {
+          claimId: 'claim-unsupported-0',
+          text: sanitizedQuery,
+          status: 'UNKNOWN',
+          reason: 'No verified official government documentation found for this question.',
+        },
+      ],
       guardrail: {
         decision: preGuardrail.decision,
         pii: preGuardrail.pii,
@@ -111,6 +186,24 @@ export async function askGroundedCivicAssistant(query, options = {}) {
     retrieval.retrievedChunks
   );
 
+  const proposalCheck = evaluateAssistantProposal({
+    summary: primarySummary,
+    citations: retrieval.sources,
+    humanApproved: options.humanApproved === true,
+  });
+
+  // Generate high-precision claim-level provenance
+  let provenance;
+  try {
+    provenance = await generateGuidanceWithProvenance({
+      query: retrievalQuery,
+      jurisdictionCode: options.jurisdictionCode || null,
+      referenceTimestamp: options.referenceTimestamp || Date.now(),
+    });
+  } catch {
+    provenance = null;
+  }
+
   // Generate contextual suggestions
   const serviceName = topChunk.serviceName;
   const suggestions = [
@@ -124,6 +217,23 @@ export async function askGroundedCivicAssistant(query, options = {}) {
     grounded: retrieval.grounded && entailment.contradictedCount === 0,
     confidenceScore: retrieval.confidenceScore,
     entailment,
+    firewall: firewallResult
+      ? {
+          contractVersion: firewallResult.contractVersion,
+          sourceId: firewallResult.sourceId,
+          sourceType: firewallResult.sourceType,
+          decision: firewallResult.decision,
+          counts: firewallResult.counts,
+          threatClasses: firewallResult.threatClasses,
+          redactedCategories: firewallResult.redactedCategories,
+          isolatedEvidenceEnvelope: firewallResult.isolatedEvidenceEnvelope,
+          telemetryEvent: firewallResult.telemetryEvent,
+          proposalCheck,
+        }
+      : null,
+    provenance,
+    claims: provenance?.claims || entailment.claims || [],
+    unsupportedClaims: provenance?.unsupportedClaims || [],
     guardrail: {
       decision: preGuardrail.decision,
       pii: preGuardrail.pii,
