@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Search, BookOpen, ExternalLink, ShieldCheck, ShieldAlert, MessageSquarePlus, Send, CheckCircle } from 'lucide-react';
-import { searchGlossary } from '../../data/civicGlossary.js';
+import { searchGlossaryWithTypos, GLOSSARY_QUERY_MAX_LENGTH } from '../../data/civicGlossary.js';
 import { submitGlossarySuggestion } from '../../services/civicGlossaryService.js';
 import { useLanguage } from '../../context/LanguageContext';
 import { useToast } from '../../context/ToastContext';
@@ -36,7 +36,7 @@ const CivicGlossaryModal = ({
 
   if (!isOpen) return null;
 
-  const results = searchGlossary(searchTerm);
+  const { results, isCloseMatch } = searchGlossaryWithTypos(searchTerm);
 
   const handleSuggestionSubmit = (e) => {
     e.preventDefault();
@@ -141,6 +141,8 @@ const CivicGlossaryModal = ({
             className="input-field"
             placeholder="Search jargon or abbreviation (e.g., NOC, EWS, IFSC, MICR, affidavit, encumbrance)..."
             value={searchTerm}
+            maxLength={GLOSSARY_QUERY_MAX_LENGTH}
+            aria-label="Search glossary terms"
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ border: 'none', background: 'transparent', padding: '0.2rem', width: '100%', outline: 'none' }}
           />
@@ -238,6 +240,10 @@ const CivicGlossaryModal = ({
             </form>
           </div>
         )}
+
+        <p role="status" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: isCloseMatch ? '0 0 0.75rem' : 0 }}>
+          {isCloseMatch ? `No exact match for "${searchTerm.trim()}". Showing close spellings.` : ''}
+        </p>
 
         {/* Terms list */}
         <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', paddingRight: '0.25rem' }}>
