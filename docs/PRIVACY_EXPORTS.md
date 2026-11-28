@@ -28,6 +28,17 @@ Empty arrays mean no attributable account-owned records were available in that c
 Legacy browser records without an owner identifier are deliberately omitted because the
 application cannot safely infer which account created them.
 
+## CSV format
+
+The download can also be saved as CSV. The browser converts the securely downloaded JSON, so
+the authorisation, field allowlists and single-use link are the same for both formats.
+
+- One table with the columns `category`, `record`, `field` and `value`; list fields have one
+  row per item. `user` and `meta` are only in the JSON file.
+- Every cell is quoted. Text that a spreadsheet would read as a formula (starting with `=`,
+  `+`, `-`, `@`, a tab or a carriage return) is prefixed with an apostrophe.
+- The file starts with a UTF-8 byte order mark so non-English text displays correctly.
+
 ## Security and lifecycle
 
 - Both export creation and download require a Clerk session whose `fva` factor-verification
