@@ -1137,14 +1137,14 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
               })}
 
               {renderNavLink({
-
                 to: '/evidence-bundles',
                 label: 'Evidence Bundles',
+                icon: FolderLock
+              })}
 
-
+              {renderNavLink({
                 to: '/data-clean-room',
                 label: 'Data Clean Room',
-
                 icon: Shield
               })}
 
@@ -1375,6 +1375,9 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 activeTarget: '/traffic-echallan-workspace',
                 label: t('nav.trafficChallan', 'E-Challan Dispute'),
                 icon: Car
+              })}
+
+              {renderNavLink({
                 to: '/food-safety-workspace',
                 activeTarget: '/food-safety-workspace',
                 label: t('nav.foodSafetyWorkspace', 'Food Safety Redressal'),
