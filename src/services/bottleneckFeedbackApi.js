@@ -17,11 +17,28 @@ export async function feedbackRequest({ method = 'GET', body, query = '', key, g
   return response.json();
 }
 
+export const FEEDBACK_ATTACHMENT_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
+export const MAX_FEEDBACK_ATTACHMENT_BYTES = 256 * 1024;
+
+const sizeLabel = (bytes) => `${Math.ceil(bytes / 1024)} KB`;
+
+/** Returns what is wrong with a chosen file in plain words, or '' when it can be attached. */
+export function checkFeedbackAttachment(file) {
+  if (!file) return '';
+  if (!FEEDBACK_ATTACHMENT_TYPES.includes(file.type)) {
+    return `"${file.name}" cannot be attached. Choose a PNG, JPEG or PDF file.`;
+  }
+  if (file.size < 1) return `"${file.name}" is empty. Choose a file with content.`;
+  if (file.size > MAX_FEEDBACK_ATTACHMENT_BYTES) {
+    return `"${file.name}" is ${sizeLabel(file.size)}. The limit is ${sizeLabel(MAX_FEEDBACK_ATTACHMENT_BYTES)}; crop or compress it and choose it again.`;
+  }
+  return '';
+}
+
 export async function encodeFeedbackAttachment(file) {
   if (!file) return null;
-  if (file.size < 1 || file.size > 256 * 1024 || !['image/png', 'image/jpeg', 'application/pdf'].includes(file.type)) {
-    throw new Error('Choose a PNG, JPEG or PDF between 1 byte and 256 KB.');
-  }
+  const problem = checkFeedbackAttachment(file);
+  if (problem) throw new Error(problem);
   const bytes = new Uint8Array(await file.arrayBuffer());
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
