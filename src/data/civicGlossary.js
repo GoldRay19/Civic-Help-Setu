@@ -472,3 +472,54 @@ export const searchAllGlossaryAndMemory = (query = '') => {
 
   return { glossary: glossaryResults, translationMemory: memoryResults };
 };
+
+export const GLOSSARY_QUERY_MAX_LENGTH = 80;
+
+const toWords = (value) => value.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u).filter(Boolean);
+
+// Words shorter than 4 letters must match exactly: one edit turns "EC" into another acronym.
+const allowedTypos = (word) => (word.length < 4 ? 0 : word.length < 7 ? 1 : 2);
+
+/** Edit distance where swapping two neighbouring letters counts as one typo. */
+const editDistance = (a, b) => {
+  const rows = [Array.from({ length: b.length + 1 }, (_, j) => j)];
+  for (let i = 1; i <= a.length; i += 1) {
+    rows.push([i]);
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let best = Math.min(rows[i - 1][j] + 1, rows[i][j - 1] + 1, rows[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        best = Math.min(best, rows[i - 2][j - 2] + 1);
+      }
+      rows[i].push(best);
+    }
+  }
+  return rows[a.length][b.length];
+};
+
+/**
+ * `searchGlossary`, falling back to close spellings of term names and
+ * abbreviations when nothing matches as typed. `isCloseMatch` tells the UI to
+ * say so. Definitions are never guessed: only curated entries are returned.
+ */
+export const searchGlossaryWithTypos = (query = '') => {
+  const exact = searchGlossary(query);
+  if (exact.length > 0 || typeof query !== 'string' || query.length > GLOSSARY_QUERY_MAX_LENGTH) {
+    return { results: exact, isCloseMatch: false };
+  }
+
+  const queryWords = toWords(query);
+  const scored = CIVIC_GLOSSARY.map((item) => {
+    const words = toWords([item.id, item.term, ...(item.abbreviations || [])].join(' '));
+    let score = 0;
+    for (const queryWord of queryWords) {
+      const closest = Math.min(...words.map((word) => editDistance(queryWord, word)));
+      if (closest > allowedTypos(queryWord)) return null;
+      score += closest;
+    }
+    return { item, score };
+  }).filter(Boolean);
+
+  const results = queryWords.length ? scored.sort((a, b) => a.score - b.score).map(({ item }) => item) : [];
+  return { results, isCloseMatch: results.length > 0 };
+};
