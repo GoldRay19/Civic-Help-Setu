@@ -5,7 +5,7 @@ import {
   readChecklist,
   writeChecklist,
 } from './checklistStorage';
-import { setCurrentActor } from './accessControl';
+import { setCurrentActor, subscribeActor } from './accessControl';
 
 const makeStorage = () => {
   const data = new Map();
@@ -80,6 +80,7 @@ describe('readChecklist / writeChecklist', () => {
       ok: false,
       reason: 'forbidden',
     });
+    setCurrentActor({ id: 'alice' });
     expect(readChecklist('private-list', storage).checked).toEqual(['Task']);
   });
 });
@@ -209,5 +210,55 @@ describe('createChecklistSession', () => {
     expect(session.getState()).toEqual({ checked: ['Affidavit'], status: 'idle' });
     expect(queue).toHaveLength(0);
     expect(storage.setItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('saved progress across accounts', () => {
+  const savedByAlice = () => {
+    const storage = makeStorage();
+    setCurrentActor({ id: 'alice' });
+    writeChecklist('SRV-1', ['Affidavit'], 0, storage);
+    return storage;
+  };
+
+  it('comes back for the same account in a new session', () => {
+    const storage = savedByAlice();
+    expect(makeSession(storage).session.getState()).toEqual({ checked: ['Affidavit'], status: 'idle' });
+  });
+
+  it.each([['another account', { id: 'bob' }], ['a signed-out visitor', null]])(
+    'is hidden from %s',
+    (_, actor) => {
+      const storage = savedByAlice();
+      setCurrentActor(actor);
+      expect(readChecklist('SRV-1', storage)).toEqual({ checked: [], rev: 0 });
+      expect(makeSession(storage).session.getState()).toEqual({ checked: [], status: 'forbidden' });
+    }
+  );
+
+  it('keeps ticks in memory without overwriting the owner', () => {
+    const storage = savedByAlice();
+    setCurrentActor({ id: 'bob' });
+    const { session, queue } = makeSession(storage);
+    session.toggle('Salary slips');
+
+    expect(session.getState()).toEqual({ checked: ['Salary slips'], status: 'forbidden' });
+    expect(queue).toHaveLength(0);
+    setCurrentActor({ id: 'alice' });
+    expect(readChecklist('SRV-1', storage).checked).toEqual(['Affidavit']);
+  });
+
+  it('tells subscribers when the account changes, but not on a repeat', async () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeActor(listener);
+    setCurrentActor({ id: 'alice' });
+    await Promise.resolve();
+    setCurrentActor({ id: 'alice' });
+    await Promise.resolve();
+    unsubscribe();
+    setCurrentActor({ id: 'bob' });
+    await Promise.resolve();
+
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });

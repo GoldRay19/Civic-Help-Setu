@@ -38,9 +38,21 @@ const cleanLabels = (value) =>
     ? [...new Set(value.filter((v) => typeof v === 'string'))]
     : [];
 
+const ownerOf = (entry) => entry?.ownerUserId || entry?.userId || null;
+
+const belongsToAnotherAccount = (entry) => {
+  const owner = ownerOf(entry);
+  return Boolean(owner) && owner !== (getCurrentActor()?.id || null);
+};
+
+// False when the saved progress for `id` was written by a different account.
+export const canAccessChecklist = (id, storage = getDefaultStorage()) =>
+  !id || !storage || !belongsToAnotherAccount(readMap(storage)[id]);
+
 export const readChecklist = (id, storage = getDefaultStorage()) => {
   if (!id || !storage) return { checked: [], rev: 0 };
   const entry = readMap(storage)[id];
+  if (belongsToAnotherAccount(entry)) return { checked: [], rev: 0 };
   const rev = Number.isInteger(entry?.rev) && entry.rev >= 0 ? entry.rev : 0;
   return { checked: cleanLabels(entry?.checked), rev };
 };
@@ -59,8 +71,8 @@ export const writeChecklist = (
     const map = readMap(storage);
     const actorId = getCurrentActor()?.id || null;
     const existing = map[id];
-    const existingOwner = existing?.ownerUserId || existing?.userId || null;
-    if (existingOwner && existingOwner !== actorId) {
+    const existingOwner = ownerOf(existing);
+    if (belongsToAnotherAccount(existing)) {
       return { ok: false, reason: 'forbidden' };
     }
     const current = readChecklist(id, storage);
@@ -108,7 +120,9 @@ const sameLabels = (a, b) =>
 
 /**
  * Small state machine around a checklist.
- * status: idle | saving | saved | error | conflict | updated
+ * status: idle | saving | saved | error | conflict | updated | forbidden
+ *    (forbidden: saved by another account; none of it is shown and new ticks
+ *    stay in memory)
  *  - toggles are applied to the UI immediately and written together on the
  *    next scheduled tick, so rapid clicks collapse into one write and the
  *    final status always describes the final state;
@@ -141,7 +155,7 @@ export const createChecklistSession = ({
     snapshot = { checked: [...desired], status };
     listeners.forEach((fn) => fn());
   };
-  publish('idle');
+  publish(persisted && !canAccessChecklist(id, storage) ? 'forbidden' : 'idle');
 
   const flush = () => {
     scheduled = false;
@@ -154,7 +168,7 @@ export const createChecklistSession = ({
       latest = result.state;
       publish('conflict');
     } else {
-      publish('error');
+      publish(result.reason === 'forbidden' ? 'forbidden' : 'error');
     }
   };
 
@@ -184,7 +198,8 @@ export const createChecklistSession = ({
       desired = desired.includes(label)
         ? desired.filter((l) => l !== label)
         : [...desired, label];
-      if (persisted) requestSave();
+      if (snapshot.status === 'forbidden') publish('forbidden');
+      else if (persisted) requestSave();
       else publish('idle');
     },
     retry: () => {

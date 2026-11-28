@@ -118,9 +118,22 @@ export class PermissionDeniedError extends Error {
 
 let currentActor = null;
 
+const actorListeners = new Set();
+
 /** Called by AuthProvider whenever the signed-in user changes. Pass null when signed out. */
 export const setCurrentActor = (user) => {
+  const previousId = currentActor?.id ?? null;
   currentActor = user && typeof user === 'object' ? user : null;
+  if ((currentActor?.id ?? null) !== previousId) {
+    // Deferred: AuthProvider calls this while rendering.
+    queueMicrotask(() => actorListeners.forEach((listener) => listener()));
+  }
+};
+
+/** Notifies when a different account signs in or out. Returns an unsubscribe function. */
+export const subscribeActor = (listener) => {
+  actorListeners.add(listener);
+  return () => actorListeners.delete(listener);
 };
 
 export const getCurrentActor = () => currentActor;
