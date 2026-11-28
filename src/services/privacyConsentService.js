@@ -70,6 +70,9 @@ export const USER_DATA_STORES = [
   { key: 'civicbridge_checklists', category: 'drafts', exportAs: 'checklistProgress', empty: {} }, // checklistStorage.js
   { key: 'civic_accessibility_visit_plans', category: 'drafts', exportAs: 'accessibilityVisitPlans', empty: {} }, // accessibilityPlannerService.js
   { key: 'civic_grievance_evidence_drafts', category: 'drafts', exportAs: 'grievanceEvidenceDrafts', empty: [] }, // grievanceEvidenceService.js
+  { key: 'civic_evidence_bundles_v1', category: 'drafts', exportAs: 'verifiableEvidenceBundles', empty: [] }, // verifiableEvidenceBundleStorage.js
+  { key: 'civic_evidence_bundle_files_v1', category: 'drafts', exportAs: 'verifiableEvidenceBundleFiles', empty: {} }, // verifiableEvidenceBundleStorage.js
+  { key: 'civic_evidence_bundle_audits_v1', category: 'drafts', exportAs: 'verifiableEvidenceBundleAudits', empty: [] }, // verifiableEvidenceBundleStorage.js
   { key: 'civic_glossary_suggestions', category: 'activity', exportAs: 'glossarySuggestions', empty: [] }, // civicGlossaryService.js
   { key: 'civic_life_event_journeys', category: 'drafts', exportAs: 'lifeEventJourneys', empty: {} }, // lifeEventNavigatorService.js
   { key: 'civicbridge_community_audits', category: 'activity', exportAs: null }, // communityAuditService.js
@@ -298,6 +301,10 @@ export const RETAINED_STORAGE_KEYS = [
   'civicbridge_tree_rate_limit_v1',
   'civicbridge_tree_migration_backup_v1',
   'civicbridge_trees_v1',
+  // Civic Workflow Digital Twin simulation twin and maintainer audit logs (#1157)
+  'civicbridge_digital_twin_workflows_v1',
+  'civicbridge_digital_twin_simulations_v1',
+  'civicbridge_digital_twin_audit_logs_v1',
 
   // Municipal heatwave cooling-relief register and rate-limit guard (#983)
   'civicbridge_up_heat_relief_facilities_v1',
@@ -344,7 +351,6 @@ export const RETAINED_STORAGE_KEYS = [
   'civic_relief_audit_logs_v1',
   'civic_relief_archive_v1',
   'civic_relief_meta_v1',
-
   // Handled by purge itself: consents are reset, the audit log keeps the deletion receipt
   CONSENT_STORAGE_KEY,
   AUDIT_STORAGE_KEY,
