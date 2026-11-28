@@ -262,6 +262,7 @@ export const rankAndFilterServices = (
     category = 'All',
     department = 'All',
     mode = 'All',
+    eligibility = '',
     difficulty = 'All',
     feeType = 'All',
     speedFilter = 'All',
@@ -291,6 +292,17 @@ export const rankAndFilterServices = (
       if (mode === 'Hybrid') return type.includes('hybrid') || (type.includes('online') && type.includes('offline'));
       return true;
     });
+  }
+
+  // 3b. Eligibility: every typed word must appear in one of the published eligibility lines
+  const eligibilityWords = eligibility.toLowerCase().split(/\s+/).filter(Boolean);
+  if (eligibilityWords.length > 0) {
+    result = result.filter((s) =>
+      (Array.isArray(s.eligibility) ? s.eligibility : []).some((line) => {
+        const text = String(line).toLowerCase();
+        return eligibilityWords.every((word) => text.includes(word));
+      })
+    );
   }
 
   // 4. Difficulty Filter
