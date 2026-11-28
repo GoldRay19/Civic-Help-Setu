@@ -4,6 +4,7 @@ import {
   CHECKLIST_STORAGE_KEY,
   createChecklistSession,
 } from '../services/checklistStorage';
+import { getCurrentActor, subscribeActor } from '../services/accessControl';
 import { summarizeRequirementProgress } from '../services/requirementTypes';
 import RequirementNote from './RequirementNote';
 
@@ -11,6 +12,8 @@ const STATUS_TEXT = {
   saving: 'Saving...',
   saved: 'All changes saved.',
   updated: 'Updated from another tab or window.',
+  forbidden:
+    'Progress saved here belongs to another account. Your ticks are not being saved.',
 };
 
 // `items` is an array of labels. Pass `checklistId` to save progress in the
@@ -20,10 +23,13 @@ const STATUS_TEXT = {
 // counts official requirements only.
 const Checklist = ({ items = [], checklistId, label = 'Checklist', requirements }) => {
   const itemsKey = items.join('\u0000');
+  const getActorId = () => getCurrentActor()?.id ?? null;
+  // Saved progress is per account, so start over when the account changes.
+  const actorId = useSyncExternalStore(subscribeActor, getActorId, getActorId);
   const session = useMemo(
     () => createChecklistSession({ id: checklistId, items }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [checklistId, itemsKey]
+    [checklistId, itemsKey, actorId]
   );
 
   const { checked, status } = useSyncExternalStore(
