@@ -151,6 +151,23 @@ retention, migrations, rollback, environment variables, operational limits and
 the manual fallback are documented in
 [docs/micro-volunteer-task-board.md](docs/micro-volunteer-task-board.md).
 
+Offline Emergency Civic Information Card (#761) — verified local contacts,
+offline install/refresh, stale warnings, optimistic concurrency, reviewer
+workflow, deterministic recommendations, retention and rollback:
+```bash
+npx vitest run src/services/offlineEmergencyCardService.test.js       # public card, offline lifecycle, workflow, RBAC, security
+npx vitest run src/services/offlineEmergencyCardMigrations.test.js    # empty/legacy migration, indexes, retention, rollback
+npx vitest run src/services/offlineEmergencyCardAccessControl.test.js # roles, capabilities and jurisdiction scoping
+npx vitest run src/pages/OfflineEmergencyCardWorkspace.test.jsx       # workspace states and accessibility semantics
+npx vitest run src/components/offlineEmergencyCard/OfflineEmergencyCardContactForm.test.jsx # form validation
+npx vitest run src/components/offlineEmergencyCard/OfflineEmergencyCardViews.test.jsx # installed card and source form states
+```
+
+Architecture, collections, state machine, role matrix, deterministic ruleset,
+retention, migrations, rollback, environment, official data sources and the
+manual fallback are documented in
+[docs/offline-emergency-civic-card.md](docs/offline-emergency-civic-card.md).
+
 ## Security checks
 Every PR runs a secret scan, a dependency audit and a lint for unsafe HTML/JS patterns. Locally:
 ```bash
@@ -176,3 +193,11 @@ records alongside the schema. See [Civic data quality contracts](docs/CIVIC_DATA
 for supported entities, the existing import integration, limits and rollback.
 
 Regional directory device-local review, history, limits and rollout: [docs/REGIONAL_SERVICE_DIRECTORY.md](docs/REGIONAL_SERVICE_DIRECTORY.md).
+
+## Internal civic event contract changes
+
+Use the existing bus and the `events` section of the shared registry rather than
+creating another event system. Run `npm run contracts:check -- --base <full-base-commit-sha>`
+and the generated sample, real CLI and bus integration tests described in
+[the event contract runbook](docs/CIVIC_EVENT_CONTRACTS.md). Retain published
+versions, owned change history and consumer migration records.

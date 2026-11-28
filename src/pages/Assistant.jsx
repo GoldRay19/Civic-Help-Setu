@@ -1,11 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { parseAssistantQuery, parseSlugParam } from '../utils/searchParams';
 import { useLocation, Link } from 'react-router-dom';
-import { Send, AlertCircle, Loader2, Sparkles, Mic, MicOff, BookOpen, RefreshCw, Pencil, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Send, AlertCircle, Loader2, Sparkles, Mic, MicOff, BookOpen, RefreshCw, Pencil, ShieldCheck, ShieldAlert, Info } from 'lucide-react';
+import { LanguageContext } from '../context/LanguageContext';
+import {
+  VOICE_SUPPORTED_LANGUAGES,
+  voiceLangFromAppLocale,
+  readVoiceConsent,
+  writeVoiceConsent,
+  queryMicrophonePermission,
+  classifyRecognitionError,
+  extractSpeechTranscript,
+} from '../utils/voiceSearch';
 import { runPreInferenceGuardrails } from '../ai/aiGuardrailPipeline';
-import { askCivicAssistant } from '../ai/civicAssistant';
 import { askGroundedCivicAssistant } from '../ai/groundedCivicAssistant';
+import { runCivicAgentPipeline } from '../ai/agents/agentOrchestrator';
+import AgentContractBadge from '../components/assistant/AgentContractBadge';
 import SourceGroundedBadge from '../components/assistant/SourceGroundedBadge';
+import ModelGatewayBadge from '../components/assistant/ModelGatewayBadge';
+import { executeModelGateway } from '../services/gateway/modelGatewayService';
 import SourcesAndLimitations from '../components/assistant/SourcesAndLimitations';
 import ChatHeaderControls from '../components/chat/ChatHeaderControls';
 import VoiceInputStatus from '../components/chat/VoiceInputStatus';
@@ -30,19 +43,58 @@ import { logDiagnostic } from '../utils/diagnostics';
 import { getAllServices } from '../services/serviceCatalog';
 import { queryCivicKnowledge } from '../services/groundedCivicRagService';
 import SourceTraceabilityPanel from '../components/assistant/SourceTraceabilityPanel';
+import FirewallInspectionPanel from '../components/assistant/FirewallInspectionPanel';
+import DurableWorkflowPanel from '../components/assistant/DurableWorkflowPanel';
+import ClaimProvenanceGuidance from '../components/assistant/ClaimProvenanceGuidance';
+
+import {
+  createReviewStudioStore,
+  buildReviewProposalFromAssistantResponse,
+} from '../services/agentReviewStudioService';
+
+import CaseMemoryInspectionModal from '../components/assistant/CaseMemoryInspectionModal';
+import { caseMemoryEngine } from '../services/agentMemory/caseMemoryEngine';
+import GovernedToolActionsPanel from '../components/assistant/GovernedToolActionsPanel';
 
 const Assistant = () => {
+  const languageContext = useContext(LanguageContext);
   const [messages, setMessages] = useState(() => loadChatHistory());
+  const [flaggedReviewIds, setFlaggedReviewIds] = useState({});
+
+  const handleFlagForReview = (msg) => {
+    try {
+      const store = createReviewStudioStore();
+      const proposal = buildReviewProposalFromAssistantResponse(
+        msg.data?.title || 'Civic guidance inquiry',
+        msg
+      );
+      store.submitProposal({ ...proposal, idempotencyKey: `asst-flag-${msg.id}` });
+      setFlaggedReviewIds((prev) => ({ ...prev, [msg.id]: true }));
+    } catch (err) {
+      logDiagnostic('Failed to flag assistant response for review', err);
+    }
+  };
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState('');
+  const [voiceLanguage, setVoiceLanguage] = useState(() =>
+    voiceLangFromAppLocale(languageContext?.language || 'en')
+  );
+  const [hasVoiceConsent, setHasVoiceConsent] = useState(() => readVoiceConsent());
+  const [showVoiceConsent, setShowVoiceConsent] = useState(false);
+  const [showVoiceLimitations, setShowVoiceLimitations] = useState(false);
+  const [hasVoiceTranscript, setHasVoiceTranscript] = useState(false);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const inputRef = useRef(null);
   const [failedQuery, setFailedQuery] = useState(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showExternalDoc, setShowExternalDoc] = useState(false);
+  const [externalDocText, setExternalDocText] = useState('');
+  const [externalDocType, setExternalDocType] = useState('uploaded_pdf');
+  const [showCaseMemoryModal, setShowCaseMemoryModal] = useState(false);
   // Messages cleared by "New conversation", kept in memory only for the undo window
   const [undoSnapshot, setUndoSnapshot] = useState(null);
   const undoNoticeRef = useRef(null);
@@ -53,10 +105,25 @@ const Assistant = () => {
   const urlServiceId = parseSlugParam(new URLSearchParams(location.search).get('service') || new URLSearchParams(location.search).get('serviceId'));
   const [overrideServiceId, setOverrideServiceId] = useState(null);
 
+  const currentServiceContextId = overrideServiceId !== null
+    ? (overrideServiceId || null)
+    : (urlServiceId || location.state?.serviceId || (!hasUserMessages(messages) ? null : lastAssistantServiceId(messages)));
+  const currentCaseId = currentServiceContextId ? `case-${currentServiceContextId}` : 'general-consultation';
+
   // Save messages to persistent storage whenever they update
   useEffect(() => {
     saveChatHistory(messages);
   }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        recognitionRef.current?.abort?.();
+      } catch {
+        // Safe ignore on unmount
+      }
+    };
+  }, []);
 
   const getAnswer = async (query, history) => {
     // Short follow-ups like "what are the fees?" reuse the service from the last answer
@@ -75,12 +142,35 @@ const Assistant = () => {
     }
 
     let response;
+    let gatewayMeta = null;
+
     try {
-      response = await askGroundedCivicAssistant(safeQuery);
+      const searchParams = new URLSearchParams(location.search);
+      const jurisdictionParam = searchParams.get('state') || searchParams.get('jurisdiction') || null;
+      response = await askGroundedCivicAssistant(safeQuery, {
+        jurisdictionCode: jurisdictionParam,
+        ...(externalDocument ? { externalDocument } : {}),
+      });
     } catch (groundingErr) {
-      logDiagnostic('Grounded retrieval error, falling back to basic assistant:', groundingErr);
-      response = await askCivicAssistant(safeQuery);
+      logDiagnostic('Grounded retrieval error, falling back to model gateway:', groundingErr);
+
+      try {
+        const gatewayRes = await executeModelGateway({ query: safeQuery });
+        gatewayMeta = gatewayRes.meta || null;
+        response = gatewayRes;
+      } catch (gatewayErr) {
+        logDiagnostic('Model Gateway error, falling back to civic agent pipeline:', gatewayErr);
+        try {
+          response = await runCivicAgentPipeline(safeQuery, {
+            serviceContextId: currentServiceContextId,
+          });
+        } catch (pipelineErr) {
+          logDiagnostic('Civic agent pipeline error, falling back to basic assistant:', pipelineErr);
+          response = await askCivicAssistant(safeQuery);
+        }
+      }
     }
+
     return {
       id: `asst-${Date.now()}`,
       role: 'assistant',
@@ -95,6 +185,12 @@ const Assistant = () => {
       suggestions: response.suggestions || [],
       guardrail: response.guardrail || null,
       entailment: response.entailment || null,
+      firewall: response.firewall || null,
+      provenance: response.provenance || null,
+      claims: response.claims || [],
+      unsupportedClaims: response.unsupportedClaims || [],
+      contractMeta: response.contractMeta || null,
+      gatewayMeta,
       timestamp: new Date().toISOString(),
     };
   };
@@ -126,14 +222,44 @@ const Assistant = () => {
       };
       setMessages((prev) => [...prev, userMessage]);
     }
+    const externalDocument = externalDocText.trim()
+      ? {
+          contractVersion: '1.0.0',
+          sourceType: externalDocType,
+          sourceId: externalDocType === 'uploaded_pdf' ? 'user-uploaded-pdf' : 'user-external-web',
+          content: externalDocText.trim(),
+        }
+      : null;
+
     setInput('');
+    setExternalDocText('');
+    setShowExternalDoc(false);
+    setHasVoiceTranscript(false);
     setIsLoading(true);
     setError(null);
     setFailedQuery(null);
 
     try {
-      const assistantMessage = await getAnswer(safeQuery, history);
+      const assistantMessage = await getAnswer(safeQuery, history, externalDocument);
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // Automatically stage model proposal in case-isolated memory if structured guidance is returned
+      if (assistantMessage.data?.title || assistantMessage.data?.summary) {
+        const targetCaseId = assistantMessage.serviceId
+          ? `case-${assistantMessage.serviceId}`
+          : currentCaseId;
+        caseMemoryEngine
+          .recordModelProposal({
+            tenantId: 'default',
+            caseId: targetCaseId,
+            title: assistantMessage.data.title || 'Civic Guidance Proposal',
+            text: assistantMessage.data.summary || assistantMessage.text || '',
+            category: 'ACTION_STEP',
+            citationIds: assistantMessage.retrievedChunks?.map((c) => c.id || c.source) || [],
+            confidenceScore: assistantMessage.confidenceScore || 0.8,
+          })
+          .catch((err) => logDiagnostic('Failed to record model proposal to case memory', err));
+      }
     } catch (err) {
       logDiagnostic('Assistant request failed', err);
       setError("We couldn't process your request. Please try again.");
@@ -188,27 +314,26 @@ const Assistant = () => {
     inputRef.current?.focus();
   };
 
-  const toggleVoiceInput = () => {
+  const startVoiceRecognition = () => {
     setVoiceError('');
+    setShowVoiceConsent(false);
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setVoiceError('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+      setVoiceError(classifyRecognitionError('unsupported').message);
       return;
     }
 
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
-    }
+    let gotTranscript = false;
+    let hadError = false;
+    let stoppedManually = false;
 
     try {
       const recognition = new SpeechRecognition();
       recognitionRef.current = recognition;
       recognition.continuous = false;
       recognition.interimResults = true;
-      recognition.lang = 'en-IN';
+      recognition.lang = voiceLanguage || 'en-IN';
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -216,32 +341,80 @@ const Assistant = () => {
       };
 
       recognition.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map((result) => result[0].transcript)
-          .join('');
-        setInput(transcript);
+        const extracted = extractSpeechTranscript(event);
+        if (!extracted.isEmpty) {
+          gotTranscript = true;
+          setInput(extracted.transcript);
+          setHasVoiceTranscript(true);
+        } else if (extracted.isFinal && !gotTranscript) {
+          setVoiceError(classifyRecognitionError('no-speech').message);
+        }
       };
 
       recognition.onerror = (event) => {
         console.error('Speech error:', event.error);
-        if (event.error === 'not-allowed') {
-          setVoiceError('Microphone permission was denied. Please allow microphone access in your browser.');
-        } else if (event.error !== 'no-speech') {
-          setVoiceError(`Voice recognition error: ${event.error}`);
-        }
+        hadError = true;
+        const classified = classifyRecognitionError(event.error);
+        setVoiceError(classified.message);
         setIsListening(false);
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        if (!gotTranscript && !hadError && !stoppedManually) {
+          setVoiceError(classifyRecognitionError('no-speech').message);
+        }
+        if (gotTranscript) {
+          inputRef.current?.focus();
+        }
+      };
+
+      recognition._markManualStop = () => {
+        stoppedManually = true;
       };
 
       recognition.start();
     } catch (err) {
       logDiagnostic('Failed to initialize speech recognition:', err);
-      setVoiceError('Could not start microphone recording. Please check browser settings.');
+      setVoiceError('Could not start microphone recording. Please check browser settings or type manually.');
       setIsListening(false);
     }
+  };
+
+  const toggleVoiceInput = async () => {
+    setVoiceError('');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceError(classifyRecognitionError('unsupported').message);
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?._markManualStop?.();
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const perm = await queryMicrophonePermission();
+    if (perm.state === 'denied') {
+      setVoiceError(classifyRecognitionError('not-allowed').message);
+      return;
+    }
+
+    if (!hasVoiceConsent) {
+      setShowVoiceConsent(true);
+      return;
+    }
+
+    startVoiceRecognition();
+  };
+
+  const handleConfirmVoiceConsent = () => {
+    writeVoiceConsent(true);
+    setHasVoiceConsent(true);
+    startVoiceRecognition();
   };
 
   const handleNewConversationClick = () => {
@@ -267,9 +440,6 @@ const Assistant = () => {
   };
 
   const questionCount = messages.filter((m) => m.role === 'user').length;
-  const currentServiceContextId = overrideServiceId !== null
-    ? (overrideServiceId || null)
-    : (urlServiceId || location.state?.serviceId || (!hasUserMessages(messages) ? null : lastAssistantServiceId(messages)));
 
   const renderAssistantContent = (msg) => {
     if (msg.text && !msg.data) {
@@ -280,11 +450,15 @@ const Assistant = () => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <SourceGroundedBadge
-          grounded={msg.grounded ?? (msg.serviceId !== null)}
-          confidenceScore={msg.confidenceScore ?? 0.85}
-          sourcesCount={data.officialSources?.length || (msg.retrievedChunks?.length || 1)}
-        />
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <SourceGroundedBadge
+            grounded={msg.grounded ?? (msg.serviceId !== null)}
+            confidenceScore={msg.confidenceScore ?? 0.85}
+            sourcesCount={data.officialSources?.length || (msg.retrievedChunks?.length || 1)}
+          />
+          {msg.gatewayMeta && <ModelGatewayBadge meta={msg.gatewayMeta} />}
+        </div>
+        <AgentContractBadge contractMeta={msg.contractMeta} />
 
         {(msg.status === 'blocked' || msg.guardrail?.injection?.blocked) && (
           <div
@@ -307,6 +481,8 @@ const Assistant = () => {
             <span>AI Safety Guardrail: Request blocked before inference</span>
           </div>
         )}
+
+        {msg.firewall && <FirewallInspectionPanel firewall={msg.firewall} />}
 
         {msg.entailment && (msg.entailment.verifiedCount > 0 || !msg.entailment.overallSupported) && (
           <div
@@ -339,6 +515,24 @@ const Assistant = () => {
                 ? `Entailment Check: Verified (${msg.entailment.verifiedCount} claim${msg.entailment.verifiedCount === 1 ? '' : 's'})`
                 : `Entailment Caution: ${msg.entailment.unsupportedCount + msg.entailment.contradictedCount} unverified/conflicting claim(s)`}
             </span>
+            <button
+              type="button"
+              onClick={() => handleFlagForReview(msg)}
+              disabled={Boolean(flaggedReviewIds[msg.id])}
+              style={{
+                marginLeft: 'auto',
+                padding: '0.2rem 0.55rem',
+                borderRadius: '0.4rem',
+                border: '1px solid currentColor',
+                background: 'transparent',
+                color: 'inherit',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: flaggedReviewIds[msg.id] ? 'default' : 'pointer',
+              }}
+            >
+              {flaggedReviewIds[msg.id] ? 'Sent to Review Studio' : 'Flag for Human Review'}
+            </button>
           </div>
         )}
 
@@ -422,9 +616,28 @@ const Assistant = () => {
           </div>
         )}
 
+        {/* Claim-Level Source Provenance & Passages (#1154) */}
+        {(msg.provenance || (msg.claims && msg.claims.length > 0)) && (
+          <ClaimProvenanceGuidance
+            provenance={msg.provenance}
+            claims={msg.claims}
+            unsupportedClaims={msg.unsupportedClaims}
+            failClosedNotice={msg.provenance?.failClosedNotice || data.missingInformationNotice}
+            disclaimer={data.disclaimer}
+          />
+        )}
+
         {/* Sources, review dates and limitations (omitted when the response has no source data) */}
         {msg.ragResult && <SourceTraceabilityPanel ragResult={msg.ragResult} />}
         <SourcesAndLimitations message={msg} />
+
+        {/* Capability-governed tool actions (#1146) */}
+        <GovernedToolActionsPanel
+          serviceId={msg.serviceId}
+          title={data.title}
+          officialSources={data.officialSources}
+          sessionId={currentCaseId}
+        />
 
         {/* Suggested Follow-up Questions */}
         {msg.suggestions && msg.suggestions.length > 0 && (
@@ -502,17 +715,16 @@ const Assistant = () => {
           onNewConversation={handleNewConversationClick}
           canReset={needsResetConfirmation(messages)}
           isLoading={isLoading}
-        />
-
-        {/* Voice Input Feedback */}
-        <VoiceInputStatus
-          isListening={isListening}
-          voiceError={voiceError}
-          onDismissError={() => setVoiceError('')}
+          onOpenCaseMemory={() => setShowCaseMemoryModal(true)}
         />
 
         {/* Personalized Civic Recommendations based on User Profile Context */}
         <PersonalizedRecommendationsPanel onSelectPrompt={(prompt) => handleSendMessage(prompt)} />
+
+        {/* Durable Event-Sourced Civic Agent Workflow (ADR-1149) */}
+        <div className="mb-4">
+          <DurableWorkflowPanel serviceId={currentServiceContextId} />
+        </div>
 
         {/* Contextual Civic-Service Question Suggestion Panel (#385) */}
         <CivicQuestionSuggestionPanel
@@ -698,11 +910,153 @@ const Assistant = () => {
           />
         )}
 
+        {/* Untrusted External Document / Web Snippet Toggle (#1151) */}
+        <div style={{ marginBottom: '0.75rem' }}>
+          <button
+            type="button"
+            aria-expanded={showExternalDoc}
+            onClick={() => setShowExternalDoc((prev) => !prev)}
+            className="btn"
+            style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem', borderRadius: '99px' }}
+          >
+            {showExternalDoc ? 'Hide untrusted document scanner' : 'Attach untrusted document / web snippet'}
+          </button>
+
+          {showExternalDoc && (
+            <div
+              role="region"
+              aria-label="Untrusted document firewall input"
+              style={{
+                marginTop: '0.5rem',
+                padding: '0.75rem',
+                borderRadius: '0.75rem',
+                border: '1px solid var(--border-main)',
+                background: 'var(--bg-secondary)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+              }}
+            >
+              <label htmlFor="external-doc-type" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                Source Type (treated as untrusted evidence)
+              </label>
+              <select
+                id="external-doc-type"
+                value={externalDocType}
+                onChange={(e) => setExternalDocType(e.target.value)}
+                style={{ padding: '0.35rem 0.5rem', borderRadius: '0.4rem', fontSize: '0.85rem' }}
+              >
+                <option value="uploaded_pdf">Uploaded PDF text</option>
+                <option value="external_web">External web page content</option>
+              </select>
+              <label htmlFor="external-doc-text" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                Retrieved Content (ephemeral, scanned by Prompt-Injection Firewall)
+              </label>
+              <textarea
+                id="external-doc-text"
+                rows={3}
+                value={externalDocText}
+                onChange={(e) => setExternalDocText(e.target.value)}
+                placeholder="Paste extracted civic PDF or web snippet to scan before synthesis..."
+                style={{ padding: '0.5rem', borderRadius: '0.4rem', fontSize: '0.85rem', width: '100%' }}
+              />
+            </div>
+          )}
+        </div>
+        {/* Voice Input Feedback (placed directly above the input bar so it stays in view) */}
+        <VoiceInputStatus
+          isListening={isListening}
+          voiceError={voiceError}
+          onDismissError={() => setVoiceError('')}
+          onStopListening={() => {
+            recognitionRef.current?._markManualStop?.();
+            recognitionRef.current?.stop();
+            setIsListening(false);
+          }}
+          showConsentPrompt={showVoiceConsent}
+          onConfirmConsent={handleConfirmVoiceConsent}
+          onDismissConsent={() => setShowVoiceConsent(false)}
+          voiceLanguage={voiceLanguage}
+          onVoiceLanguageChange={setVoiceLanguage}
+          showLimitations={showVoiceLimitations}
+          onToggleLimitations={() => setShowVoiceLimitations((prev) => !prev)}
+          hasEditableTranscript={hasVoiceTranscript && Boolean(input.trim())}
+        />
+
+        {/* Voice Language & Limitations Bar */}
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+            marginBottom: '0.5rem',
+            fontSize: '0.78rem',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+            <label htmlFor="assistant-voice-lang" style={{ fontWeight: '600' }}>
+              Voice language:
+            </label>
+            <select
+              id="assistant-voice-lang"
+              aria-label="Voice recognition language"
+              value={voiceLanguage}
+              onChange={(e) => setVoiceLanguage(e.target.value)}
+              disabled={isListening}
+              style={{
+                padding: '0.25rem 0.55rem',
+                borderRadius: '99px',
+                border: '1px solid var(--border-main)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.78rem',
+                cursor: isListening ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {VOICE_SUPPORTED_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowVoiceLimitations((prev) => !prev)}
+            aria-expanded={showVoiceLimitations}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              padding: '0.25rem 0.6rem',
+              borderRadius: '99px',
+              border: '1px solid var(--border-light)',
+              background: 'var(--glass-bg)',
+              color: 'var(--text-secondary)',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+            }}
+          >
+            <Info size={13} aria-hidden="true" />
+            <span>Voice languages &amp; limits</span>
+          </button>
+        </div>
+
         {/* Input Bar */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSendMessage();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && isListening) {
+              recognitionRef.current?._markManualStop?.();
+              recognitionRef.current?.stop();
+              setIsListening(false);
+            }
           }}
           style={{
             position: 'sticky',
@@ -721,8 +1075,9 @@ const Assistant = () => {
           <button
             type="button"
             onClick={toggleVoiceInput}
+            aria-pressed={isListening}
             aria-label={isListening ? 'Stop listening' : 'Start voice typing'}
-            title="Voice typing uses your browser's speech service. In Chrome the audio is processed by Google."
+            title="Voice typing (optional; asks permission first). In Chrome/Edge, transient audio is processed by the browser speech service."
             style={{
               padding: '0.65rem',
               flexShrink: 0,
@@ -746,7 +1101,10 @@ const Assistant = () => {
             aria-label="Ask a civic question"
             placeholder='Ask e.g. "Documents for Birth Certificate"'
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (!e.target.value.trim()) setHasVoiceTranscript(false);
+            }}
             disabled={isLoading}
             style={{
               flex: 1,
@@ -792,8 +1150,15 @@ const Assistant = () => {
         onConfirm={handleConfirmNewConversation}
         onCancel={() => setShowResetConfirm(false)}
       />
+
+      <CaseMemoryInspectionModal
+        isOpen={showCaseMemoryModal}
+        onClose={() => setShowCaseMemoryModal(false)}
+        caseId={currentCaseId}
+      />
     </div>
   );
 };
 
 export default Assistant;
+

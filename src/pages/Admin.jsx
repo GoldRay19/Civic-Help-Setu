@@ -29,7 +29,7 @@ import {
   rejectServiceSubmission,
 } from '../services/adminService';
 
-import * as importBatchService from '../services/importBatchService';
+import importBatchService from '../services/importBatchService';
 import AdminStatsGrid from '../components/admin/AdminStatsGrid';
 import ServiceModal from '../components/admin/ServiceModal';
 import ReportResolutionModal from '../components/admin/ReportResolutionModal';
@@ -54,6 +54,8 @@ import PublicToiletReviewQueue from '../components/admin/PublicToiletReviewQueue
 import TransitConcessionReviewQueue from '../components/admin/TransitConcessionReviewQueue';
 import OpenContractingAuditQueue from '../components/admin/OpenContractingAuditQueue';
 import AuditLogViewer from '../components/admin/AuditLogViewer';
+import WorkflowDeadLetterPanel from '../components/admin/WorkflowDeadLetterPanel';
+import ModelGatewayDashboard from '../components/admin/ModelGatewayDashboard';
 import ServiceImportPanel from '../components/admin/ServiceImportPanel';
 import ServiceRecordList from '../components/admin/ServiceRecordList';
 import ServiceLifecycleReview from '../components/admin/ServiceLifecycleReview';
@@ -69,6 +71,7 @@ import {
 import StaleRecordsReviewQueue from '../components/admin/StaleRecordsReviewQueue';
 import LinkHealthPanel from '../components/admin/LinkHealthPanel';
 import ServiceDraftsPanel from '../components/admin/ServiceDraftsPanel';
+import CivicWorkflowDigitalTwinWorkspace from './CivicWorkflowDigitalTwinWorkspace';
 import { getDraftForService, listDrafts, saveDraft } from '../services/serviceDrafts';
 import CatalogueMigrationPanel from '../components/admin/CatalogueMigrationPanel';
 import ImportConsole from '../pages/ImportConsole';
@@ -99,8 +102,15 @@ import RuleConflictInspectorModal from '../components/admin/RuleConflictInspecto
 import DuplicateServiceDetectorPanel from '../components/admin/DuplicateServiceDetectorPanel';
 import CatalogueConflictDetectorPanel from '../components/admin/CatalogueConflictDetectorPanel';
 import CivicWorksModeratorPanel from '../components/civicWorks/CivicWorksModeratorPanel';
+import AgentReviewStudioPanel from '../components/admin/AgentReviewStudioPanel';
+import GovernedToolRegistryPanel from '../components/admin/GovernedToolRegistryPanel';
+import CivicAgentEvalHarnessPanel from '../components/admin/CivicAgentEvalHarnessPanel';
+
+import WardIssueHeatmap from '../components/analytics/WardIssueHeatmap';
+
 import AccessibilityInspectorPanel from '../components/AccessibilityInspectorPanel';
 import MultiRegionHealthPanel from '../components/admin/MultiRegionHealthPanel';
+
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -764,11 +774,22 @@ const Admin = () => {
               { id: 'duplicates', label: 'Duplicate Detection', badge: null },
   {
     id: 'imports',
-    label: `Imports (${stats?.total || 0})`,
+    label: `Imports (${importBatchService.getStatistics().total})`,
     badge: null,
   },
               { id: 'conflicts', label: 'Requirement Conflicts', badge: null },
               { id: 'civic-works', label: 'Ward Public Works', badge: null },
+
+              { id: 'agent-review', label: 'Agent Review Studio', badge: null },
+              { id: 'agent-eval-harness', label: 'Agent Eval Harness', badge: null },
+              { id: 'tool-registry', label: 'Tool Registry & Capabilities', badge: null },
+
+
+              { id: 'model-gateway', label: 'Model Gateway & Residency', badge: null },
+
+
+              { id: 'ward-analytics', label: 'Ward Civic Analytics', badge: null },
+
               { id: 'pedestrian-barriers', label: 'Pedestrian Route Barriers', badge: null },
               { id: 'public-projects', label: 'Public Project Timeline', badge: null },
               { id: 'provenance-reviews', label: 'Knowledge Provenance', badge: null },
@@ -776,7 +797,11 @@ const Admin = () => {
               { id: 'chaos-resilience', label: 'Chaos & Resilience Suite', badge: null },
               { id: 'counter-demand', label: 'Counter Demand & Staffing', badge: null },
               { id: 'multi-region', label: 'Multi-Region Topology & Lag', badge: null },
+
+
+
               { id: 'audit', label: 'Audit Trail Logs', badge: null },
+              { id: 'digital-twin', label: 'Digital Twin Simulation', badge: null },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
 
@@ -1825,6 +1850,42 @@ const Admin = () => {
               </div>
             )}
 
+
+            {/* Human-in-the-Loop Agent Review Studio Tab */}
+            {activeTab === 'agent-review' && (
+              <div>
+                <AgentReviewStudioPanel />
+              </div>
+            )}
+
+            {/* Civic Agent Evaluation Harness Tab (#1147) */}
+            {activeTab === 'agent-eval-harness' && (
+              <div>
+                <CivicAgentEvalHarnessPanel />
+              </div>
+            )}
+
+            {/* Governed Agent Tool Registry & Capability Controls Tab (#1146) */}
+            {activeTab === 'tool-registry' && (
+              <div>
+                <GovernedToolRegistryPanel />
+              </div>
+            )}
+
+            {/* Model Gateway & Data Residency Tab (#1153) */}
+            {activeTab === 'model-gateway' && (
+              <div>
+                <ModelGatewayDashboard />
+              </div>
+            )}
+
+            {/* Differentially Private Ward Civic Analytics Tab */}
+            {activeTab === 'ward-analytics' && (
+              <div style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                <WardIssueHeatmap clientId="admin-analytics-session" />
+              </div>
+            )}
+
             {/* Pedestrian Route Barrier Moderation Tab */}
             {activeTab === 'pedestrian-barriers' && (
               <div>
@@ -1903,24 +1964,33 @@ const Admin = () => {
             {activeTab === 'multi-region' && (
               <div>
                 <MultiRegionHealthPanel />
+
+
+
               </div>
             )}
 
             {/* Audit Trail Tab */}
             {activeTab === 'audit' && (
-              <div>
+              <div className="space-y-6">
+                <WorkflowDeadLetterPanel />
                 <AuditLogViewer auditLogs={auditLogs} />
               </div>
             )}
 
-            {/* Import Console Tab */}
-            {activeTab === 'imports' && (
-              <ImportConsole />
+            {/* Civic Workflow Digital Twin Simulation Tab (#1157) */}
+            {activeTab === 'digital-twin' && (
+              <div>
+                <CivicWorkflowDigitalTwinWorkspace />
+              </div>
             )}
+
+            {/* Import Console Tab */}
+            {activeTab === 'imports' && <ImportConsole />}
           </div>
-        </div>
 
         {/* Modals */}
+        <>
         <ConfirmationDialog
           isOpen={Boolean(pendingAction)}
           title={pendingAction?.dialog.title}
@@ -1979,7 +2049,9 @@ const Admin = () => {
           onApprove={handleApproveSubmission}
           onReject={handleRejectSubmission}
         />
+        </>
       </div>
+    </div>
     </div>
   );
 };
