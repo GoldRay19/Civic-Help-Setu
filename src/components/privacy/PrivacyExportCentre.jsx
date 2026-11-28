@@ -9,6 +9,7 @@ import {
   PRIVACY_EXPORT_CATEGORIES,
   PRIVACY_EXPORT_VERSION,
 } from '../../services/privacyExportService';
+import { privacyExportToCsv } from '../../services/privacyExportCsv';
 import {
   isVaultAtRestEncrypted,
   unlockAtRestVault,
@@ -36,6 +37,7 @@ const PrivacyExportCentre = () => {
   const [vaultRequest, setVaultRequest] = useState({ ownerId: null, selected: false, authorized: false, documents: [] });
   const [vaultPassphraseState, setVaultPassphraseState] = useState({ ownerId: null, value: '' });
   const [busy, setBusy] = useState(false);
+  const [format, setFormat] = useState('json');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [vaultEncrypted] = useState(() => isVaultAtRestEncrypted());
@@ -158,16 +160,21 @@ const PrivacyExportCentre = () => {
         setError(await readError(downloadResponse));
         return;
       }
-      const exportBlob = await downloadResponse.blob();
+      let exportBlob = await downloadResponse.blob();
+      if (format === 'csv') {
+        const payload = JSON.parse(await exportBlob.text());
+        // The byte order mark lets spreadsheet apps read non-English text correctly.
+        exportBlob = new Blob(['\uFEFF', privacyExportToCsv(payload)], { type: 'text/csv;charset=utf-8' });
+      }
       const objectUrl = URL.createObjectURL(exportBlob);
       const anchor = document.createElement('a');
       anchor.href = objectUrl;
-      anchor.download = `civic-help-setu-export-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.download = `civic-help-setu-export-${new Date().toISOString().slice(0, 10)}.${format}`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-      setNotice('Your versioned JSON export was downloaded. Its secure link has been consumed and cannot be reused.');
+      setNotice(`Your versioned ${format.toUpperCase()} export was downloaded. Its secure link has been consumed and cannot be reused.`);
     } catch {
       setError('The secure export could not be completed. Check your connection and try again.');
     } finally {
@@ -184,7 +191,7 @@ const PrivacyExportCentre = () => {
             Privacy Centre: secure data export
           </h2>
           <p style={{ margin: '0.35rem 0 0', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Preview your account-owned data, choose categories, and create a versioned JSON export. Export links expire in five minutes and work once for your signed-in account.
+            Preview your account-owned data, choose categories, and create a versioned JSON or CSV export. Export links expire in five minutes and work once for your signed-in account.
           </p>
         </div>
       </div>
@@ -305,6 +312,29 @@ const PrivacyExportCentre = () => {
           <CheckCircle2 size={16} aria-hidden="true" /> {notice}
         </div>
       )}
+      <fieldset
+        disabled={!isAccountSession || busy}
+        style={{ border: 0, padding: 0, margin: '1rem 0 0', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}
+      >
+        <legend style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', padding: 0, marginBottom: '0.35rem' }}>
+          File format
+        </legend>
+        {[
+          ['json', 'JSON (complete structure)'],
+          ['csv', 'CSV (opens in a spreadsheet)'],
+        ].map(([value, label]) => (
+          <label key={value} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            <input
+              type="radio"
+              name="privacy-export-format"
+              value={value}
+              checked={format === value}
+              onChange={() => setFormat(value)}
+            />
+            {label}
+          </label>
+        ))}
+      </fieldset>
       <button
         type="button"
         className="btn btn-primary"
@@ -313,7 +343,7 @@ const PrivacyExportCentre = () => {
         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}
       >
         <Download size={17} aria-hidden="true" />
-        {busy ? 'Preparing secure export…' : 'Create secure JSON export'}
+        {busy ? 'Preparing secure export…' : `Create secure ${format.toUpperCase()} export`}
       </button>
     </section>
   );

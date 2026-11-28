@@ -152,6 +152,7 @@ const SearchQueryRecoveryWorkspace = lazy(() => import('./pages/SearchQueryRecov
 const ExplainableServiceRankerWorkspace = lazy(() => import('./pages/ExplainableServiceRankerWorkspace'));
 const AbuseDashboardPage = lazy(() => import('./components/abuse-control-plane/AbuseDashboard'));
 const CostCarbonGovernorWorkspacePage = lazy(() => import('./pages/CostCarbonGovernorWorkspace'));
+const TrafficChallanWorkspace = lazy(() => import('./pages/TrafficChallanWorkspace'));
 const FoodSafetyWorkspace = lazy(() => import('./pages/FoodSafetyWorkspace'));
 const PolicyEngineWorkspacePage = lazy(() => import('./pages/PolicyEngineWorkspace'));
 const ContractTestMarketplaceWorkspacePage = lazy(() => import('./pages/ContractTestMarketplaceWorkspace'));
@@ -472,6 +473,9 @@ function AppRoot() {
                             <Route path="/rbi-banking-workspace" element={<RbiOmbudsmanWorkspace />} />
                             <Route path="/rbi-ombudsman" element={<RbiOmbudsmanWorkspace />} />
                             <Route path="/banking-deficiency-dispute" element={<RbiOmbudsmanWorkspace />} />
+                            <Route path="/traffic-echallan-workspace" element={<TrafficChallanWorkspace />} />
+                            <Route path="/echallan-dispute" element={<TrafficChallanWorkspace />} />
+                            <Route path="/traffic-fine-contest" element={<TrafficChallanWorkspace />} />
                             <Route path="/food-safety-workspace" element={<FoodSafetyWorkspace />} />
                             <Route path="/fssai-redressal" element={<FoodSafetyWorkspace />} />
                             <Route path="/food-adulteration-audit" element={<FoodSafetyWorkspace />} />

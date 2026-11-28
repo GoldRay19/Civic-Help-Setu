@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MAX_SEARCH_LENGTH } from '../../utils/searchParams';
+import { MAX_SEARCH_LENGTH, MAX_ELIGIBILITY_LENGTH } from '../../utils/searchParams';
 import { Search, X, ArrowUpDown, RotateCcw } from 'lucide-react';
 import DepartmentFilterSelect from './DepartmentFilterSelect';
 import FeeAndSpeedFilter from './FeeAndSpeedFilter';
@@ -13,6 +13,8 @@ const FilterToolbar = ({
   searchSuggestions = [],
   selectedMode,
   onModeChange,
+  eligibility = '',
+  onEligibilityChange = () => {},
   selectedDifficulty,
   onDifficultyChange,
   departments = [],
@@ -49,6 +51,7 @@ const FilterToolbar = ({
     if (feeType && feeType !== 'All') count += 1;
     if (speedFilter && speedFilter !== 'All') count += 1;
     if (selectedMode && selectedMode !== 'All') count += 1;
+    if (eligibility.trim()) count += 1;
     if (selectedDifficulty && selectedDifficulty !== 'All') count += 1;
     if (sortBy && sortBy !== 'relevance') count += 1;
     return count;
@@ -60,6 +63,7 @@ const FilterToolbar = ({
     feeType,
     speedFilter,
     selectedMode,
+    eligibility,
     selectedDifficulty,
     sortBy,
   ]);
@@ -386,6 +390,25 @@ const FilterToolbar = ({
             onSpeedFilterChange={onSpeedFilterChange}
           />
         </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <label htmlFor="service-eligibility-filter" style={{ fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)' }}>
+            Eligibility mentions
+          </label>
+          <input
+            id="service-eligibility-filter"
+            type="search"
+            value={eligibility}
+            maxLength={MAX_ELIGIBILITY_LENGTH}
+            onChange={(event) => onEligibilityChange(event.target.value)}
+            placeholder="e.g. resident, birth, income"
+            aria-describedby="service-eligibility-filter-help"
+            style={{ padding: '0.45rem 0.75rem', borderRadius: '0.6rem', border: '1px solid var(--border-light)', background: 'var(--glass-bg)', color: 'var(--text-primary)' }}
+          />
+          <small id="service-eligibility-filter-help" style={{ color: 'var(--text-tertiary)' }}>
+            Searches the published eligibility text. It does not decide whether you qualify.
+          </small>
+        </div>
       </div>
 
       {/* Bottom Filter Group: Application Mode, Complexity, and Sorting Facets */}
@@ -405,7 +428,7 @@ const FilterToolbar = ({
           {/* Application Mode Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.85rem' }}>
             <span style={{ color: 'var(--text-tertiary)', fontWeight: '600' }}>Mode:</span>
-            {['All', 'Online', 'Offline'].map((m) => {
+            {['All', 'Online', 'Offline', 'Hybrid'].map((m) => {
               const isSelected = selectedMode === m;
               return (
                 <button

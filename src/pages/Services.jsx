@@ -72,6 +72,7 @@ const Services = () => {
     category: activeCategory,
     department: selectedDepartment,
     mode: selectedMode,
+    eligibility: eligibilityQuery,
     difficulty: selectedDifficulty,
     fee: selectedFee,
     speed: selectedSpeed,
@@ -105,6 +106,7 @@ const Services = () => {
   const handleCategoryChange = (cat) => updateParam('cat', cat, 'All');
   const handleSearchChange = (query) => updateParam('q', normalizeSearchQuery(query), '');
   const handleModeChange = (mode) => updateParam('mode', mode, 'All');
+  const handleEligibilityChange = (value) => updateParam('elig', value, '');
   const handleDifficultyChange = (diff) => updateParam('diff', diff, 'All');
   const handleDepartmentChange = (dept) => updateParam('dept', dept, 'All');
   const handleStateChange = (state) => {
@@ -154,6 +156,7 @@ const Services = () => {
   const hasFilterFacets = Boolean(
     activeCategory !== 'All' ||
     selectedMode !== 'All' ||
+    eligibilityQuery.trim() !== '' ||
     selectedDifficulty !== 'All' ||
     selectedDepartment !== 'All' ||
     selectedFee !== 'All' ||
@@ -174,6 +177,7 @@ const Services = () => {
       category: activeCategory,
       department: selectedDepartment,
       mode: selectedMode,
+      eligibility: eligibilityQuery,
       difficulty: selectedDifficulty,
       feeType: selectedFee,
       speedFilter: selectedSpeed,
@@ -187,6 +191,7 @@ const Services = () => {
     activeCategory,
     selectedDepartment,
     selectedMode,
+    eligibilityQuery,
     selectedDifficulty,
     selectedFee,
     selectedSpeed,
@@ -360,6 +365,8 @@ const Services = () => {
           selectedState={selectedState}
           selectedDistrict={selectedDistrict}
           districtOptions={districtOptions}
+          eligibility={eligibilityQuery}
+          onEligibilityChange={handleEligibilityChange}
           onStateChange={handleStateChange}
           onDistrictChange={handleDistrictChange}
           feeType={selectedFee}

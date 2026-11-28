@@ -53,6 +53,7 @@ import {
   FolderLock,
   ClipboardList,
   Landmark,
+  Car,
   UtensilsCrossed,
 } from 'lucide-react';
 
@@ -1375,6 +1376,10 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 activeTarget: '/rbi-banking-workspace',
                 label: t('nav.rbiBanking', 'RBI Banking Ombudsman'),
                 icon: Landmark
+                to: '/traffic-echallan-workspace',
+                activeTarget: '/traffic-echallan-workspace',
+                label: t('nav.trafficChallan', 'E-Challan Dispute'),
+                icon: Car
                 to: '/food-safety-workspace',
                 activeTarget: '/food-safety-workspace',
                 label: t('nav.foodSafetyWorkspace', 'Food Safety Redressal'),

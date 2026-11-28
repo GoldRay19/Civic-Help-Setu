@@ -1,5 +1,29 @@
 import { useEffect } from 'react';
-import { X, Printer, CheckSquare, FileText, AlertCircle } from 'lucide-react';
+import { X, Printer, FileText, AlertCircle } from 'lucide-react';
+
+const NOT_LISTED = 'Not listed in this guide. Confirm with the official source.';
+
+const asList = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
+
+const Section = ({ title, children }) => (
+  <section>
+    <h5 style={{ margin: '0 0 0.4rem', fontSize: '0.88rem', fontWeight: 600 }}>{title}</h5>
+    <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>{children}</div>
+  </section>
+);
+
+const Missing = () => <p style={{ margin: 0 }}>{NOT_LISTED}</p>;
+
+const Bullets = ({ items }) =>
+  items.length === 0 ? (
+    <Missing />
+  ) : (
+    <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+      {items.map((item, idx) => (
+        <li key={idx}>{item}</li>
+      ))}
+    </ul>
+  );
 
 export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
   useEffect(() => {
@@ -13,12 +37,13 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
 
   if (!isOpen || !service) return null;
 
-  const docs = service.documents || service.requiredDocuments || [
-    'Aadhaar Card (Original & 2 self-attested photocopies)',
-    'Proof of Current Residence (Electricity Bill / Voter ID / Rent Agreement)',
-    'Income Certificate or Salary Slip issued within last 6 months',
-    'Two recent passport-sized photographs (35mm x 45mm, white background)',
-  ];
+  // Only what the service record actually publishes: a packet is carried to a counter, so a
+  // guessed document or timeline could send someone there unprepared.
+  const docs = asList(service.documents || service.requiredDocuments);
+  const eligibility = asList(service.eligibility);
+  const steps = asList(service.steps);
+  const warnings = asList(service.warnings);
+  const sources = asList(service.officialSources).filter((source) => source?.url);
 
   const handlePrint = () => {
     window.print();
@@ -26,7 +51,7 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
 
   return (
     <div
-      className="modal-backdrop"
+      className="modal-backdrop print-packet-backdrop"
       style={{
         position: 'fixed',
         top: 0,
@@ -82,7 +107,7 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
           <button
             type="button"
             onClick={onClose}
-            className="btn btn-ghost"
+            className="btn btn-ghost no-print"
             aria-label="Close checklist modal"
             style={{ padding: '0.4rem', borderRadius: '0.5rem', color: 'var(--text-secondary)' }}
           >
@@ -115,15 +140,26 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
               Service: <span style={{ color: 'var(--accent-main, #38bdf8)' }}>{service.title || service.name}</span>
             </h4>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Category: {service.category || 'Civic Service'} • Standard SLA: {service.processingTime || '15-21 Days'}
+              Category: {service.category || 'Civic Service'} • Last verified: {service.lastVerified || 'not recorded'}
             </p>
           </div>
+
+          <Section title="Important warnings">
+            <Bullets items={warnings} />
+          </Section>
+
+          <Section title="Who can apply">
+            <Bullets items={eligibility} />
+          </Section>
 
           {/* Table of Document Checklist */}
           <div>
             <h5 style={{ margin: '0 0 0.6rem', fontSize: '0.88rem', fontWeight: 600 }}>
-              Mandatory Documents Verification Table:
+              Documents to check and carry:
             </h5>
+            {docs.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{NOT_LISTED}</p>
+            ) : (
             <div
               style={{
                 border: '1px solid var(--border-light, #334155)',
@@ -135,7 +171,7 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
                 <thead>
                   <tr style={{ background: 'rgba(255, 255, 255, 0.04)', borderBottom: '1px solid var(--border-light, #334155)' }}>
                     <th style={{ padding: '0.65rem 0.85rem' }}>#</th>
-                    <th style={{ padding: '0.65rem 0.85rem' }}>Required Document</th>
+                    <th style={{ padding: '0.65rem 0.85rem' }}>Document</th>
                     <th style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>Original</th>
                     <th style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>Self-Attested Copy</th>
                   </tr>
@@ -161,7 +197,36 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
+
+          <Section title="Steps">
+            {steps.length === 0 ? (
+              <Missing />
+            ) : (
+              <ol style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                {steps.map((step, idx) => (
+                  <li key={idx}>
+                    <strong>{step.title || step}</strong>
+                    {step.description ? `: ${step.description}` : ''}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Section>
+
+          <Section title="Published fees">
+            <p style={{ margin: 0 }}>{service.fees || NOT_LISTED}</p>
+          </Section>
+
+          <Section title="Processing time">
+            <p style={{ margin: 0 }}>{service.processingTime || NOT_LISTED}</p>
+          </Section>
+
+          <Section title="Official sources">
+            {/* Addresses are written out because a link cannot be followed on paper. */}
+            <Bullets items={sources.map((source) => `${source.name || 'Official source'}: ${source.url}`)} />
+          </Section>
 
           {/* Photograph & Biometrics Specifications */}
           <div
@@ -173,7 +238,7 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
             }}
           >
             <div style={{ padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-light, #334155)' }}>
-              <strong>Photograph Specs:</strong>
+              <strong>Photograph Specs:</strong> (general tip, confirm at the counter)
               <ul style={{ margin: '0.35rem 0 0', paddingLeft: '1.2rem', color: 'var(--text-secondary)' }}>
                 <li>Size: 35mm x 45mm</li>
                 <li>Plain white background</li>
@@ -181,7 +246,7 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
               </ul>
             </div>
             <div style={{ padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-light, #334155)' }}>
-              <strong>Attestation Norms:</strong>
+              <strong>Attestation Norms:</strong> (general tip, confirm at the counter)
               <ul style={{ margin: '0.35rem 0 0', paddingLeft: '1.2rem', color: 'var(--text-secondary)' }}>
                 <li>Sign across the lower margin</li>
                 <li>Write &quot;Self Attested&quot; + Date</li>
@@ -214,6 +279,7 @@ export default function ServicePrintPacketModal({ isOpen, onClose, service }) {
 
         {/* Modal Footer */}
         <div
+          className="no-print"
           style={{
             padding: '1rem 1.5rem',
             borderTop: '1px solid var(--border-light, #334155)',
