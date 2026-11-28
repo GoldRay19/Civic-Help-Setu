@@ -133,6 +133,7 @@ const CivicContributionPipelineWorkspace = lazy(() => import('./pages/CivicContr
 const RteAdmissionWorkspace = lazy(() => import('./pages/RteAdmissionWorkspace'));
 const EvidenceDossierWorkspace = lazy(() => import('./pages/EvidenceDossierWorkspace'));
 const ChangeFeedPage = lazy(() => import('./pages/ChangeFeedPage'));
+const NfsaRationWorkspace = lazy(() => import('./pages/NfsaRationWorkspace'));
 const PortalChangeMonitorWorkspace = lazy(() => import('./pages/PortalChangeMonitorWorkspace'));
 const FeeEvidenceAssistant = lazy(() => import('./pages/FeeEvidenceAssistant'));
 const JurisdictionHandoffWorkspace = lazy(() => import('./pages/JurisdictionHandoffWorkspace'));
@@ -152,6 +153,7 @@ const ExplainableServiceRankerWorkspace = lazy(() => import('./pages/Explainable
 const AbuseDashboardPage = lazy(() => import('./components/abuse-control-plane/AbuseDashboard'));
 const CostCarbonGovernorWorkspacePage = lazy(() => import('./pages/CostCarbonGovernorWorkspace'));
 const TrafficChallanWorkspace = lazy(() => import('./pages/TrafficChallanWorkspace'));
+const FoodSafetyWorkspace = lazy(() => import('./pages/FoodSafetyWorkspace'));
 const PolicyEngineWorkspacePage = lazy(() => import('./pages/PolicyEngineWorkspace'));
 const ContractTestMarketplaceWorkspacePage = lazy(() => import('./pages/ContractTestMarketplaceWorkspace'));
 const FreshnessPredictionWorkspacePage = lazy(() => import('./pages/FreshnessPredictionWorkspace'));
@@ -470,6 +472,9 @@ function AppRoot() {
                             <Route path="/traffic-echallan-workspace" element={<TrafficChallanWorkspace />} />
                             <Route path="/echallan-dispute" element={<TrafficChallanWorkspace />} />
                             <Route path="/traffic-fine-contest" element={<TrafficChallanWorkspace />} />
+                            <Route path="/food-safety-workspace" element={<FoodSafetyWorkspace />} />
+                            <Route path="/fssai-redressal" element={<FoodSafetyWorkspace />} />
+                            <Route path="/food-adulteration-audit" element={<FoodSafetyWorkspace />} />
                             <Route path="/offline-emergency-card" element={<OfflineEmergencyCardWorkspace />} />
                             <Route path="/emergency-card" element={<OfflineEmergencyCardWorkspace />} />
                             <Route path="/services/offline-emergency-card" element={<OfflineEmergencyCardWorkspace />} />
@@ -559,6 +564,10 @@ function AppRoot() {
                             <Route path="/tenants" element={<TenantAdministrationWorkspace />} />
                             <Route path="/tenants/:tenantId" element={<TenantAdministrationWorkspace />} />
                             <Route path="/tenant-workspace" element={<TenantAdministrationWorkspace />} />
+
+                            <Route path="/nfsa-ration-workspace" element={<NfsaRationWorkspace />} />
+                            <Route path="/ration-entitlement-dispute" element={<NfsaRationWorkspace />} />
+                            <Route path="/food-commission-grievance" element={<NfsaRationWorkspace />} />
 
                             <Route path="*" element={<NotFound />} />
                           </Routes>

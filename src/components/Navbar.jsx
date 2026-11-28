@@ -53,6 +53,7 @@ import {
   FolderLock,
   ClipboardList,
   Car,
+  UtensilsCrossed,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -1240,6 +1241,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
               })}
 
               {renderNavLink({
+                to: '/nfsa-ration-workspace',
+                label: 'NFSA Ration Redressal',
+                icon: Scale
+              })}
+
+              {renderNavLink({
                 to: '/synthetic-datasets',
                 label: 'Synthetic Dataset Generator',
                 icon: Database
@@ -1368,6 +1375,10 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                 activeTarget: '/traffic-echallan-workspace',
                 label: t('nav.trafficChallan', 'E-Challan Dispute'),
                 icon: Car
+                to: '/food-safety-workspace',
+                activeTarget: '/food-safety-workspace',
+                label: t('nav.foodSafetyWorkspace', 'Food Safety Redressal'),
+                icon: UtensilsCrossed
               })}
 
               {renderNavLink({
@@ -1442,6 +1453,12 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
                   to: '/tenants',
                   label: 'Authority Workspaces',
                   icon: Building2
+                })}
+
+                {renderNavLink({
+                  to: '/nfsa-ration-workspace',
+                  label: 'NFSA Ration Redressal',
+                  icon: Scale
                 })}
 
                 {renderNavLink({
