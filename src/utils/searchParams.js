@@ -9,6 +9,7 @@
 export const MAX_SEARCH_LENGTH = 100;
 export const MAX_ASSISTANT_QUERY_LENGTH = 500;
 export const MAX_ID_LENGTH = 64;
+export const MAX_ELIGIBILITY_LENGTH = 60;
 
 export const SORT_KEYS = ['relevance', 'popularity', 'speed-asc', 'name-asc', 'name-desc', 'difficulty-asc'];
 
@@ -55,6 +56,8 @@ export const parseServiceFilters = (params, { categories = [], departments = [] 
   category: pickAllowed(params.get('cat'), categories, 'All'),
   department: pickAllowed(params.get('dept'), departments, 'All'),
   mode: pickAllowed(params.get('mode'), FILTER_OPTIONS.mode, 'All'),
+  // Free text matched against each guide's published eligibility lines.
+  eligibility: normalizeText(params.get('elig'), MAX_ELIGIBILITY_LENGTH, { trim: false }),
   difficulty: pickAllowed(params.get('diff'), FILTER_OPTIONS.diff, 'All'),
   fee: pickAllowed(params.get('fee'), FILTER_OPTIONS.fee, 'All'),
   speed: pickAllowed(params.get('speed'), FILTER_OPTIONS.speed, 'All'),

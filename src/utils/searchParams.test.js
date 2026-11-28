@@ -97,6 +97,7 @@ describe('parseServiceFilters', () => {
   const defaults = {
     searchQuery: '',
     category: 'All',
+    eligibility: '',
     department: 'All',
     mode: 'All',
     difficulty: 'All',
@@ -117,6 +118,7 @@ describe('parseServiceFilters', () => {
     expect(result).toEqual({
       searchQuery: 'ration',
       category: 'Health',
+      eligibility: '',
       department: 'Revenue',
       mode: 'Hybrid',
       difficulty: 'Easy',
