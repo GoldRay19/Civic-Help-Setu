@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Trash2, Printer, Scale, FileDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { comparisonService, NOT_AVAILABLE } from '../../services/comparisonService';
+import { comparisonService, generateAIExplanation, NOT_AVAILABLE } from '../../services/comparisonService';
 import { useModalKeyboard } from '../../hooks/useModalKeyboard';
 import EligibilityComparisonExplainerSection from './EligibilityComparisonExplainerSection';
+import RequirementComparisonPanel from './RequirementComparisonPanel';
 import ServiceComparisonExportModal from './ServiceComparisonExportModal';
 
 export const ComparisonValue = ({ value }) => {
@@ -25,24 +26,20 @@ const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, o
   const [highlightDiffs, setHighlightDiffs] = useState(false);
   const [showOnlyDiffs, setShowOnlyDiffs] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [aiExplanation, setAIExplanation] = useState(null);
   const modalRef = useModalKeyboard(isOpen, onClose);
+  // Derived during render and declared before the early return, so the hook order never changes.
+  const aiExplanation = useMemo(
+    () =>
+      comparedServices && comparedServices.length >= 2
+        ? generateAIExplanation(comparedServices)
+        : null,
+    [comparedServices]
+  );
 
   if (!isOpen) return null;
 
   const matrix = comparisonService.buildComparisonMatrix(comparedServices);
   const diffSummary = comparisonService.getDifferencesSummary(comparedServices);
-
-  // Sync AI explanation when comparedServices changes (client-side only)
-  useEffect(() => {
-    if (comparedServices && comparedServices.length >= 2) {
-      setAIExplanation(
-        comparisonService.generateAIExplanation(comparedServices)
-      );
-    } else {
-      setAIExplanation(null);
-    }
-  }, [comparedServices]);
 
   const modal = (
     <div
@@ -188,6 +185,7 @@ const ServiceComparisonModal = ({ isOpen, onClose, comparedServices, onRemove, o
                 </tr>
               </tbody>
             </table>
+            <RequirementComparisonPanel comparedServices={comparedServices} />
             <EligibilityComparisonExplainerSection comparedServices={comparedServices} />
 
               {/* AI Explanation Section */}
