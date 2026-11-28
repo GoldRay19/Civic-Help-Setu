@@ -25,6 +25,11 @@ import VerifiableEvidenceBundleWorkspace from './pages/VerifiableEvidenceBundleW
 
 
 
+import ZkAttributeVerifierView from './pages/ZkAttributeVerifierView';
+import FederatedQueryExplorer from './pages/FederatedQueryExplorer';
+import WardAnalyticsDashboard from './pages/WardAnalyticsDashboard';
+
+
 const ResourceExchangePage = lazy(() => import('./components/resource-exchange/ResourceExchangePage'));
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -147,6 +152,7 @@ const SearchQueryRecoveryWorkspace = lazy(() => import('./pages/SearchQueryRecov
 const ExplainableServiceRankerWorkspace = lazy(() => import('./pages/ExplainableServiceRankerWorkspace'));
 const AbuseDashboardPage = lazy(() => import('./components/abuse-control-plane/AbuseDashboard'));
 const CostCarbonGovernorWorkspacePage = lazy(() => import('./pages/CostCarbonGovernorWorkspace'));
+const FoodSafetyWorkspace = lazy(() => import('./pages/FoodSafetyWorkspace'));
 const PolicyEngineWorkspacePage = lazy(() => import('./pages/PolicyEngineWorkspace'));
 const ContractTestMarketplaceWorkspacePage = lazy(() => import('./pages/ContractTestMarketplaceWorkspace'));
 const FreshnessPredictionWorkspacePage = lazy(() => import('./pages/FreshnessPredictionWorkspace'));
@@ -462,6 +468,9 @@ function AppRoot() {
                             <Route path="/ghg-inventory" element={<GhgInventoryWorkspace />} />
                             <Route path="/emissions-inventory" element={<GhgInventoryWorkspace />} />
                             <Route path="/services/ghg-inventory" element={<GhgInventoryWorkspace />} />
+                            <Route path="/food-safety-workspace" element={<FoodSafetyWorkspace />} />
+                            <Route path="/fssai-redressal" element={<FoodSafetyWorkspace />} />
+                            <Route path="/food-adulteration-audit" element={<FoodSafetyWorkspace />} />
                             <Route path="/offline-emergency-card" element={<OfflineEmergencyCardWorkspace />} />
                             <Route path="/emergency-card" element={<OfflineEmergencyCardWorkspace />} />
                             <Route path="/services/offline-emergency-card" element={<OfflineEmergencyCardWorkspace />} />
