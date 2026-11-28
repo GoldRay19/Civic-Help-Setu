@@ -257,12 +257,14 @@ const Footer = () => {
 </li>
 <li>
   <Link
+    to="/rbi-banking-workspace"
     to="/traffic-echallan-workspace"
     to="/food-safety-workspace"
     style={linkBaseStyle}
     onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
     onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
   >
+    RBI Banking Ombudsman Redressal
     Traffic E-Challan Dispute (Rule 167A)
     Food Safety (FSSAI) Redressal
   </Link>

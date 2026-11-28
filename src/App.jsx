@@ -157,6 +157,7 @@ const FoodSafetyWorkspace = lazy(() => import('./pages/FoodSafetyWorkspace'));
 const PolicyEngineWorkspacePage = lazy(() => import('./pages/PolicyEngineWorkspace'));
 const ContractTestMarketplaceWorkspacePage = lazy(() => import('./pages/ContractTestMarketplaceWorkspace'));
 const FreshnessPredictionWorkspacePage = lazy(() => import('./pages/FreshnessPredictionWorkspace'));
+const RbiOmbudsmanWorkspace = lazy(() => import('./pages/RbiOmbudsmanWorkspace'));
 const RecommendationExperimentationWorkspacePage = lazy(() => import('./pages/RecommendationExperimentationWorkspace'));
 const CivicWorkflowDigitalTwinWorkspace = lazy(() => import('./pages/CivicWorkflowDigitalTwinWorkspace'));
 const RecommendationFairnessAuditWorkspace = lazy(() => import('./pages/RecommendationFairnessAuditWorkspace'));
@@ -469,6 +470,9 @@ function AppRoot() {
                             <Route path="/ghg-inventory" element={<GhgInventoryWorkspace />} />
                             <Route path="/emissions-inventory" element={<GhgInventoryWorkspace />} />
                             <Route path="/services/ghg-inventory" element={<GhgInventoryWorkspace />} />
+                            <Route path="/rbi-banking-workspace" element={<RbiOmbudsmanWorkspace />} />
+                            <Route path="/rbi-ombudsman" element={<RbiOmbudsmanWorkspace />} />
+                            <Route path="/banking-deficiency-dispute" element={<RbiOmbudsmanWorkspace />} />
                             <Route path="/traffic-echallan-workspace" element={<TrafficChallanWorkspace />} />
                             <Route path="/echallan-dispute" element={<TrafficChallanWorkspace />} />
                             <Route path="/traffic-fine-contest" element={<TrafficChallanWorkspace />} />
