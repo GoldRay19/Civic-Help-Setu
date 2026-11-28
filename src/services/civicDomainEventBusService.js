@@ -461,3 +461,10 @@ export function _resetEventBusInternalStores() {
   contractRejectedCount = 0;
   consumerContractFailureCount = 0;
 }
+
+/**
+ * Retrieves all outbox events for inspection and testing.
+ */
+export function getOutboxEvents() {
+  return Array.from(outboxStore.values());
+}
