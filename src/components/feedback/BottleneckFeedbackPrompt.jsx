@@ -15,7 +15,12 @@ import {
 } from '../../services/bottleneckFeedbackService';
 
 import { useOptionalAuth } from '../../context/AuthContext';
-import { feedbackRequest, encodeFeedbackAttachment } from '../../services/bottleneckFeedbackApi.js';
+import {
+  feedbackRequest,
+  encodeFeedbackAttachment,
+  checkFeedbackAttachment,
+  FEEDBACK_ATTACHMENT_TYPES,
+} from '../../services/bottleneckFeedbackApi.js';
 
 const BottleneckFeedbackPrompt = ({
   serviceId,
@@ -28,6 +33,8 @@ const BottleneckFeedbackPrompt = ({
   const localDemo = isDemoMode && import.meta.env.DEV && import.meta.env.VITE_SHARED_FEEDBACK !== 'true';
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState(null);
+  const [fileError, setFileError] = useState('');
+  const fileInput = useRef(null);
   const receipt = useRef(null);
   const inFlight = useRef(false);
   const timer = useRef(null);
@@ -46,6 +53,21 @@ const BottleneckFeedbackPrompt = ({
     // Simple client-side hint if user enters numbers that look like phone or Aadhaar
     const hasSuspectNumbers = /\b\d{10,12}\b/.test(val) || /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(val);
     setPiiWarning(hasSuspectNumbers);
+  };
+
+  const handleFilePick = (event) => {
+    const chosen = event.target.files?.[0] || null;
+    const problem = checkFeedbackAttachment(chosen);
+    setFileError(problem);
+    setFile(problem ? null : chosen);
+    // Clearing the input lets the same file be picked again after it has been fixed.
+    if (problem) event.target.value = '';
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setFileError('');
+    if (fileInput.current) fileInput.current.value = '';
   };
 
   const handleSubmit = async (e) => {
@@ -75,7 +97,7 @@ const BottleneckFeedbackPrompt = ({
       timer.current = setTimeout(() => {
         setSubmitted(false);
         setIsOpen(false);
-        setNotes(''); setFile(null); receipt.current = null;
+        setNotes(''); setFile(null); setFileError(''); receipt.current = null;
         if (onDismiss) onDismiss();
       }, 2500);
     } catch (err) {
@@ -295,12 +317,26 @@ const BottleneckFeedbackPrompt = ({
                 )}
               </div>
 
-              {!localDemo && <label>
-                Optional attachment (PNG, JPEG or PDF, up to 256 KB)
-                <input type="file" accept="image/png,image/jpeg,application/pdf" disabled={busy}
-                  onChange={event => setFile(event.target.files?.[0] || null)} />
-                <small>Do not upload personal documents. Files are quarantined; only scanner-approved files can be opened by moderators.</small>
-              </label>}
+              {!localDemo && <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <label htmlFor="bottleneck-attachment">
+                  Optional attachment (PNG, JPEG or PDF, up to 256 KB)
+                </label>
+                <input id="bottleneck-attachment" ref={fileInput} type="file"
+                  accept={FEEDBACK_ATTACHMENT_TYPES.join(',')} disabled={busy}
+                  aria-describedby="bottleneck-attachment-help bottleneck-attachment-status"
+                  aria-invalid={fileError ? 'true' : undefined}
+                  onChange={handleFilePick} />
+                <small id="bottleneck-attachment-help">Do not upload personal documents. Files are quarantined; only scanner-approved files can be opened by moderators.</small>
+                <div id="bottleneck-attachment-status" aria-live="polite">
+                  {fileError && <span role="alert" style={{ color: '#ef4444', fontSize: '0.8rem' }}>{fileError}</span>}
+                  {file && (
+                    <span style={{ fontSize: '0.8rem' }}>
+                      Ready to attach: {file.name} ({Math.ceil(file.size / 1024)} KB){' '}
+                      <button type="button" className="btn btn-secondary" onClick={removeFile} disabled={busy}>Remove file</button>
+                    </span>
+                  )}
+                </div>
+              </div>}
               {/* Action Buttons */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', alignItems: 'center' }}>
                 <button
