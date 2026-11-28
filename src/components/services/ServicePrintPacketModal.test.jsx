@@ -31,11 +31,42 @@ describe('ServicePrintPacketModal', () => {
     expect(html).toContain('Print Checklist Packet');
   });
 
-  it('falls back to default civic documents when service has no specific documents', () => {
+  it('prints the published eligibility, steps, fees, sources, warnings and verification date', () => {
+    const html = renderToStaticMarkup(
+      <ServicePrintPacketModal
+        isOpen={true}
+        onClose={() => {}}
+        service={{
+          ...mockService,
+          eligibility: ['Resident of the district'],
+          steps: [{ title: 'Apply', description: 'Submit the form' }],
+          fees: 'Free within 21 days',
+          officialSources: [{ name: 'Portal', url: 'https://example.gov.in/apply' }],
+          warnings: ['Check the counter timings'],
+          lastVerified: '2026-11-05',
+        }}
+      />
+    );
+    for (const text of [
+      'Resident of the district',
+      'Submit the form',
+      'Free within 21 days',
+      'Portal: https://example.gov.in/apply',
+      'Check the counter timings',
+      '2026-11-05',
+    ]) {
+      expect(html).toContain(text);
+    }
+  });
+
+  it('says what is not listed instead of inventing documents or timelines', () => {
     const html = renderToStaticMarkup(
       <ServicePrintPacketModal isOpen={true} onClose={() => {}} service={{ title: 'General Service' }} />
     );
     expect(html).toContain('Physical Application Packet Checklist');
-    expect(html).toContain('Aadhaar Card (Original &amp; 2 self-attested photocopies)');
+    expect(html).toContain('Not listed in this guide. Confirm with the official source.');
+    expect(html).toContain('Last verified: not recorded');
+    expect(html).not.toContain('Aadhaar');
+    expect(html).not.toContain('15-21 Days');
   });
 });
