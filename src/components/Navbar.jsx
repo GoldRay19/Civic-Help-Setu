@@ -52,6 +52,7 @@ import {
   GraduationCap,
   FolderLock,
   ClipboardList,
+  Car,
   UtensilsCrossed,
 } from 'lucide-react';
 
@@ -1370,6 +1371,10 @@ const Navbar = ({ initialOpen = false, defaultOpen } = {}) => {
               })}
 
               {renderNavLink({
+                to: '/traffic-echallan-workspace',
+                activeTarget: '/traffic-echallan-workspace',
+                label: t('nav.trafficChallan', 'E-Challan Dispute'),
+                icon: Car
                 to: '/food-safety-workspace',
                 activeTarget: '/food-safety-workspace',
                 label: t('nav.foodSafetyWorkspace', 'Food Safety Redressal'),

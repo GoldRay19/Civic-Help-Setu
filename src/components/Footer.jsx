@@ -257,11 +257,13 @@ const Footer = () => {
 </li>
 <li>
   <Link
+    to="/traffic-echallan-workspace"
     to="/food-safety-workspace"
     style={linkBaseStyle}
     onFocus={(e) => Object.assign(e.currentTarget.style, focusRingStyle)}
     onBlur={(e) => { e.currentTarget.style.outline = ''; e.currentTarget.style.outlineOffset = ''; }}
   >
+    Traffic E-Challan Dispute (Rule 167A)
     Food Safety (FSSAI) Redressal
   </Link>
 </li>
